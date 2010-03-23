@@ -28,14 +28,16 @@ extern "C" {
 
 struct ShareListItem
 {
-    void * ptr;
-    unsigned int size_of_ptr;
 
-    char * ptr_name;
+    char ptr_name[128];
     unsigned int size_of_ptr_name;
 
     unsigned int last_write_inc;
     unsigned int permissions;
+
+    void * ptr;
+    unsigned int size_of_ptr;
+
 };
 
 
@@ -49,9 +51,9 @@ struct ShareList
 
 struct VariableShare
 {
-    char * sharename;
+    char sharename[128];
 
-    char * ip;
+    char ip[128];
     unsigned int port;
     int state;
 

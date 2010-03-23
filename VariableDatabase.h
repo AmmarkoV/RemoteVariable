@@ -22,7 +22,8 @@
 #define VARIABLEDATABASE_H_INCLUDED
 
 #include "RemoteVariableSupport.h"
-
+struct VariableShare * Create_VariableDatabase(char * sharename,char * IP,unsigned int port,char * password,unsigned int newsize);
 int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int permissions,void * ptr,unsigned int ptr_size);
+int Destroy_VariableDatabase(struct VariableShare * vsh);
 
 #endif // VARIABLEDATABASE_H_INCLUDED

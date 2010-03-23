@@ -28,20 +28,24 @@
 struct VariableShare * Start_VariableSharing(char * sharename,char * password)
 {
     fprintf(stderr,"Starting Variable Sharing!\n");
+    struct VariableShare *  vsh = Create_VariableDatabase(sharename,"127.0.0.1",12345,password,128);
     StartRemoteVariableServer(12345);
-    return 0;
+    return vsh;
 }
 
 struct VariableShare * ConnectToRemote_VariableSharing(char * IP,unsigned int port,char * password)
 {
+    struct VariableShare *  vsh = Create_VariableDatabase("RemoteShare",IP,port,password,128);
     fprintf(stderr,"ConnectToRemote_VariableSharing not implemented yet!");
-    return 0;
+    return vsh;
 }
 
 
 int Stop_VariableSharing(struct VariableShare * vsh)
 {
     stop_server_thread=1;
+
+    Destroy_VariableDatabase(vsh);
     return 0;
 }
 

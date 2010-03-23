@@ -27,6 +27,31 @@ int VariableShareOk(struct VariableShare * vsh)
  return 1;
 }
 
+struct VariableShare * Create_VariableDatabase(char * sharename,char * IP,unsigned int port,char * password,unsigned int newsize)
+{
+  struct VariableShare * vsh=0;
+
+  vsh = (struct VariableShare *) malloc(sizeof(struct VariableShare));
+  if (vsh==0) { error("Could not allocate memory for share!"); return 0; }
+
+
+
+
+  return vsh;
+}
+
+
+int Destroy_VariableDatabase(struct VariableShare * vsh)
+{
+  if (vsh==0) { debug_say("Memory for share , already deallocated!"); return 1; }
+  if ( vsh->share.variables == 0 ) { debug_say("Memory for shared variables , already deallocated!"); return 1; }
+
+  free(vsh->share.variables);
+  free(vsh);
+
+  return 1;
+}
+
 
 int Resize_VariableDatabase(struct VariableShare * vsh , unsigned int newsize)
 {
@@ -50,7 +75,7 @@ int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int
     if ( Resize_VariableDatabase(vsh,vsh->share.total_variables_memory+128) == 0 ) return 0;
   }
 
-  if (spot_to_take<vsh->share.total_variables_memory)
+  if (spot_to_take < vsh->share.total_variables_memory)
   {
   }
 
