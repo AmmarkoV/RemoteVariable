@@ -1,5 +1,9 @@
 #include "VariableDatabase.h"
 #include "helper.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 /***************************************************************************
 * Copyright (C) 2010 by Ammar Qammaz *
 * ammarkov@gmail.com *
@@ -34,9 +38,12 @@ struct VariableShare * Create_VariableDatabase(char * sharename,char * IP,unsign
   vsh = (struct VariableShare *) malloc(sizeof(struct VariableShare));
   if (vsh==0) { error("Could not allocate memory for share!"); return 0; }
 
+  vsh->share.variables = (struct ShareListItem * ) malloc( newsize * sizeof(struct ShareListItem) );
+  if (vsh->share.variables==0) { free(vsh); // ROLL BACK
+                                 error("Could not allocate memory for share variables!"); return 0; }
 
-
-
+  vsh->share.total_variables_memory=newsize;
+  vsh->share.total_variables_shared=0;
   return vsh;
 }
 
@@ -48,7 +55,6 @@ int Destroy_VariableDatabase(struct VariableShare * vsh)
 
   free(vsh->share.variables);
   free(vsh);
-
   return 1;
 }
 
@@ -77,6 +83,15 @@ int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int
 
   if (spot_to_take < vsh->share.total_variables_memory)
   {
+    if ( strlen(var_name)>=128 ) { error("Buffer Overflow attempt , we are safe"); return 0; }
+    strcpy(vsh->share.variables[spot_to_take].ptr_name,var_name);
+    vsh->share.variables[spot_to_take].size_of_ptr_name = strlen(var_name);
+
+    vsh->share.variables[spot_to_take].last_write_inc=0;
+    vsh->share.variables[spot_to_take].permissions=permissions;
+
+    vsh->share.variables[spot_to_take].ptr=ptr;
+    vsh->share.variables[spot_to_take].size_of_ptr=ptr_size;
   }
 
  return 1;

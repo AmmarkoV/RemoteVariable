@@ -26,4 +26,6 @@ struct VariableShare * Create_VariableDatabase(char * sharename,char * IP,unsign
 int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int permissions,void * ptr,unsigned int ptr_size);
 int Destroy_VariableDatabase(struct VariableShare * vsh);
 
+int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int permissions,void * ptr,unsigned int ptr_size);
+
 #endif // VARIABLEDATABASE_H_INCLUDED

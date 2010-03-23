@@ -34,6 +34,7 @@ struct ShareListItem
 
     unsigned int last_write_inc;
     unsigned int permissions;
+    unsigned int lock_refresh;
 
     void * ptr;
     unsigned int size_of_ptr;

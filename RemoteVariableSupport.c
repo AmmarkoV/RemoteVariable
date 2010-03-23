@@ -24,6 +24,7 @@
 #include <string.h>
 #include "RemoteVariableSupport.h"
 #include "NetworkFramework.h"
+#include "VariableDatabase.h"
 
 struct VariableShare * Start_VariableSharing(char * sharename,char * password)
 {
@@ -51,7 +52,7 @@ int Stop_VariableSharing(struct VariableShare * vsh)
 
 int Add_VariableToSharingList(struct VariableShare * vsh,char * variable_name,unsigned int permissions,void * ptr,unsigned int ptr_size)
 {
-    return AddVariable_ToDatabase(vsh,variable_name,permissions,ptr,ptr_size);
+    return AddVariable_Database(vsh,variable_name,permissions,ptr,ptr_size);
 }
 
 int Delete_VariableFromSharingList(struct VariableShare * vsh,char * variable_name)
