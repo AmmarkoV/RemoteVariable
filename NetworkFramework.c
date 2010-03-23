@@ -1,3 +1,23 @@
+/***************************************************************************
+* Copyright (C) 2010 by Ammar Qammaz *
+* ammarkov@gmail.com *
+* *
+* This program is free software; you can redistribute it and/or modify *
+* it under the terms of the GNU General Public License as published by *
+* the Free Software Foundation; either version 2 of the License, or *
+* (at your option) any later version. *
+* *
+* This program is distributed in the hope that it will be useful, *
+* but WITHOUT ANY WARRANTY; without even the implied warranty of *
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the *
+* GNU General Public License for more details. *
+* *
+* You should have received a copy of the GNU General Public License *
+* along with this program; if not, write to the *
+* Free Software Foundation, Inc., *
+* 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. *
+***************************************************************************/
+
 #include "NetworkFramework.h"
 #include "helper.h"
 /*
@@ -26,7 +46,11 @@
   PASS THEM TO VARIABLE DATABASE FOR CHECK
   AND IF THEY PASS THE CHECK send THEM
 */
-
+int GeneralPacket_ConvertTo_VariablePacket(struct NetworkRequestVariablePacket * variablepack , struct NetworkRequestGeneralPacket * generalpack )
+{
+ debug_say("GeneralPacket_ConvertTo_VariablePacket not implemented");
+ return 0;
+}
 
 int
 StartRemoteVariableServer(unsigned int port)
@@ -36,7 +60,7 @@ StartRemoteVariableServer(unsigned int port)
   struct sockaddr_in server;
   struct sockaddr_in from;
 
-  sock = socket(AF_INET, SOCK_DGRAM, 0);
+  sock = socket(AF_INET, SOCK_STREAM, 0);
   if ( sock < 0 )
       error("Opening socket");
 
@@ -52,12 +76,46 @@ StartRemoteVariableServer(unsigned int port)
   int fork_res, packeterror = 0;
   while (1)
   {
-      struct TFTP_PACKET request; // = { 0 };
-      if ( debug_msg() )
-          printf("\n Waiting for a tftp client \n");
+      struct NetworkRequestGeneralPacket request={0}; // = { 0 };
+
+     debug_say("Waiting for a tftp client");
+
+
       n = recvfrom(sock, (char*) & request, sizeof (request), 0, (struct sockaddr *) & from, &fromlen);
-      if ( n < 0 )
-          error("recvfrom");
+
+      if ( n < 0 ) error("Error RecvFrom , dropping session"); else
+     { //RECEIVED PACKET OK
+         packeterror = 0;
+         /*DISASSEMBLE REQUEST @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+           RQST ID   PAYLOAD SIZE   PAYLOAD DATA
+           1 byte   |   2 bytes   |   n bytes
+              A            B            C
+         */
+         if (request.RequestType>=INVALID_TYPE) { packeterror=1; } else
+         if (request.RequestType==ERROR)
+         { // ERROR PACKET
+           packeterror=1;
+           error("Error Packet Received");
+         }
+
+
+         if ( packeterror == 0 )
+         { debug_say("No Packet Request Error , Passing through to VariableDatabase Check");
+           if ( (request.RequestType==READVAR) || (request.RequestType==WRITEVAR) )
+           {
+              debug_say("Generic Packet should contain Variable Packet as a payload");
+              struct NetworkRequestVariablePacket * variablepacket=0;
+              variablepacket (struct NetworkRequestVariablePacket * ) malloc(request.data_size);
+              GeneralPacket_ConvertTo_VariablePacket(variablepacket,&request);
+              // LOOOOOOOOOOOOOOOOOOOOOOTS OF THINGS TODO :P
+           }
+         }
+
+
+     }//RECEIVED PACKET OK
+
+  }
+/*
       packeterror = 0;
       // DISASSEMBLE TFTP PACKET! @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
       // 2 bytes 1 byte 1byte
@@ -123,8 +181,8 @@ StartRemoteVariableServer(unsigned int port)
           printf("TFTP Server master thread - Incoming Request Denied..\n");
           fflush(stdout);
           write(1, request.data, n - 2);
-      }
-  }
+      }*/
+
 
   return;
 }
