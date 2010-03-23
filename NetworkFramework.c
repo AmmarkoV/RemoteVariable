@@ -63,27 +63,38 @@ RemoteVariableServer_Thread(void * ptr)
   if ( debug_msg() ) printf("TFTPServer\n");
   int sock, length, fromlen, n;
   struct sockaddr_in server;
-  struct sockaddr_in from;
+  struct sockaddr_in client;
 
   sock = socket(AF_INET, SOCK_STREAM, 0);
-  if ( sock < 0 )
-      error("Opening socket");
+  if ( sock < 0 ) { error("Opening socket"); return 0; }
 
   length = sizeof (server);
   bzero(&server, length);
+
   server.sin_family = AF_INET;
   server.sin_addr.s_addr = INADDR_ANY;
   server.sin_port = htons(12345); //TODO ADD PORT
 
-  if ( bind(sock, (struct sockaddr *) & server, length) < 0 ) error("binding master port for atftp!");
+  if ( bind(sock, (struct sockaddr *) & server, length) < 0 ) { error("binding master port for atftp!"); return 0; }
   fromlen = sizeof (struct sockaddr_in);
-  char filename[512]={0};
-  int fork_res, packeterror = 0;
+
+  if (listen(sock,10) < 0)  { error("Failed to listen on server socket"); return 0; }
+
+
+  int packeterror = 0;
   while (stop_server_thread==0)
   {
       struct NetworkRequestGeneralPacket request={0}; // = { 0 };
 
-     debug_say("Waiting for a tftp client");
+      debug_say("Waiting for a client");
+
+      unsigned int clientlen = sizeof(echoclient);
+              /* Wait for client connection */
+      if ( (client = accept(serversock, (struct sockaddr *) &echoclient, &clientlen)) < 0)  error("Failed to accept client connection");
+
+     fprintf(stdout, "Client connected: %s\n", inet_ntoa(echoclient.sin_addr));
+     HandleClient(clientsock);
+
 
 
       n = recvfrom(sock, (char*) & request, sizeof (request), 0, (struct sockaddr *) & from, &fromlen);
