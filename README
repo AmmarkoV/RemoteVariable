@@ -17,7 +17,7 @@ For debugging ValGrind is a great tool that will be used during the development
 Simple Practical Example
 ------------------------------------------------------------------------------------------------------------------
 For example lets say an admin has a very complex program on PC#1 and wants to find out the value of the variable "int ServiceNeeded;"
-A solution would be for the program to run an HTTP server for example 
+
 
 the PC #1 program should have the following structure :
 

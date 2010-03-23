@@ -34,9 +34,18 @@
 				</Linker>
 			</Target>
 		</Build>
-		<Unit filename="main.c">
+		<Unit filename="NetworkFramework.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="NetworkFramework.h" />
+		<Unit filename="RemoteVariableSupport.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="RemoteVariableSupport.h" />
+		<Unit filename="VariableDatabase.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="VariableDatabase.h" />
 		<Extensions>
 			<code_completion />
 			<envvars />
