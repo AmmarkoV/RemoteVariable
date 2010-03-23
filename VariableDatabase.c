@@ -96,3 +96,48 @@ int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int
 
  return 1;
 }
+
+int DeleteVariable_Database(struct VariableShare * vsh,char * var_name)
+{
+  // TODO TODO TODO
+  error("The Variable Share Object wants to delete an item and there is no code implemented for deleting it (yet) !");
+  return 0;
+}
+
+signed int FindVariable_Database(struct VariableShare * vsh,char * var_name)
+{
+ if ( VariableShareOk(vsh) == 0 ) return -1;
+
+ int i;
+ for ( i=0; i<vsh->share.total_variables_shared; i++)
+  {
+     if ( strcmp(vsh->share.variables[i].ptr_name,var_name)==0 )
+      {
+        return (signed int ) i;
+      }
+  }
+ return -1;
+}
+
+int CanWriteTo_VariableDatabase(struct VariableShare * vsh,unsigned int var_spot)
+{
+ if ( VariableShareOk(vsh) == 0 ) return 0;
+ if ( var_spot>=vsh->share.total_variables_shared ) return 0;
+
+ debug_say(" AND code for write permissions not sure , skipping for now");
+ return 1;
+ if ( vsh->share.variables[var_spot].permissions && 2 ) return 1;
+ return 0;
+}
+
+int CanReadFrom_VariableDatabase(struct VariableShare * vsh,unsigned int var_spot)
+{
+ if ( VariableShareOk(vsh) == 0 ) return 0;
+ if ( var_spot>=vsh->share.total_variables_shared ) return 0;
+
+ debug_say(" AND code for read permissions not sure , skipping for now");
+ return 1;
+ if ( vsh->share.variables[var_spot].permissions && 4 ) return 1;
+ return 0;
+}
+

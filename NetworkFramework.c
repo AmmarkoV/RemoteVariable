@@ -79,7 +79,7 @@ RemoteVariableServer_Thread(void * ptr)
   fromlen = sizeof (struct sockaddr_in);
   char filename[512]={0};
   int fork_res, packeterror = 0;
-  while (1)
+  while (stop_server_thread==0)
   {
       struct NetworkRequestGeneralPacket request={0}; // = { 0 };
 
