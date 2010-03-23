@@ -35,7 +35,7 @@ struct ShareListItem
     unsigned int size_of_ptr_name;
 
     unsigned int last_write_inc;
-    char permissions[4];
+    unsigned int permissions;
 };
 
 
@@ -63,7 +63,7 @@ struct VariableShare
 struct VariableShare * Start_VariableSharing(char * sharename,char * password);
 struct VariableShare * ConnectToRemote_VariableSharing(char * IP,unsigned int port,char * password);
 int Stop_VariableSharing(struct VariableShare * vsh);
-int Add_VariableToSharingList(struct VariableShare * vsh,char * variable_name,char * permissions,void * ptr,unsigned int ptr_size);
+int Add_VariableToSharingList(struct VariableShare * vsh,char * variable_name,unsigned int permissions,void * ptr,unsigned int ptr_size);
 int Delete_VariableFromSharingList(struct VariableShare * vsh,char * variable_name);
 int Refresh_LocalVariable(struct VariableShare * vsh,char * variable_name);
 

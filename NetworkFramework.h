@@ -56,4 +56,8 @@ struct NetworkRequestGeneralPacket
   unsigned char * data;
 };
 
+extern unsigned int stop_server_thread;
+
+int StartRemoteVariableServer(unsigned int port);
+
 #endif // NETWORKFRAMEWORK_H_INCLUDED

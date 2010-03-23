@@ -20,6 +20,10 @@
 
 #include "NetworkFramework.h"
 #include "helper.h"
+
+void * RemoteVariableServer_Thread(void * ptr);
+unsigned int stop_server_thread=0;
+pthread_t server_thread;
 /*
   TODO
   SPAWN A NEW LISTEN THEAD WHEN
@@ -49,11 +53,12 @@
 int GeneralPacket_ConvertTo_VariablePacket(struct NetworkRequestVariablePacket * variablepack , struct NetworkRequestGeneralPacket * generalpack )
 {
  debug_say("GeneralPacket_ConvertTo_VariablePacket not implemented");
+ variablepack->RequestType = generalpack->RequestType;
  return 0;
 }
 
-int
-StartRemoteVariableServer(unsigned int port)
+void *
+RemoteVariableServer_Thread(void * ptr)
 {
   if ( debug_msg() ) printf("TFTPServer\n");
   int sock, length, fromlen, n;
@@ -68,7 +73,7 @@ StartRemoteVariableServer(unsigned int port)
   bzero(&server, length);
   server.sin_family = AF_INET;
   server.sin_addr.s_addr = INADDR_ANY;
-  server.sin_port = htons(port);
+  server.sin_port = htons(12345); //TODO ADD PORT
 
   if ( bind(sock, (struct sockaddr *) & server, length) < 0 ) error("binding master port for atftp!");
   fromlen = sizeof (struct sockaddr_in);
@@ -105,10 +110,15 @@ StartRemoteVariableServer(unsigned int port)
            {
               debug_say("Generic Packet should contain Variable Packet as a payload");
               struct NetworkRequestVariablePacket * variablepacket=0;
-              variablepacket (struct NetworkRequestVariablePacket * ) malloc(request.data_size);
+              variablepacket = (struct NetworkRequestVariablePacket * ) malloc(request.data_size);
               GeneralPacket_ConvertTo_VariablePacket(variablepacket,&request);
               // LOOOOOOOOOOOOOOOOOOOOOOTS OF THINGS TODO :P
            }
+         }else
+         {
+          printf("Incoming Request not passed through..\n");
+         // fflush(stdout);
+          //write(1, request.data, n - 2);
          }
 
 
@@ -185,4 +195,12 @@ StartRemoteVariableServer(unsigned int port)
 
 
   return;
+}
+
+int
+StartRemoteVariableServer(unsigned int port)
+{
+   char *message1 = (char *)  "Server Thread";
+   stop_server_thread=0;
+   pthread_create( &server_thread, NULL,  RemoteVariableServer_Thread ,(void*) message1);
 }
