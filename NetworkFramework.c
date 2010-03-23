@@ -22,7 +22,7 @@
 #include "helper.h"
 
 void * RemoteVariableServer_Thread(void * ptr);
-unsigned int stop_server_thread=0;
+unsigned int stop_server_thread=0,stop_client_thread=0;
 pthread_t server_thread;
 /*
   TODO
@@ -50,56 +50,19 @@ pthread_t server_thread;
   PASS THEM TO VARIABLE DATABASE FOR CHECK
   AND IF THEY PASS THE CHECK send THEM
 */
-int GeneralPacket_ConvertTo_VariablePacket(struct NetworkRequestVariablePacket * variablepack , struct NetworkRequestGeneralPacket * generalpack )
+
+
+void HandleClient(struct VariableShare * vsh,int clientsock,struct sockaddr_in client,unsigned int clientlen)
 {
- debug_say("GeneralPacket_ConvertTo_VariablePacket not implemented");
- variablepack->RequestType = generalpack->RequestType;
- return 0;
-}
+      printf( "Client connected: %s\n", inet_ntoa(client.sin_addr));
 
-void *
-RemoteVariableServer_Thread(void * ptr)
-{
-  if ( debug_msg() ) printf("TFTPServer\n");
-  int sock, length, fromlen, n;
-  struct sockaddr_in server;
-  struct sockaddr_in client;
-
-  sock = socket(AF_INET, SOCK_STREAM, 0);
-  if ( sock < 0 ) { error("Opening socket"); return 0; }
-
-  length = sizeof (server);
-  bzero(&server, length);
-
-  server.sin_family = AF_INET;
-  server.sin_addr.s_addr = INADDR_ANY;
-  server.sin_port = htons(12345); //TODO ADD PORT
-
-  if ( bind(sock, (struct sockaddr *) & server, length) < 0 ) { error("binding master port for atftp!"); return 0; }
-  fromlen = sizeof (struct sockaddr_in);
-
-  if (listen(sock,10) < 0)  { error("Failed to listen on server socket"); return 0; }
-
-
-  int packeterror = 0;
-  while (stop_server_thread==0)
-  {
-      struct NetworkRequestGeneralPacket request={0}; // = { 0 };
-
-      debug_say("Waiting for a client");
-
-      unsigned int clientlen = sizeof(echoclient);
-              /* Wait for client connection */
-      if ( (client = accept(serversock, (struct sockaddr *) &echoclient, &clientlen)) < 0)  error("Failed to accept client connection");
-
-     fprintf(stdout, "Client connected: %s\n", inet_ntoa(echoclient.sin_addr));
-     HandleClient(clientsock);
+      struct NetworkRequestGeneralPacket request={0};
+      int data_received = recv(clientsock, (char*) & request, sizeof (request), 0);
 
 
 
-      n = recvfrom(sock, (char*) & request, sizeof (request), 0, (struct sockaddr *) & from, &fromlen);
-
-      if ( n < 0 ) error("Error RecvFrom , dropping session"); else
+      int packeterror = 0;
+     if ( data_received < 0 ) error("Error RecvFrom , dropping session"); else
      { //RECEIVED PACKET OK
          packeterror = 0;
          /*DISASSEMBLE REQUEST @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -120,9 +83,6 @@ RemoteVariableServer_Thread(void * ptr)
            if ( (request.RequestType==READVAR) || (request.RequestType==WRITEVAR) )
            {
               debug_say("Generic Packet should contain Variable Packet as a payload");
-              struct NetworkRequestVariablePacket * variablepacket=0;
-              variablepacket = (struct NetworkRequestVariablePacket * ) malloc(request.data_size);
-              GeneralPacket_ConvertTo_VariablePacket(variablepacket,&request);
               // LOOOOOOOOOOOOOOOOOOOOOOTS OF THINGS TODO :P
            }
          }else
@@ -135,83 +95,61 @@ RemoteVariableServer_Thread(void * ptr)
 
      }//RECEIVED PACKET OK
 
-  }
-/*
-      packeterror = 0;
-      // DISASSEMBLE TFTP PACKET! @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-      // 2 bytes 1 byte 1byte
-      // RRQ/WRQ | opcode | filename | 0 | Mode | 0
-      // A B C D E
-      // A part
-      if ( (request.Op1 != 0) || ((request.Op2 != 2) && (request.Op2 != 1)) )
+} // CLIENT HANDLE !
+
+
+void *
+RemoteVariableServer_Thread(void * ptr)
+{
+  if ( debug_msg() ) printf("Remote Variable TCP Server thread started..\n");
+
+  struct VariableShare *vsh;
+  vsh = (struct VariableShare *) ptr;
+
+
+  int serversock,clientsock;
+  unsigned int serverlen = sizeof(struct sockaddr_in),clientlen = sizeof(struct sockaddr_in);
+  struct sockaddr_in server;
+  struct sockaddr_in client;
+
+  serversock = socket(AF_INET, SOCK_STREAM, 0);
+    if ( serversock < 0 ) { error("Opening socket"); return 0; }
+
+
+  bzero(&client,clientlen);
+  bzero(&server,serverlen);
+
+  server.sin_family = AF_INET;
+  server.sin_addr.s_addr = INADDR_ANY;
+  server.sin_port = htons(vsh->port);
+
+  if ( bind(serversock,(struct sockaddr *) &server,serverlen) < 0 ) { error("binding master port for atftp!"); return 0; }
+  if (listen(serversock,10) < 0)  { error("Failed to listen on server socket"); return 0; }
+
+
+  while (stop_server_thread==0)
+  {
+    debug_say("Waiting for a client");
+    /* Wait for client connection */
+    if ( (clientsock = accept(serversock,(struct sockaddr *) &client, &clientlen)) < 0) { error("Failed to accept client connection"); } else
       {
-          packeterror = 1;
+          HandleClient(vsh,clientsock,client,clientlen);
       }
-      // B part
-      //write(1, request.data, n - 2);
-      strcpy(filename, request.data);
-      unsigned int fnm_end = strlen(filename);
-      //CHECK FOR INCORRECT FILENAMES!
-      if ( SecurityFilename(filename) == -1 )
-      {
-          packeterror = 1;
-          if ( error_msg() ) printf("Insecure filename string.. , failing packet \n");
-          TransmitError("Insecure filename ", 2, sock, &from);
-      }
-      else
-          if ( fnm_end == 0 )
-      {
-          packeterror = 1;
-          if ( error_msg() ) printf("Null filename.. , failing packet \n");
-          TransmitError("Null filename ", 3, sock, &from);
-      }
-      // DISASSEMBLE TFTP PACKET! @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-
-      if ( packeterror == 0 )
-      {
-          fork_res = fork();
-          if ( fork_res < 0 )
-          {
-              if ( error_msg() ) printf("Could not fork server , client will fail\n");
-              TransmitError("Cannot fork accept connection", 1, sock, &from);
-          }
-          else if ( fork_res == 0 )
-          {
-              int f_fromlen = fromlen;
-              struct sockaddr_in f_from = from;
-              if ( debug_msg() ) printf("New UDP server fork to serve file %s , operation type %u \n", filename, request.Op2);
-              fflush(stdout);
-               //check if root
-
-              if ( getuid() == ROOT_ID )
-              {
-                  setuid(1000);
-                  if ( debug_msg() ) printf("Switched from root(uid=%d) to normal user(uid=%d)\n", ROOT_ID, getuid());
-              }
-
-              HandleClient(filename, f_fromlen, f_from, request.Op2);
-          }
-          else
-          {
-              // Server loop
-          }
-      }
-      else
-      {
-          printf("TFTP Server master thread - Incoming Request Denied..\n");
-          fflush(stdout);
-          write(1, request.data, n - 2);
-      }*/
-
-
+ }
   return;
+
 }
 
 int
-StartRemoteVariableServer(unsigned int port)
+StartRemoteVariableServer(struct VariableShare * vsh)
 {
-   char *message1 = (char *)  "Server Thread";
    stop_server_thread=0;
-   pthread_create( &server_thread, NULL,  RemoteVariableServer_Thread ,(void*) message1);
+   pthread_create( &server_thread, NULL,  RemoteVariableServer_Thread ,(void*) vsh);
+}
+
+int
+StartRemoteVariableConnection(struct VariableShare * vsh)
+{
+   stop_client_thread=0;
+   pthread_create( &server_thread, NULL,  RemoteVariableServer_Thread ,(void*) vsh);
 }

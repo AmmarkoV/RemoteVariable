@@ -29,6 +29,8 @@
 #include <unistd.h>
 #include <sys/uio.h>
 
+#include "RemoteVariableSupport.h"
+
 enum RequestTypeEnum
 {
     READVAR=0,
@@ -37,27 +39,21 @@ enum RequestTypeEnum
     INVALID_TYPE
 };
 
-struct NetworkRequestVariablePacket
-{
-  unsigned char RequestType;
-
-  unsigned int name_size;
-  unsigned char * name;
-
-  unsigned int payload_size;
-  unsigned char * payload;
-
-};
 
 struct NetworkRequestGeneralPacket
 {
   unsigned char RequestType;
+
+  unsigned int name_size;
+  unsigned char name[128];
+
   unsigned int data_size;
   unsigned char * data;
 };
 
 extern unsigned int stop_server_thread;
 
-int StartRemoteVariableServer(unsigned int port);
+int StartRemoteVariableServer(struct VariableShare * vsh);
+int StartRemoteVariableConnection(struct VariableShare * vsh);
 
 #endif // NETWORKFRAMEWORK_H_INCLUDED
