@@ -22,8 +22,10 @@
 #include "helper.h"
 
 void * RemoteVariableServer_Thread(void * ptr);
-unsigned int stop_server_thread=0,stop_client_thread=0;
+unsigned int stop_server_thread=0;
+unsigned int stop_client_thread=0;
 pthread_t server_thread;
+
 /*
   TODO
   SPAWN A NEW LISTEN THEAD WHEN

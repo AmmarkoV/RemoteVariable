@@ -52,6 +52,7 @@ struct NetworkRequestGeneralPacket
 };
 
 extern unsigned int stop_server_thread;
+extern unsigned int stop_client_thread;
 
 int StartRemoteVariableServer(struct VariableShare * vsh);
 int StartRemoteVariableConnection(struct VariableShare * vsh);

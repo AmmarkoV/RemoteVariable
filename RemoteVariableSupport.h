@@ -58,7 +58,7 @@ struct VariableShare
 
     char ip[128];
     unsigned int port;
-    int state;
+    int state; // 0 = NOT INITED , 1 = SERVER , 2 = CLIENT
 
     struct ShareList share;
 

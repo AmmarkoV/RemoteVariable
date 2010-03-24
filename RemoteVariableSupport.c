@@ -30,6 +30,12 @@ struct VariableShare * Start_VariableSharing(char * sharename,char * password)
 {
     fprintf(stderr,"Starting Variable Sharing!\n");
     struct VariableShare *  vsh = Create_VariableDatabase(sharename,"127.0.0.1",12345,password,128);
+    if ( vsh == 0 ) return 0;
+
+    if ( vsh->state == 0 )  vsh->state =1; else
+                            {
+                              error("Variable Shared already initialized , stop it before starting it again as server!");
+                            }
     StartRemoteVariableServer(vsh);
     return vsh;
 }
@@ -37,6 +43,12 @@ struct VariableShare * Start_VariableSharing(char * sharename,char * password)
 struct VariableShare * ConnectToRemote_VariableSharing(char * IP,unsigned int port,char * password)
 {
     struct VariableShare *  vsh = Create_VariableDatabase("RemoteShare",IP,port,password,128);
+    if ( vsh == 0 ) return 0;
+    if ( vsh->state == 0 )  vsh->state =1; else
+                            {
+                              error("Variable Shared already initialized , stop it before starting it again as connect to remote!");
+                            }
+
     StartRemoteVariableConnection(vsh);
     return vsh;
 }
@@ -44,7 +56,10 @@ struct VariableShare * ConnectToRemote_VariableSharing(char * IP,unsigned int po
 
 int Stop_VariableSharing(struct VariableShare * vsh)
 {
+    vsh->state =0;
     stop_server_thread=1;
+    stop_client_thread=1;
+
 
     Destroy_VariableDatabase(vsh);
     return 0;
