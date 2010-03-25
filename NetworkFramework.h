@@ -35,6 +35,7 @@ enum RequestTypeEnum
 {
     READVAR=0,
     WRITEVAR,
+    OK,
     ERROR,
     INVALID_TYPE
 };
@@ -45,7 +46,7 @@ struct NetworkRequestGeneralPacket
   unsigned char RequestType;
 
   unsigned int name_size;
-  unsigned char name[128];
+  unsigned char name[32];
 
   unsigned int data_size;
   unsigned char * data;

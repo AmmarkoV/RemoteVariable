@@ -53,6 +53,45 @@ pthread_t server_thread;
   AND IF THEY PASS THE CHECK send THEM
 */
 
+int RecvVariableFrom(struct VariableShare * vsh,int clientsock,unsigned int variable_id)
+{
+ struct NetworkRequestGeneralPacket data={0};
+ unsigned int data_length=sizeof(data)-sizeof(void *);
+ int data_recv= recv(clientsock, (char*) & data, sizeof (data_length), 0); // SEND START FRAME!
+
+ if ( data.RequestType == WRITEVAR )
+  {
+   data.RequestType=READVAR;
+   data.name_size=vsh->share.variables[variable_id].size_of_ptr_name;
+   strcpy(data.name,vsh->share.variables[variable_id].ptr_name);
+
+   data.data_size = vsh->share.variables[variable_id].size_of_ptr;
+
+
+   data_recv= send(clientsock, (char*) & vsh->share.variables[variable_id].ptr,data.data_size, 0); // SEND START FRAME!
+  } else
+  { error("Dropping General Packet , out of context..");}
+
+  return 0;
+}
+
+int SendVariableTo(struct VariableShare * vsh,int clientsock,unsigned int variable_id)
+{
+ struct NetworkRequestGeneralPacket data={0};
+ unsigned int data_length=sizeof(data)-sizeof(void *);
+
+  data.RequestType=READVAR;
+  data.name_size=vsh->share.variables[variable_id].size_of_ptr_name;
+  strcpy(data.name,vsh->share.variables[variable_id].ptr_name);
+
+  data.data_size = vsh->share.variables[variable_id].size_of_ptr;
+
+  int data_sent= send(clientsock, (char*) & data, sizeof (data_length), 0); // SEND START FRAME!
+
+  data_sent= send(clientsock, (char*) & vsh->share.variables[variable_id].ptr,data.data_size, 0); // SEND START FRAME!
+
+  return 0;
+}
 
 void HandleClient(struct VariableShare * vsh,int clientsock,struct sockaddr_in client,unsigned int clientlen)
 {

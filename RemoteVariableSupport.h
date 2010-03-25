@@ -29,7 +29,7 @@ extern "C" {
 struct ShareListItem
 {
 
-    char ptr_name[128];
+    char ptr_name[32];
     unsigned int size_of_ptr_name;
 
     unsigned int last_write_inc;
@@ -38,8 +38,9 @@ struct ShareListItem
     unsigned char lock_refresh;
     unsigned char flag_needs_refresh;
 
-    void * ptr;
+
     unsigned int size_of_ptr;
+    void * ptr;
 
 };
 
@@ -54,9 +55,9 @@ struct ShareList
 
 struct VariableShare
 {
-    char sharename[128];
+    char sharename[32];
 
-    char ip[128];
+    char ip[32];
     unsigned int port;
     int state; // 0 = NOT INITED , 1 = SERVER , 2 = CLIENT
 
@@ -71,6 +72,7 @@ int Stop_VariableSharing(struct VariableShare * vsh);
 int Add_VariableToSharingList(struct VariableShare * vsh,char * variable_name,unsigned int permissions,void * ptr,unsigned int ptr_size);
 int Delete_VariableFromSharingList(struct VariableShare * vsh,char * variable_name);
 int Refresh_LocalVariable(struct VariableShare * vsh,char * variable_name);
+int Refresh_RemoteVariable(struct VariableShare * vsh,char * variable_name);
 
 #ifdef __cplusplus
 }

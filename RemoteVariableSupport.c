@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "helper.h"
 #include "RemoteVariableSupport.h"
 #include "NetworkFramework.h"
 #include "VariableDatabase.h"
@@ -79,5 +80,12 @@ int Delete_VariableFromSharingList(struct VariableShare * vsh,char * variable_na
 int Refresh_LocalVariable(struct VariableShare * vsh,char * variable_name)
 {
     fprintf(stderr,"Refresh_LocalVariable not implemented yet!");
+    return 0;
+}
+
+
+int Refresh_RemoteVariable(struct VariableShare * vsh,char * variable_name)
+{
+    fprintf(stderr,"Refresh_RemoteVariable not implemented yet!");
     return 0;
 }
