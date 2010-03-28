@@ -65,6 +65,12 @@ struct VariableShare
 
 };
 
+/*
+
+ THE PROJECT IS NOT YET IN A USABLE STATE!!
+
+*/
+
 
 struct VariableShare * Start_VariableSharing(char * sharename,char * password);
 struct VariableShare * ConnectToRemote_VariableSharing(char * IP,unsigned int port,char * password);

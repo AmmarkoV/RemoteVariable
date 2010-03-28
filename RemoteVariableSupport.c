@@ -27,6 +27,7 @@
 #include "NetworkFramework.h"
 #include "VariableDatabase.h"
 
+
 struct VariableShare * Start_VariableSharing(char * sharename,char * password)
 {
     fprintf(stderr,"Starting Variable Sharing!\n");
