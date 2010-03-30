@@ -22,9 +22,7 @@
 #include "helper.h"
 
 void * RemoteVariableServer_Thread(void * ptr);
-unsigned int stop_server_thread=0;
-unsigned int stop_client_thread=0;
-pthread_t server_thread;
+
 
 /*
   TODO
@@ -62,7 +60,6 @@ int RecvVariableFrom(struct VariableShare * vsh,int clientsock,unsigned int vari
  if ( data.RequestType == WRITEVAR )
   {
    data.RequestType=READVAR;
-   data.name_size=vsh->share.variables[variable_id].size_of_ptr_name;
    strcpy(data.name,vsh->share.variables[variable_id].ptr_name);
 
    data.data_size = vsh->share.variables[variable_id].size_of_ptr;
@@ -81,7 +78,6 @@ int SendVariableTo(struct VariableShare * vsh,int clientsock,unsigned int variab
  unsigned int data_length=sizeof(data)-sizeof(void *);
 
   data.RequestType=READVAR;
-  data.name_size=vsh->share.variables[variable_id].size_of_ptr_name;
   strcpy(data.name,vsh->share.variables[variable_id].ptr_name);
 
   data.data_size = vsh->share.variables[variable_id].size_of_ptr;
@@ -104,27 +100,68 @@ void HandleClient(struct VariableShare * vsh,int clientsock,struct sockaddr_in c
 
       int packeterror = 0;
      if ( data_received < 0 ) error("Error RecvFrom , dropping session"); else
-     { //RECEIVED PACKET OK
+     {
+         //RECEIVED PACKET OK
          packeterror = 0;
-         /*DISASSEMBLE REQUEST @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-           RQST ID   PAYLOAD SIZE   PAYLOAD DATA
-           1 byte   |   2 bytes   |   n bytes
-              A            B            C
+         /*
+         struct NetworkRequestGeneralPacket
+{
+  unsigned char RequestType;
+
+  unsigned char name[32];
+
+  unsigned int data_size;
+  unsigned char * data;
+};
          */
-         if (request.RequestType>=INVALID_TYPE) { packeterror=1; } else
+
+
+         /*DISASSEMBLE REQUEST @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+           RQST ID        NAME       PAYLOAD SIZE
+           1 byte   |   32 bytes   |   2 bytes       ....  PACKET CONTINUES ...................
+              A            B             C
+         */
+         if (request.RequestType>=INVALID_TYPE)
+         {
+           packeterror=1;
+           error("Invalid Packet Type Received, Wrong Version/Incompatible Client ?");
+         } else
          if (request.RequestType==ERROR)
          { // ERROR PACKET
            packeterror=1;
            error("Error Packet Received");
+         } else
+         if (request.RequestType==OK)
+         { // OK PACKET
+           packeterror=1;
+           error("Packet Acknowledgement Received");
          }
-
 
          if ( packeterror == 0 )
          { debug_say("No Packet Request Error , Passing through to VariableDatabase Check");
            if ( (request.RequestType==READVAR) || (request.RequestType==WRITEVAR) )
            {
               debug_say("Generic Packet should contain Variable Packet as a payload");
-              // LOOOOOOOOOOOOOOOOOOOOOOTS OF THINGS TODO :P
+              printf("Incoming Packet info \n Name : %s ( %u ) \n Type : %u \n Data Size : %u \n",request.name,request.RequestType,request.data_size);
+
+              if ( request.RequestType==READVAR)
+               {
+                 signed int varnum = FindVariable_Database(vsh,request.name);
+                 if ( CanWriteTo_VariableDatabase(vsh,varnum) == 1 )
+                  {
+                   RecvVariableFrom(vsh,clientsock,varnum);
+                  } else
+                  { printf("No permission to READ \n");}
+               } else
+              if ( request.RequestType==WRITEVAR)
+               {
+                 signed int varnum = FindVariable_Database(vsh,request.name);
+                 if ( CanWriteTo_VariableDatabase(vsh,varnum) == 1 )
+                 {
+                  SendVariableTo(vsh,clientsock,varnum);
+                 } else
+                  { printf("No permission to WRITE \n");}
+               }
            }
          }else
          {
@@ -168,7 +205,7 @@ RemoteVariableServer_Thread(void * ptr)
   if (listen(serversock,10) < 0)  { error("Failed to listen on server socket"); return 0; }
 
 
-  while (stop_server_thread==0)
+  while (vsh->stop_server_thread==0)
   {
     debug_say("Waiting for a client");
     /* Wait for client connection */
@@ -184,13 +221,13 @@ RemoteVariableServer_Thread(void * ptr)
 int
 StartRemoteVariableServer(struct VariableShare * vsh)
 {
-   stop_server_thread=0;
-   pthread_create( &server_thread, NULL,  RemoteVariableServer_Thread ,(void*) vsh);
+   vsh->stop_server_thread=0;
+   pthread_create( &vsh->server_thread, NULL,  RemoteVariableServer_Thread ,(void*) vsh);
 }
 
 int
 StartRemoteVariableConnection(struct VariableShare * vsh)
 {
-   stop_client_thread=0;
-   pthread_create( &server_thread, NULL,  RemoteVariableServer_Thread ,(void*) vsh);
+   vsh->stop_client_thread=0;
+   pthread_create( &vsh->server_thread, NULL,  RemoteVariableServer_Thread ,(void*) vsh);
 }

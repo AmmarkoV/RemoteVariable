@@ -85,7 +85,7 @@ int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int
   {
     if ( strlen(var_name)>=128 ) { error("Buffer Overflow attempt , we are safe"); return 0; }
     strcpy(vsh->share.variables[spot_to_take].ptr_name,var_name);
-    vsh->share.variables[spot_to_take].size_of_ptr_name = strlen(var_name);
+    if ( strlen(var_name) > 31 ) { error("Buffer Overflow attempt originating from us ? "); return 0; }
 
     vsh->share.variables[spot_to_take].last_write_inc=0;
     vsh->share.variables[spot_to_take].permissions=permissions;

@@ -59,8 +59,8 @@ struct VariableShare * ConnectToRemote_VariableSharing(char * IP,unsigned int po
 int Stop_VariableSharing(struct VariableShare * vsh)
 {
     vsh->state =0;
-    stop_server_thread=1;
-    stop_client_thread=1;
+    vsh->stop_server_thread=1;
+    vsh->stop_client_thread=1;
 
 
     Destroy_VariableDatabase(vsh);

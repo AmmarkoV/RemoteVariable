@@ -26,16 +26,15 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#include <unistd.h>
 #include <sys/uio.h>
 
 #include "RemoteVariableSupport.h"
 
 enum RequestTypeEnum
 {
-    READVAR=0,
+    OK=0,
+    READVAR,
     WRITEVAR,
-    OK,
     ERROR,
     INVALID_TYPE
 };
@@ -45,15 +44,12 @@ struct NetworkRequestGeneralPacket
 {
   unsigned char RequestType;
 
-  unsigned int name_size;
   unsigned char name[32];
 
   unsigned int data_size;
   unsigned char * data;
 };
 
-extern unsigned int stop_server_thread;
-extern unsigned int stop_client_thread;
 
 int StartRemoteVariableServer(struct VariableShare * vsh);
 int StartRemoteVariableConnection(struct VariableShare * vsh);

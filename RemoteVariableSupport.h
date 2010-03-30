@@ -26,11 +26,13 @@
 extern "C" {
 #endif
 
+#include <pthread.h>
+#include <unistd.h>
+
 struct ShareListItem
 {
 
     char ptr_name[32];
-    unsigned int size_of_ptr_name;
 
     unsigned int last_write_inc;
     unsigned int permissions;
@@ -59,6 +61,13 @@ struct VariableShare
 
     char ip[32];
     unsigned int port;
+
+    pthread_t client_thread;
+    unsigned int stop_client_thread;
+    pthread_t server_thread;
+    unsigned int stop_server_thread;
+
+
     int state; // 0 = NOT INITED , 1 = SERVER , 2 = CLIENT
 
     struct ShareList share;
