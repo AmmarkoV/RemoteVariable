@@ -89,6 +89,10 @@ int SendVariableTo(struct VariableShare * vsh,int clientsock,unsigned int variab
   return 0;
 }
 
+// ________________________________________________________
+// HANDLE CLIENT
+
+
 void HandleClient(struct VariableShare * vsh,int clientsock,struct sockaddr_in client,unsigned int clientlen)
 {
       printf( "Client connected: %s\n", inet_ntoa(client.sin_addr));
@@ -103,38 +107,24 @@ void HandleClient(struct VariableShare * vsh,int clientsock,struct sockaddr_in c
      {
          //RECEIVED PACKET OK
          packeterror = 0;
-         /*
-         struct NetworkRequestGeneralPacket
-{
-  unsigned char RequestType;
-
-  unsigned char name[32];
-
-  unsigned int data_size;
-  unsigned char * data;
-};
-         */
 
 
          /*DISASSEMBLE REQUEST @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
            RQST ID        NAME       PAYLOAD SIZE
-           1 byte   |   32 bytes   |   2 bytes       ....  PACKET CONTINUES ...................
+           1 byte   |   32 bytes   |   2 bytes       ....  PACKET CONTINUES DATA WILL BE RECEIVED BY SUB FUNCTIONS ...................
               A            B             C
          */
          if (request.RequestType>=INVALID_TYPE)
-         {
-           packeterror=1;
-           error("Invalid Packet Type Received, Wrong Version/Incompatible Client ?");
+         { //INVALID PACKET
+           packeterror=1; error("Invalid Packet Type Received, Wrong Version/Incompatible Client ?");
          } else
          if (request.RequestType==ERROR)
          { // ERROR PACKET
-           packeterror=1;
-           error("Error Packet Received");
+           packeterror=1; error("Error Packet Received");
          } else
          if (request.RequestType==OK)
          { // OK PACKET
-           packeterror=1;
-           error("Packet Acknowledgement Received");
+           packeterror=1; error("Packet Acknowledgement Received");
          }
 
          if ( packeterror == 0 )
@@ -166,10 +156,7 @@ void HandleClient(struct VariableShare * vsh,int clientsock,struct sockaddr_in c
          }else
          {
           printf("Incoming Request not passed through..\n");
-         // fflush(stdout);
-          //write(1, request.data, n - 2);
          }
-
 
      }//RECEIVED PACKET OK
 
@@ -211,12 +198,16 @@ RemoteVariableServer_Thread(void * ptr)
     /* Wait for client connection */
     if ( (clientsock = accept(serversock,(struct sockaddr *) &client, &clientlen)) < 0) { error("Failed to accept client connection"); } else
       {
-          HandleClient(vsh,clientsock,client,clientlen);
+           HandleClient(vsh,clientsock,client,clientlen);
       }
  }
   return;
-
 }
+
+
+
+// ________________________________________________________
+// THREAD STARTERS
 
 int
 StartRemoteVariableServer(struct VariableShare * vsh)
@@ -228,6 +219,6 @@ StartRemoteVariableServer(struct VariableShare * vsh)
 int
 StartRemoteVariableConnection(struct VariableShare * vsh)
 {
-   vsh->stop_client_thread=0;
-   pthread_create( &vsh->server_thread, NULL,  RemoteVariableServer_Thread ,(void*) vsh);
+ //  vsh->stop_client_thread=0;
+ //  pthread_create( &vsh->server_thread, NULL,  RemoteVariableServer_Thread ,(void*) vsh);
 }

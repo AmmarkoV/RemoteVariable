@@ -28,6 +28,8 @@
 #include "VariableDatabase.h"
 
 
+extern char byte_order=0; // 0 = intel ,  network
+
 struct VariableShare * Start_VariableSharing(char * sharename,char * password)
 {
     fprintf(stderr,"Starting Variable Sharing!\n");

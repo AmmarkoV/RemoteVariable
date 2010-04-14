@@ -38,6 +38,7 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="NetworkFramework.h" />
+		<Unit filename="PortableSocket.h" />
 		<Unit filename="RemoteVariableSupport.c">
 			<Option compilerVar="CC" />
 		</Unit>

@@ -29,6 +29,8 @@ extern "C" {
 #include <pthread.h>
 #include <unistd.h>
 
+extern char byte_order; // 0 = intel ,  network
+
 struct ShareListItem
 {
 
