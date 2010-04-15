@@ -22,34 +22,8 @@
 #include "helper.h"
 
 void * RemoteVariableServer_Thread(void * ptr);
+void * RemoteVariableClient_Thread(void * ptr);
 
-
-/*
-  TODO
-  SPAWN A NEW LISTEN THEAD WHEN
-  Start_VariableSharing is called
-*/
-
-
-
-/*
-  TODO
-  SPAWN A NEW CONNECTION THEAD WHEN
-  ConnectToRemote_VariableSharing is called
-*/
-
-
-/*
-  TODO
-  KILL EVERYTHING WHEN
-  Stop_VariableSharing is called
-*/
-
-/*
-  TODO INTERCEPT REQUESTS FOR VARIABLES
-  PASS THEM TO VARIABLE DATABASE FOR CHECK
-  AND IF THEY PASS THE CHECK send THEM
-*/
 
 int RecvVariableFrom(struct VariableShare * vsh,int clientsock,unsigned int variable_id)
 {
@@ -205,6 +179,21 @@ RemoteVariableServer_Thread(void * ptr)
 }
 
 
+void *
+RemoteVariableClient_Thread(void * ptr)
+{
+  if ( debug_msg() ) printf("Remote Variable TCP Server thread started..\n");
+  struct VariableShare *vsh;
+  vsh = (struct VariableShare *) ptr;
+
+    while (vsh->stop_client_thread==0)
+  {
+    debug_say("Waiting for a job");
+
+ }
+
+  return;
+}
 
 // ________________________________________________________
 // THREAD STARTERS
@@ -219,6 +208,6 @@ StartRemoteVariableServer(struct VariableShare * vsh)
 int
 StartRemoteVariableConnection(struct VariableShare * vsh)
 {
- //  vsh->stop_client_thread=0;
- //  pthread_create( &vsh->server_thread, NULL,  RemoteVariableServer_Thread ,(void*) vsh);
+   vsh->stop_client_thread=0;
+   pthread_create( &vsh->client_thread, NULL,  RemoteVariableClient_Thread ,(void*) vsh);
 }

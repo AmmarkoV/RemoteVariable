@@ -29,7 +29,20 @@ extern "C" {
 #include <pthread.h>
 #include <unistd.h>
 
+#define MAX_JOBS_PENDING 100
+
 extern char byte_order; // 0 = intel ,  network
+
+struct ShareJob
+{
+  unsigned char status;
+
+     unsigned int our_cache_id;
+     unsigned int remote_cache_id;
+     unsigned char action;
+
+     unsigned int time;
+};
 
 struct ShareListItem
 {
@@ -63,6 +76,9 @@ struct VariableShare
 
     char ip[32];
     unsigned int port;
+
+    struct ShareJob job_list[MAX_JOBS_PENDING];
+    unsigned int jobs_loaded;
 
     pthread_t client_thread;
     unsigned int stop_client_thread;
