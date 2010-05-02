@@ -13,12 +13,24 @@ int main()
     int SHARED_VAR=666;
     if ( Add_VariableToSharingList(vsh,"SHARED_VAR",7,&SHARED_VAR,sizeof(SHARED_VAR)) == 0 ) fprintf(stderr,"Error Adding Shared Variable");
 
-    while (SHARED_VAR != 12345 )
+    while (SHARED_VAR != 1 )
      {
-
        usleep(100);
      }
+    printf("Received 1 \n");
 
+
+    while (SHARED_VAR != 2 )
+     {
+       usleep(100);
+     }
+    printf("Received 2 \n");
+
+     while (SHARED_VAR != 12345 )
+     {
+       usleep(100);
+     }
+    printf("Received 3 \n");
 
     if ( Stop_VariableSharing(vsh) == 0 ) fprintf(stderr,"Error Deleting share\n");
     return 0;

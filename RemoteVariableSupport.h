@@ -106,7 +106,7 @@ int Add_VariableToSharingList(struct VariableShare * vsh,char * variable_name,un
 int Delete_VariableFromSharingList(struct VariableShare * vsh,char * variable_name);
 int Refresh_LocalVariable(struct VariableShare * vsh,char * variable_name);
 int Refresh_RemoteVariable(struct VariableShare * vsh,char * variable_name);
-
+int IsUptodate_RemoteVariable(struct VariableShare * vsh,char * variable_name);
 #ifdef __cplusplus
 }
 #endif

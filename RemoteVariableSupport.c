@@ -95,3 +95,9 @@ int Refresh_RemoteVariable(struct VariableShare * vsh,char * variable_name)
     fprintf(stderr,"Refresh_RemoteVariable not implemented yet!");
     return 0;
 }
+
+
+int IsUptodate_RemoteVariable(struct VariableShare * vsh,char * variable_name)
+{
+  return 0;
+}
