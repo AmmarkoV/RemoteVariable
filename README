@@ -49,6 +49,7 @@ fprintf("Service needed at machine %s\n",vsh->sharename);
 StopVariableSharing(vsh);
 ------------------------------------------------------------------------------------------------------------------
 
+For more info , check the Documentation directory 
 
 ////////////////////////////////////////////////
 Ammar Qammaz 2010
