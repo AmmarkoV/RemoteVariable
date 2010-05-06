@@ -19,13 +19,20 @@
 ***************************************************************************/
 
 #include "JobTables.h"
-
+#include "RemoteVariableSupport.h"
 
 int AddJob(struct VariableShare * vsh,unsigned int our_varid,unsigned int peer_varid , char operation_type)
 {
  if (  vsh->jobs_loaded < MAX_JOBS_PENDING )
-  {
+  { // NEEDS TO BE REWRITTEN TO KEEP A SORTED LIST!
+    unsigned int where_to_add=vsh->jobs_loaded;
+    vsh->job_list[where_to_add].our_cache_id=our_varid;
+    vsh->job_list[where_to_add].remote_cache_id=peer_varid;
+    vsh->job_list[where_to_add].action=operation_type;
+    vsh->job_list[where_to_add].time=central_timer;
+    printf("Added JOB %u , %u -> %u  - type %u @ %u\n",where_to_add,our_varid,peer_varid,operation_type,central_timer);
     ++vsh->jobs_loaded;
+    return 1;
   } else
    printf("Job queue is full discarding new request!!\n");
  return -1;
@@ -33,22 +40,46 @@ int AddJob(struct VariableShare * vsh,unsigned int our_varid,unsigned int peer_v
 
 int RemJob(struct VariableShare * vsh,int job_id)
 {
-
+ fprintf(stderr,"REM Job not implemented \n");
  return -1;
 }
 
-int GetNextJobOperation(struct VariableShare * vsh,char operation_type)
+int DoneWithJob(struct VariableShare * vsh,int job_id)
 {
+ if ( job_id < vsh->jobs_loaded )
+  {
+     vsh->job_list[job_id].action=NOACTION;
+  }
+ return -1;
+}
+
+int GetNextJobIDOperation(struct VariableShare * vsh,char operation_type)
+{
+  if (operation_type==NOACTION) { return -1; /*No sense in returning the next null job :P */ }
+
+  unsigned int total_jobs=vsh->jobs_loaded;
+  unsigned int i=0;
+   if ( total_jobs > 0 )
+    {
+        for ( i=0; i<total_jobs; i++)
+         {
+              if (vsh->job_list[i].action == operation_type)
+                 {
+                      return i;
+                 }
+         }
+    }
+
   return -1;
 }
 
 
-int UpdateLocalVariable()
+int UpdateLocalVariable(struct VariableShare * vsh,unsigned int our_varid,unsigned int peer_varid)
 {
- return -1;
+ return AddJob(vsh,our_varid,peer_varid,READFROM);
 }
 
-int UpdateRemoteVariable()
+int UpdateRemoteVariable(struct VariableShare * vsh,unsigned int our_varid,unsigned int peer_varid)
 {
- return -1;
+ return AddJob(vsh,our_varid,peer_varid,WRITETO);
 }

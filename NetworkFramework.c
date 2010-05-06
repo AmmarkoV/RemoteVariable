@@ -185,12 +185,43 @@ RemoteVariableClient_Thread(void * ptr)
   if ( debug_msg() ) printf("Remote Variable TCP Server thread started..\n");
   struct VariableShare *vsh;
   vsh = (struct VariableShare *) ptr;
-
+    int new_job_id=-1;
     while (vsh->stop_client_thread==0)
-  {
-    debug_say("Waiting for a job");
+   {
+     debug_say("Waiting for a job");
+     usleep(10);
+     /* */
+     new_job_id=GetNextJobIDOperation(vsh,READFROM);
+     if (new_job_id!=-1)
+       {
+           /* TODO CALL THE NETWORK FUNCTION
+           TO DO THE TCP/UDP TRANSACTION AND THEN DECLARE THE JOB DONE
+           WHERE -1 GOES I SHOULD ADD THE RESULT OF THE OPERATION
+           */
+           if ( -1 != -1 )
+             { /* JOB DONE! */
+               DoneWithJob(vsh,new_job_id);
+               RemJob(vsh,new_job_id);
+               new_job_id=-1;
+             }
+       }
 
- }
+     new_job_id=GetNextJobIDOperation(vsh,WRITETO);
+
+     if (new_job_id!=-1)
+       {
+           /* TODO CALL THE NETWORK FUNCTION
+           TO DO THE TCP/UDP TRANSACTION AND THEN DECLARE THE JOB DONE
+           WHERE -1 GOES I SHOULD ADD THE RESULT OF THE OPERATION
+           */
+           if ( -1 != -1 )
+             { /* JOB DONE! */
+               DoneWithJob(vsh,new_job_id);
+               RemJob(vsh,new_job_id);
+               new_job_id=-1;
+             }
+       }
+   }
 
   return;
 }

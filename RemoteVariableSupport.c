@@ -30,7 +30,7 @@
 
 
 extern char byte_order=0; // 0 = intel ,  network
-
+extern unsigned int central_timer=0;
 
 
 struct VariableShare * Start_VariableSharing(char * sharename,char * password)
@@ -99,5 +99,6 @@ int Refresh_RemoteVariable(struct VariableShare * vsh,char * variable_name)
 
 int IsUptodate_RemoteVariable(struct VariableShare * vsh,char * variable_name)
 {
+  fprintf(stderr,"IsUptodate_RemoteVariable not implemented yet ,returning false!");
   return 0;
 }

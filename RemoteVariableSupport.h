@@ -32,6 +32,16 @@ extern "C" {
 #define MAX_JOBS_PENDING 100
 
 extern char byte_order; // 0 = intel ,  network
+extern unsigned int central_timer;
+
+enum jobactions
+{
+    NOACTION = 0 ,
+    WRITETO,
+    READFROM,
+    SYNC
+};
+
 
 struct ShareJob
 {
@@ -39,7 +49,7 @@ struct ShareJob
 
      unsigned int our_cache_id;
      unsigned int remote_cache_id;
-     unsigned char action;
+     unsigned char action; // 0 no action , 1 = write to , 2 = read from , 3 = check if it is the same on the other end
 
      unsigned int time;
 };
@@ -70,9 +80,31 @@ struct ShareList
     struct ShareListItem * variables;
 };
 
+enum VariableShareStates
+{
+    VSS_UNITIALIZED=0,
+    VSS_NORMAL,
+    VSS_INCOMING_TRANSACTIONS_DISABLED,
+    VSS_OUTGOING_TRANSACTIONS_DISABLED,
+    VSS_ALL_TRANSACTIONS_DISABLED,
+    VSS_CLOSING
+};
+
+enum VariableSharePolicies
+{
+    VSP_AUTOMATIC=0,
+    VSP_MANUAL,
+    VSP_TRANSACTIONS_DISABLED,
+    VSP_CLOSING
+};
+
+
+
 struct VariableShare
 {
     char sharename[32];
+    unsigned int global_state; /* enum VariableShareStates */
+
 
     char ip[32];
     unsigned int port;
