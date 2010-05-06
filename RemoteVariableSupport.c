@@ -85,15 +85,13 @@ int Delete_VariableFromSharingList(struct VariableShare * vsh,char * variable_na
 
 int Refresh_LocalVariable(struct VariableShare * vsh,char * variable_name)
 {
-    fprintf(stderr,"Refresh_LocalVariable not implemented yet!");
-    return 0;
+    return RefreshLocalVariable_VariableDatabase(vsh,variable_name);
 }
 
 
 int Refresh_RemoteVariable(struct VariableShare * vsh,char * variable_name)
 {
-    fprintf(stderr,"Refresh_RemoteVariable not implemented yet!");
-    return 0;
+    return RefreshRemoteVariable_VariableDatabase(vsh,variable_name);
 }
 
 

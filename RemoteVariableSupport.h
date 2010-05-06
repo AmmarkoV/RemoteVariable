@@ -1,6 +1,3 @@
-#ifndef REMOTEVARIABLESUPPORT_H_INCLUDED
-#define REMOTEVARIABLESUPPORT_H_INCLUDED
-
 /***************************************************************************
 * Copyright (C) 2010 by Ammar Qammaz *
 * ammarkov@gmail.com *
@@ -20,6 +17,8 @@
 * Free Software Foundation, Inc., *
 * 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. *
 ***************************************************************************/
+#ifndef REMOTEVARIABLESUPPORT_H_INCLUDED
+#define REMOTEVARIABLESUPPORT_H_INCLUDED
 
 
 #ifdef __cplusplus

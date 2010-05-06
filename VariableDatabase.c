@@ -1,9 +1,3 @@
-#include "VariableDatabase.h"
-#include "helper.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 /***************************************************************************
 * Copyright (C) 2010 by Ammar Qammaz *
 * ammarkov@gmail.com *
@@ -23,6 +17,12 @@
 * Free Software Foundation, Inc., *
 * 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. *
 ***************************************************************************/
+#include "VariableDatabase.h"
+#include "helper.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 
 int VariableShareOk(struct VariableShare * vsh)
 {
@@ -145,4 +145,37 @@ int FindJobsFrom_VariableDatabase(struct VariableShare * vsh)
 {
  return -1;
 }
+
+int RefreshLocalVariable_VariableDatabase(struct VariableShare * vsh,char * variable_name)
+{
+   debug_say(" RefreshLocalVariable_VariableDatabase , not implemented ");
+   int var_id = FindVariable_Database(vsh,variable_name);
+   if ( var_id == -1 )
+    {
+      fprintf(stderr,"Variable %s not found , cannot be refreshed to local\n");
+      return -1;
+    } else
+    {
+      //vsh->share.variables[var_id].
+      //UpdateLocalVariable(vsh,  our_varid, peer_varid);
+    }
+   return -1;
+}
+
+int RefreshRemoteVariable_VariableDatabase(struct VariableShare * vsh,char * variable_name)
+{
+   debug_say(" RefreshRemoteVariable_VariableDatabase , not implemented ");
+      int var_id = FindVariable_Database(vsh,variable_name);
+   if ( var_id == -1 )
+    {
+      fprintf(stderr,"Variable %s not found , cannot be refreshed to local\n");
+      return -1;
+    } else
+    {
+      //vsh->share.variables[var_id].
+      //UpdateRemoteVariable(vsh,  our_varid, peer_varid);
+    }
+   return -1;
+}
+
 

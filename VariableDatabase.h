@@ -35,4 +35,7 @@ int CanReadFrom_VariableDatabase(struct VariableShare * vsh,unsigned int var_spo
 
 int FindJobsFrom_VariableDatabase(struct VariableShare * vsh);
 
+int RefreshLocalVariable_VariableDatabase(struct VariableShare * vsh,char * variable_name);
+int RefreshRemoteVariable_VariableDatabase(struct VariableShare * vsh,char * variable_name);
+
 #endif // VARIABLEDATABASE_H_INCLUDED
