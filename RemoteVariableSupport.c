@@ -33,12 +33,16 @@ extern char byte_order=0; // 0 = intel ,  network
 extern unsigned int central_timer=0;
 
 
+
+
 /* #Start_VariableSharing#
    This function is supposed to allocate a VariableShare structure ( vsh )
    and prepare the Variable Share Server in our machine as a master share
 */
 struct VariableShare * Start_VariableSharing(char * sharename,char * password)
 {
+    under_construction_msg();
+
     fprintf(stderr,"Starting Variable Sharing!\n");
     struct VariableShare *  vsh = Create_VariableDatabase(sharename,"127.0.0.1",12345,password,128);
     if ( vsh == 0 ) return 0;
@@ -57,6 +61,8 @@ struct VariableShare * Start_VariableSharing(char * sharename,char * password)
 */
 struct VariableShare * ConnectToRemote_VariableSharing(char * IP,unsigned int port,char * password)
 {
+    under_construction_msg();
+
     struct VariableShare *  vsh = Create_VariableDatabase("RemoteShare",IP,port,password,128);
     if ( vsh == 0 ) return 0;
     if ( vsh->global_state == 0 )  vsh->global_state=VSS_NORMAL; else

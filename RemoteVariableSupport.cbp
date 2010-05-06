@@ -43,6 +43,10 @@
 		</Unit>
 		<Unit filename="NetworkFramework.h" />
 		<Unit filename="PortableSocket.h" />
+		<Unit filename="ProtocolThreads.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="ProtocolThreads.h" />
 		<Unit filename="RemoteVariableSupport.c">
 			<Option compilerVar="CC" />
 		</Unit>

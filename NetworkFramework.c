@@ -224,7 +224,10 @@ RemoteVariableClient_Thread(void * ptr)
            /* TODO CALL THE NETWORK FUNCTION
            TO DO THE TCP/UDP TRANSACTION AND THEN DECLARE THE JOB DONE
            WHERE -1 GOES I SHOULD ADD THE RESULT OF THE OPERATION
+
            */
+           //SendVariableTo(struct VariableShare * vsh,int clientsock,unsigned int variable_id)
+
            if ( -1 != -1 )
              { /* JOB DONE! */
                DoneWithJob(vsh,new_job_id);

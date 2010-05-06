@@ -18,41 +18,9 @@
 * 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. *
 ***************************************************************************/
 
-#include "helper.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include "version.h"
-
-void under_construction_msg()
-{
-   fprintf(stderr,"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-   fprintf(stderr,"RemoteVariables Version %s build %u ,  %s / %s / %s \n",FULLVERSION_STRING,(unsigned int) BUILDS_COUNT,DATE,MONTH,YEAR);
-
-   fprintf(stderr,"!!PLEASE NOTE!! that this version of RemoteVariables is still in development\n");
-   fprintf(stderr,"It isn`t fit for use on a stable project..\nIf you are a developer you can help out! :) \n");
-   fprintf(stderr,"When the project will be mature enough this warning message will be removed!\n");
-   fprintf(stderr,"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-
-}
-
-
-void error(char * msg)
-{
- fprintf(stderr,"ERROR MESSAGE : %s\n",msg);
- return;
-}
-
-int debug_msg()
-{
- return 1;
-}
-
-void debug_say(char * msg)
-{
- if ( debug_msg() == 1 ) fprintf(stderr,"%s\n",msg);
- return;
-}
+#ifndef PROTOCOLTHREADS_H_INCLUDED
+#define PROTOCOLTHREADS_H_INCLUDED
 
 
 
+#endif // PROTOCOLTHREADS_H_INCLUDED

@@ -21,6 +21,7 @@
 #ifndef HELPER_H_INCLUDED
 #define HELPER_H_INCLUDED
 
+void under_construction_msg();
 void error(char * msg);
 int debug_msg();
 void debug_say(char * msg);

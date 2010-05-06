@@ -18,41 +18,41 @@
 * 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. *
 ***************************************************************************/
 
-#include "helper.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include "version.h"
+#include "ProtocolThreads.h"
 
-void under_construction_msg()
-{
-   fprintf(stderr,"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-   fprintf(stderr,"RemoteVariables Version %s build %u ,  %s / %s / %s \n",FULLVERSION_STRING,(unsigned int) BUILDS_COUNT,DATE,MONTH,YEAR);
+/*
 
-   fprintf(stderr,"!!PLEASE NOTE!! that this version of RemoteVariables is still in development\n");
-   fprintf(stderr,"It isn`t fit for use on a stable project..\nIf you are a developer you can help out! :) \n");
-   fprintf(stderr,"When the project will be mature enough this warning message will be removed!\n");
-   fprintf(stderr,"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-
-}
+    HERE IS THE SPACE WHERE THE SERVER THREAD AND CLIENT THREAD OF EACH VARIABLE SHARE WILL
+    BE WRITTEN
 
 
-void error(char * msg)
-{
- fprintf(stderr,"ERROR MESSAGE : %s\n",msg);
- return;
-}
+*/
 
-int debug_msg()
-{
- return 1;
-}
 
-void debug_say(char * msg)
-{
- if ( debug_msg() == 1 ) fprintf(stderr,"%s\n",msg);
- return;
-}
+/*
+   The server thread of each Variable Share should wait for network connections and when the network connection is present , it should
+   analyze the message received , and according to the state respond with a correct response
+
+*/
+
+
+/*
+   The client thread should do 3 things!
+
+   #1 Check the state of the variables shared from our share ( master variables ) and for each one that needs refreshing in a peer share
+   add a job that describes the operation
+
+   #2 Keep a TCP connection to the master remote variable in case our node is a clone , and if the connection is broken , re-establish it
+
+   #3 Carry out the jobs mentioned above
+*/
 
 
 
+/*
+
+  ALL THE SOCKET STUFF SHOULD BE WRITTEN IN NETWORK FRAMEWORK
+
+  ALL THE MESSAGES SENT/RECEVEIED SHOULD BE PROCESSED HERE
+
+*/

@@ -67,7 +67,6 @@ struct ShareListItem
 
     unsigned int size_of_ptr;
     void * ptr;
-
 };
 
 
@@ -94,7 +93,6 @@ enum VariableSharePolicies
     VSP_AUTOMATIC=0,
     VSP_LOWFOOTPRINT,
     VSP_MANUAL
-
 };
 
 
@@ -123,11 +121,6 @@ struct VariableShare
 
 };
 
-/*
-
- THE PROJECT IS NOT YET IN A USABLE STATE!!
-
-*/
 
 
 struct VariableShare * Start_VariableSharing(char * sharename,char * password);
