@@ -152,7 +152,7 @@ int RefreshLocalVariable_VariableDatabase(struct VariableShare * vsh,char * vari
    int var_id = FindVariable_Database(vsh,variable_name);
    if ( var_id == -1 )
     {
-      fprintf(stderr,"Variable %s not found , cannot be refreshed to local\n");
+      fprintf(stderr,"Variable %s not found , cannot be refreshed to local\n",variable_name);
       return -1;
     } else
     {
@@ -168,7 +168,7 @@ int RefreshRemoteVariable_VariableDatabase(struct VariableShare * vsh,char * var
       int var_id = FindVariable_Database(vsh,variable_name);
    if ( var_id == -1 )
     {
-      fprintf(stderr,"Variable %s not found , cannot be refreshed to local\n");
+      fprintf(stderr,"Variable %s not found , cannot be refreshed to local\n",variable_name);
       return -1;
     } else
     {

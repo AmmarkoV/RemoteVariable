@@ -113,11 +113,11 @@ struct VariableShare
 
     pthread_t client_thread;
     unsigned int stop_client_thread;
+
     pthread_t server_thread;
     unsigned int stop_server_thread;
 
 
-    int state; // 0 = NOT INITED , 1 = SERVER , 2 = CLIENT
 
     struct ShareList share;
 
