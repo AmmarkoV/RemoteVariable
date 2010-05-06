@@ -141,3 +141,8 @@ int CanReadFrom_VariableDatabase(struct VariableShare * vsh,unsigned int var_spo
  return 0;
 }
 
+int FindJobsFrom_VariableDatabase(struct VariableShare * vsh)
+{
+ return -1;
+}
+

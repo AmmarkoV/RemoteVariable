@@ -33,4 +33,6 @@ signed int FindVariable_Database(struct VariableShare * vsh,char * var_name);
 int CanWriteTo_VariableDatabase(struct VariableShare * vsh,unsigned int var_spot);
 int CanReadFrom_VariableDatabase(struct VariableShare * vsh,unsigned int var_spot);
 
+int FindJobsFrom_VariableDatabase(struct VariableShare * vsh);
+
 #endif // VARIABLEDATABASE_H_INCLUDED

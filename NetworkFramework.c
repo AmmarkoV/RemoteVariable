@@ -17,8 +17,12 @@
 * Free Software Foundation, Inc., *
 * 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. *
 ***************************************************************************/
-
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include "VariableDatabase.h"
 #include "NetworkFramework.h"
+#include "JobTables.h"
 #include "helper.h"
 
 void * RemoteVariableServer_Thread(void * ptr);
@@ -106,7 +110,7 @@ void HandleClient(struct VariableShare * vsh,int clientsock,struct sockaddr_in c
            if ( (request.RequestType==READVAR) || (request.RequestType==WRITEVAR) )
            {
               debug_say("Generic Packet should contain Variable Packet as a payload");
-              printf("Incoming Packet info \n Name : %s ( %u ) \n Type : %u \n Data Size : %u \n",request.name,request.RequestType,request.data_size);
+              printf("Incoming Packet info \n Name : %s \n Type : %u \n Data Size : %u \n",request.name,request.RequestType,request.data_size);
 
               if ( request.RequestType==READVAR)
                {
@@ -175,19 +179,26 @@ RemoteVariableServer_Thread(void * ptr)
            HandleClient(vsh,clientsock,client,clientlen);
       }
  }
-  return;
+  return 0;
 }
 
 
 void *
 RemoteVariableClient_Thread(void * ptr)
 {
-  if ( debug_msg() ) printf("Remote Variable TCP Server thread started..\n");
+  debug_say("Remote Variable TCP Server thread started..\n");
   struct VariableShare *vsh;
   vsh = (struct VariableShare *) ptr;
     int new_job_id=-1;
     while (vsh->stop_client_thread==0)
    {
+     if (vsh->global_policy!=VSP_MANUAL)
+      {
+        debug_say("Trying to auto-generate a job");
+        FindJobsFrom_VariableDatabase(vsh);
+      }
+
+
      debug_say("Waiting for a job");
      usleep(10);
      /* */
@@ -223,7 +234,7 @@ RemoteVariableClient_Thread(void * ptr)
        }
    }
 
-  return;
+  return 0;
 }
 
 // ________________________________________________________
@@ -233,12 +244,16 @@ int
 StartRemoteVariableServer(struct VariableShare * vsh)
 {
    vsh->stop_server_thread=0;
-   pthread_create( &vsh->server_thread, NULL,  RemoteVariableServer_Thread ,(void*) vsh);
+  int retres = pthread_create( &vsh->server_thread, NULL,  RemoteVariableServer_Thread ,(void*) vsh);
+  if (retres!=0) retres = -1;
+  return retres;
 }
 
 int
 StartRemoteVariableConnection(struct VariableShare * vsh)
 {
    vsh->stop_client_thread=0;
-   pthread_create( &vsh->client_thread, NULL,  RemoteVariableClient_Thread ,(void*) vsh);
+   int retres = pthread_create( &vsh->client_thread, NULL,  RemoteVariableClient_Thread ,(void*) vsh);
+   if (retres!=0) retres = -1;
+   return retres;
 }

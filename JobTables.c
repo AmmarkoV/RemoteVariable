@@ -17,9 +17,11 @@
 * Free Software Foundation, Inc., *
 * 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. *
 ***************************************************************************/
-
+#include <stdio.h>
+#include <stdlib.h>
 #include "JobTables.h"
 #include "RemoteVariableSupport.h"
+#include "helper.h"
 
 int AddJob(struct VariableShare * vsh,unsigned int our_varid,unsigned int peer_varid , char operation_type)
 {
@@ -40,7 +42,7 @@ int AddJob(struct VariableShare * vsh,unsigned int our_varid,unsigned int peer_v
 
 int RemJob(struct VariableShare * vsh,int job_id)
 {
- fprintf(stderr,"REM Job not implemented \n");
+ debug_say("REM Job not implemented \n");
  return -1;
 }
 

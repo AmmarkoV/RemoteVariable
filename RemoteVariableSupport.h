@@ -49,7 +49,7 @@ struct ShareJob
 
      unsigned int our_cache_id;
      unsigned int remote_cache_id;
-     unsigned char action; // 0 no action , 1 = write to , 2 = read from , 3 = check if it is the same on the other end
+     char action; // 0 no action , 1 = write to , 2 = read from , 3 = check if it is the same on the other end
 
      unsigned int time;
 };
@@ -93,9 +93,9 @@ enum VariableShareStates
 enum VariableSharePolicies
 {
     VSP_AUTOMATIC=0,
-    VSP_MANUAL,
-    VSP_TRANSACTIONS_DISABLED,
-    VSP_CLOSING
+    VSP_LOWFOOTPRINT,
+    VSP_MANUAL
+
 };
 
 
@@ -104,7 +104,7 @@ struct VariableShare
 {
     char sharename[32];
     unsigned int global_state; /* enum VariableShareStates */
-
+    unsigned int global_policy; /* enum VariableSharePolicies */
 
     char ip[32];
     unsigned int port;
