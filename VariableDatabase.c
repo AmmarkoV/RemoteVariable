@@ -156,6 +156,7 @@ int RefreshLocalVariable_VariableDatabase(struct VariableShare * vsh,char * vari
       return -1;
     } else
     {
+      /*TODO*/
       //vsh->share.variables[var_id].
       //UpdateLocalVariable(vsh,  our_varid, peer_varid);
     }
@@ -172,6 +173,7 @@ int RefreshRemoteVariable_VariableDatabase(struct VariableShare * vsh,char * var
       return -1;
     } else
     {
+      /*TODO*/
       //vsh->share.variables[var_id].
       //UpdateRemoteVariable(vsh,  our_varid, peer_varid);
     }

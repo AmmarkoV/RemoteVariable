@@ -42,6 +42,16 @@ enum jobactions
 };
 
 
+struct ShareClient
+{
+    /*TODO ADD MORE DATA*/
+    char IP[10];
+    unsigned int port;
+
+    unsigned int ping;
+    unsigned int last_transaction;
+};
+
 struct ShareJob
 {
   unsigned char status;
@@ -97,9 +107,13 @@ enum VariableSharePolicies
 
 
 
+
+
 struct VariableShare
 {
     char sharename[32];
+    char this_address_space_is_master;
+
     unsigned int global_state; /* enum VariableShareStates */
     unsigned int global_policy; /* enum VariableSharePolicies */
 
@@ -108,6 +122,10 @@ struct VariableShare
 
     struct ShareJob job_list[MAX_JOBS_PENDING];
     unsigned int jobs_loaded;
+
+    struct ShareClient client_list[100];
+    unsigned int clients_loaded;
+
 
     pthread_t client_thread;
     unsigned int stop_client_thread;

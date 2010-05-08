@@ -47,7 +47,11 @@ struct VariableShare * Start_VariableSharing(char * sharename,char * password)
     struct VariableShare *  vsh = Create_VariableDatabase(sharename,"127.0.0.1",12345,password,128);
     if ( vsh == 0 ) return 0;
 
-    if ( vsh->global_state == 0 )  vsh->global_state=VSS_NORMAL; else
+    if ( vsh->global_state == 0 )
+                            {
+                              vsh->global_state=VSS_NORMAL;
+                              vsh->this_address_space_is_master=1;
+                            } else
                             {
                               error("Variable Shared already initialized , stop it before starting it again as server!");
                             }
@@ -65,7 +69,11 @@ struct VariableShare * ConnectToRemote_VariableSharing(char * IP,unsigned int po
 
     struct VariableShare *  vsh = Create_VariableDatabase("RemoteShare",IP,port,password,128);
     if ( vsh == 0 ) return 0;
-    if ( vsh->global_state == 0 )  vsh->global_state=VSS_NORMAL; else
+    if ( vsh->global_state == 0 )
+                            {
+                              vsh->global_state=VSS_NORMAL;
+                              vsh->this_address_space_is_master=0;
+                            } else
                             {
                               error("Variable Shared already initialized , stop it before starting it again as connect to remote!");
                             }
@@ -107,6 +115,28 @@ int Delete_VariableFromSharingList(struct VariableShare * vsh,char * variable_na
     fprintf(stderr,"Delete_VariableFromSharingList not implemented yet!");
     return 0;
 }
+
+
+/* #LockForLocalUse_LocalVariable#
+   The variable_name is locked and will not be writeable , or readable from a network peer
+*/
+int LockForLocalUse_LocalVariable(struct VariableShare * vsh,char * variable_name)
+{
+    /*Todo Implement*/
+    return 0;
+}
+
+
+/* #Unlock_LocalVariable#
+   The variable_name is unlocked and will be writeable , or readable from a network peer according to the permissions
+   specified when it was added to the share
+*/
+int Unlock_LocalVariable(struct VariableShare * vsh,char * variable_name)
+{
+    /*Todo Implement*/
+    return 0;
+}
+
 
 /* #Refresh_LocalVariable#
    If the share policy is automatic updates , it forces an update
