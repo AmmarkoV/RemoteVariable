@@ -47,6 +47,43 @@
    #3 Carry out the jobs mentioned above
 */
 
+int InitCloneShare_Handshake(struct VariableShare * vsh)
+{
+
+  return -1;
+}
+
+int AcceptCloneShare_Handshake(struct VariableShare * vsh)
+{
+
+  return -1;
+}
+
+
+
+int RequestVariable_Handshake(struct VariableShare * vsh)
+{
+
+  return -1;
+}
+
+int SendVariable_Handshake(struct VariableShare * vsh)
+{
+
+  return -1;
+}
+
+int MasterReceive_Handshake(struct VariableShare * vsh)
+{
+
+  return -1;
+}
+
+int MasterSend_Handshake(struct VariableShare * vsh)
+{
+
+  return -1;
+}
 
 
 /*

@@ -42,11 +42,13 @@ enum jobactions
 };
 
 
-struct ShareClient
+struct SharePeer
 {
     /*TODO ADD MORE DATA*/
     char IP[10];
     unsigned int port;
+
+    int socket_to_client;
 
     unsigned int ping;
     unsigned int last_transaction;
@@ -123,7 +125,8 @@ struct VariableShare
     struct ShareJob job_list[MAX_JOBS_PENDING];
     unsigned int jobs_loaded;
 
-    struct ShareClient client_list[100];
+    struct SharePeer master;
+    struct SharePeer client_list[100];
     unsigned int clients_loaded;
 
 
