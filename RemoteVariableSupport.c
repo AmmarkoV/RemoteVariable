@@ -50,6 +50,7 @@ struct VariableShare * Start_VariableSharing(char * sharename,char * password)
     if ( vsh->global_state == 0 )
                             {
                               vsh->global_state=VSS_NORMAL;
+                              vsh->global_policy=VSP_AUTOMATIC;
                               vsh->this_address_space_is_master=1;
                             } else
                             {
@@ -72,6 +73,7 @@ struct VariableShare * ConnectToRemote_VariableSharing(char * IP,unsigned int po
     if ( vsh->global_state == 0 )
                             {
                               vsh->global_state=VSS_NORMAL;
+                              vsh->global_policy=VSP_AUTOMATIC;
                               vsh->this_address_space_is_master=0;
                             } else
                             {
@@ -92,7 +94,7 @@ int Stop_VariableSharing(struct VariableShare * vsh)
     vsh->global_state=VSS_UNITIALIZED;
     vsh->stop_server_thread=1;
     vsh->stop_client_thread=1;
-
+    vsh->stop_refresh_thread=1;
 
     Destroy_VariableDatabase(vsh);
     return 0;

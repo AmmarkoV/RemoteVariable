@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include "HashFunctions.h"
 
 int VariableShareOk(struct VariableShare * vsh)
 {
@@ -66,6 +66,14 @@ int Resize_VariableDatabase(struct VariableShare * vsh , unsigned int newsize)
   return 0;
 }
 
+unsigned long GetVariableHash(struct VariableShare * vsh,unsigned int var_id)
+{
+  if (vsh->share.variables[var_id].size_of_ptr<sizeof(unsigned long)) { unsigned long stacklong = (unsigned long) vsh->share.variables[var_id].ptr;
+                                                                        return stacklong; }
+  debug_say("Todo ADD code that produces hash on variables that do not fit unsigned long!\n");
+  /*hash(unsigned char *str);*/
+  return 0;
+}
 
 int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int permissions,void * ptr,unsigned int ptr_size)
 {
@@ -181,3 +189,35 @@ int RefreshRemoteVariable_VariableDatabase(struct VariableShare * vsh,char * var
 }
 
 
+int RefreshAllLocalVariables(struct VariableShare * vsh)
+{
+ debug_say("TODO : Refresh All Local Variables not implemented!");
+ return -1;
+}
+
+
+void *
+AutoRefreshVariable_Thread(void * ptr)
+{
+  debug_say("AutoRefresh Thread started..\n");
+  struct VariableShare *vsh;
+  vsh = (struct VariableShare *) ptr;
+
+   int variables_changed=0;
+   while ( (vsh->global_policy==VSP_AUTOMATIC) && (vsh->stop_refresh_thread==0) )
+   {
+       usleep(1000);
+       variables_changed=RefreshAllLocalVariables(vsh);
+   }
+
+   return 0;
+}
+
+/* THREAD STARTER */
+int StartAutoRefreshVariable(struct VariableShare * vsh)
+{
+  vsh->stop_refresh_thread=0;
+  int retres = pthread_create( &vsh->refresh_thread, NULL,  AutoRefreshVariable_Thread ,(void*) vsh);
+  if (retres!=0) retres = -1;
+  return retres;
+}

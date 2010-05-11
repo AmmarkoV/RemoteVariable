@@ -130,6 +130,10 @@ struct VariableShare
     unsigned int clients_loaded;
 
 
+
+    pthread_t refresh_thread;
+    unsigned int stop_refresh_thread;
+
     pthread_t client_thread;
     unsigned int stop_client_thread;
 
