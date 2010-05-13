@@ -192,15 +192,15 @@ RemoteVariableClient_Thread(void * ptr)
     int new_job_id=-1;
     while (vsh->stop_client_thread==0)
    {
-     if (vsh->global_policy!=VSP_MANUAL)
+    /* if (vsh->global_policy!=VSP_MANUAL)
       {
         debug_say("Trying to auto-generate a job");
         FindJobsFrom_VariableDatabase(vsh);
-      }
+      }*/
 
 
-     debug_say("Waiting for a job");
-     usleep(10);
+     debug_say("Client Thread Waiting for a job");
+     usleep(100);
      /* */
      new_job_id=GetNextJobIDOperation(vsh,READFROM);
      if (new_job_id!=-1)

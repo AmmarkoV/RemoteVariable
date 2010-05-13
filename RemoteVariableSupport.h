@@ -76,6 +76,7 @@ struct ShareListItem
     unsigned char lock_refresh;
     unsigned char flag_needs_refresh;
 
+    unsigned long hash;
 
     unsigned int size_of_ptr;
     void * ptr;

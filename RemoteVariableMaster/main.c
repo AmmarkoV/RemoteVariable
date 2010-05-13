@@ -13,6 +13,15 @@ int main()
     int SHARED_VAR=666;
     if ( Add_VariableToSharingList(vsh,"SHARED_VAR",7,&SHARED_VAR,sizeof(SHARED_VAR)) == 0 ) fprintf(stderr,"Error Adding Shared Variable");
 
+    printf("Starting Self Test!\n");
+    while (SHARED_VAR != 1 )
+     {
+       usleep(1000);
+       SHARED_VAR = SHARED_VAR - 1;
+     }
+    printf("Ended Self Test ,if nothing printed since start test failed :P !\n");
+    SHARED_VAR=666;
+
     while (SHARED_VAR != 1 )
      {
        usleep(100);

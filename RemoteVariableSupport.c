@@ -57,6 +57,7 @@ struct VariableShare * Start_VariableSharing(char * sharename,char * password)
                               error("Variable Shared already initialized , stop it before starting it again as server!");
                             }
     StartRemoteVariableServer(vsh);
+    StartAutoRefreshVariable(vsh);
     return vsh;
 }
 
@@ -81,6 +82,7 @@ struct VariableShare * ConnectToRemote_VariableSharing(char * IP,unsigned int po
                             }
 
     StartRemoteVariableConnection(vsh);
+    StartAutoRefreshVariable(vsh);
     return vsh;
 }
 

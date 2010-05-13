@@ -33,9 +33,9 @@ signed int FindVariable_Database(struct VariableShare * vsh,char * var_name);
 int CanWriteTo_VariableDatabase(struct VariableShare * vsh,unsigned int var_spot);
 int CanReadFrom_VariableDatabase(struct VariableShare * vsh,unsigned int var_spot);
 
-int FindJobsFrom_VariableDatabase(struct VariableShare * vsh);
 
 int RefreshLocalVariable_VariableDatabase(struct VariableShare * vsh,char * variable_name);
 int RefreshRemoteVariable_VariableDatabase(struct VariableShare * vsh,char * variable_name);
 
+int StartAutoRefreshVariable(struct VariableShare * vsh);
 #endif // VARIABLEDATABASE_H_INCLUDED

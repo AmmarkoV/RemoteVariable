@@ -15,15 +15,15 @@ int main()
     if ( Add_VariableToSharingList(vsh,"SHARED_VAR",7,&SHARED_VAR,sizeof(SHARED_VAR)) == 0 ) fprintf(stderr,"Error Adding Shared Variable");
 
     SHARED_VAR=1;
-    while (IsUptodate_RemoteVariable(vsh,"SHARED_VAR"))
+    while (!IsUptodate_RemoteVariable(vsh,"SHARED_VAR"))
       { sleep(1); }
 
     SHARED_VAR=2;
-    while (IsUptodate_RemoteVariable(vsh,"SHARED_VAR"))
+    while (!IsUptodate_RemoteVariable(vsh,"SHARED_VAR"))
       { sleep(1); }
 
     SHARED_VAR=12345;
-    while (IsUptodate_RemoteVariable(vsh,"SHARED_VAR"))
+    while (!IsUptodate_RemoteVariable(vsh,"SHARED_VAR"))
       { sleep(1); }
 
     if ( Stop_VariableSharing(vsh) == 0 ) fprintf(stderr,"Error Deleting share\n");

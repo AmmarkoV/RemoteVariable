@@ -34,6 +34,10 @@
 				</Linker>
 			</Target>
 		</Build>
+		<Unit filename="HashFunctions.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="HashFunctions.h" />
 		<Unit filename="JobTables.c">
 			<Option compilerVar="CC" />
 		</Unit>
