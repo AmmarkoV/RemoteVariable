@@ -68,7 +68,9 @@ int Resize_VariableDatabase(struct VariableShare * vsh , unsigned int newsize)
 
 unsigned long GetVariableHash(struct VariableShare * vsh,unsigned int var_id)
 {
-  if (vsh->share.variables[var_id].size_of_ptr<sizeof(unsigned long)) { unsigned long stacklong = (unsigned long) vsh->share.variables[var_id].ptr;
+  if (vsh->share.variables[var_id].size_of_ptr<sizeof(unsigned long)) {
+                                                                        unsigned long * stacklongptr = vsh->share.variables[var_id].ptr;
+                                                                        unsigned long stacklong = *stacklongptr;
                                                                         fprintf(stderr,"GetVariableHash for var %u returning %u\n",var_id,stacklong);
                                                                         return stacklong; }
   debug_say("Todo ADD code that produces hash on variables that do not fit unsigned long!\n");
