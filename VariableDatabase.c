@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "HashFunctions.h"
+#include "JobTables.h"
 
 int VariableShareOk(struct VariableShare * vsh)
 {
@@ -68,10 +69,10 @@ int Resize_VariableDatabase(struct VariableShare * vsh , unsigned int newsize)
 
 unsigned long GetVariableHash(struct VariableShare * vsh,unsigned int var_id)
 {
-  if (vsh->share.variables[var_id].size_of_ptr<sizeof(unsigned long)) {
+  if (vsh->share.variables[var_id].size_of_ptr<sizeof(unsigned long)) { /*The whole variable fits inside the unsigned long so no hash is required*/
                                                                         unsigned long * stacklongptr = vsh->share.variables[var_id].ptr;
                                                                         unsigned long stacklong = *stacklongptr;
-                                                                        fprintf(stderr,"GetVariableHash for var %u returning %u\n",var_id,stacklong);
+                                                                        /*fprintf(stderr,"GetVariableHash for var %u returning %u\n",var_id,stacklong);*/
                                                                         return stacklong; }
   debug_say("Todo ADD code that produces hash on variables that do not fit unsigned long!\n");
   /*hash(unsigned char *str);*/
@@ -188,14 +189,14 @@ int RefreshRemoteVariable_VariableDatabase(struct VariableShare * vsh,char * var
    return -1;
 }
 
+
 int IfLocalVariableChanged_SignalUpdateToJoblist(struct VariableShare * vsh,unsigned int var_id)
 {
   unsigned long newhash=GetVariableHash(vsh,var_id);
   if (newhash!=vsh->share.variables[var_id].hash )
     {
-
       debug_say("Variable Changed !");
-      debug_say("TODO : Add jobs for each client that has registered itself as a client to our cache..");
+      Job_UpdateLocalVariableToAllPeers(vsh,var_id);
       /*We keep the new hash as the current hash :)*/
       vsh->share.variables[var_id].hash=newhash;
 
@@ -207,12 +208,15 @@ int IfLocalVariableChanged_SignalUpdateToJoblist(struct VariableShare * vsh,unsi
 int RefreshAllLocalVariables(struct VariableShare * vsh)
 {
  if ( vsh->share.total_variables_shared == 0 ) { return -1; /* NO VARIABLES TO SHARE OR UPDATE!*/}
+ int retres=0;
  int i=0;
- fprintf(stderr,"Refreshing %u variables!\n",vsh->share.total_variables_shared);
+ //fprintf(stderr,"Refreshing %u variables!\n",vsh->share.total_variables_shared);
  for ( i=0; i<vsh->share.total_variables_shared; i++)
   {
-      IfLocalVariableChanged_SignalUpdateToJoblist(vsh,i);
+     if ( IfLocalVariableChanged_SignalUpdateToJoblist(vsh,i) ) ++retres;
   }
+
+ if ( retres>0 ) return retres;
  return -1;
 }
 

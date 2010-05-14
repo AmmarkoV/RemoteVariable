@@ -76,12 +76,19 @@ int GetNextJobIDOperation(struct VariableShare * vsh,char operation_type)
 }
 
 
-int UpdateLocalVariable(struct VariableShare * vsh,unsigned int our_varid,unsigned int peer_varid)
+int Job_UpdateLocalVariable(struct VariableShare * vsh,unsigned int our_varid,unsigned int peer_varid)
 {
  return AddJob(vsh,our_varid,peer_varid,READFROM);
 }
 
-int UpdateRemoteVariable(struct VariableShare * vsh,unsigned int our_varid,unsigned int peer_varid)
+int Job_UpdateRemoteVariable(struct VariableShare * vsh,unsigned int our_varid,unsigned int peer_varid)
 {
  return AddJob(vsh,our_varid,peer_varid,WRITETO);
+}
+
+int Job_UpdateLocalVariableToAllPeers(struct VariableShare * vsh,unsigned int our_varid)
+{
+ debug_say("TODO : Add jobs for each client that has registered itself as a client to our cache..");
+
+ return 0;
 }
