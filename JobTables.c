@@ -42,7 +42,7 @@ int AddJob(struct VariableShare * vsh,unsigned int our_varid,unsigned int peer_v
 
 int RemJob(struct VariableShare * vsh,int job_id)
 {
- debug_say("REM Job not implemented \n");
+ debug_say("REMove Job not implemented \n");
  return -1;
 }
 
