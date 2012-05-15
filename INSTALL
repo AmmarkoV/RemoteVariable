@@ -1,0 +1,9 @@
+ 
+--------------- Compilation ---------------
+To compile the project open a terminal and run
+./make
+This will produce the library and test executables 
+you can issue 
+./TestMasterAndClone.sh to test the library
+
+ 
