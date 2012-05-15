@@ -1,0 +1,11 @@
+# depslib dependency file v1.0
+1271267365 source:/home/ammar/Documents/Programming/RemoteVariableSupport/RemoteVariableTesterClient/main.c
+	<stdio.h>
+	<stdlib.h>
+	<unistd.h>
+	"../RemoteVariableSupport.h"
+
+1271081150 /home/ammar/Documents/Programming/RemoteVariableSupport/RemoteVariableSupport.h
+	<pthread.h>
+	<unistd.h>
+

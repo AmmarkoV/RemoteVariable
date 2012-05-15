@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_layout_file>
+	<ActiveTarget name="Release" />
+	<File name="HashFunctions.c" open="0" top="0" tabpos="12">
+		<Cursor position="0" topLine="0" />
+	</File>
+	<File name="HashFunctions.h" open="0" top="0" tabpos="11">
+		<Cursor position="83" topLine="0" />
+	</File>
+	<File name="JobTables.c" open="0" top="0" tabpos="7">
+		<Cursor position="1857" topLine="47" />
+	</File>
+	<File name="JobTables.h" open="0" top="0" tabpos="8">
+		<Cursor position="1557" topLine="0" />
+	</File>
+	<File name="NetworkFramework.c" open="0" top="0" tabpos="5">
+		<Cursor position="8152" topLine="215" />
+	</File>
+	<File name="NetworkFramework.h" open="0" top="0" tabpos="6">
+		<Cursor position="1196" topLine="10" />
+	</File>
+	<File name="ProtocolThreads.c" open="0" top="0" tabpos="9">
+		<Cursor position="2050" topLine="48" />
+	</File>
+	<File name="ProtocolThreads.h" open="0" top="0" tabpos="10">
+		<Cursor position="1065" topLine="0" />
+	</File>
+	<File name="RemoteVariableSupport.c" open="0" top="0" tabpos="1">
+		<Cursor position="2202" topLine="127" />
+	</File>
+	<File name="RemoteVariableSupport.h" open="0" top="0" tabpos="2">
+		<Cursor position="2131" topLine="63" />
+	</File>
+	<File name="VariableDatabase.c" open="0" top="0" tabpos="3">
+		<Cursor position="1519" topLine="201" />
+	</File>
+	<File name="VariableDatabase.h" open="0" top="0" tabpos="4">
+		<Cursor position="1828" topLine="0" />
+	</File>
+	<File name="helper.c" open="0" top="0" tabpos="13">
+		<Cursor position="1697" topLine="0" />
+	</File>
+	<File name="helper.h" open="0" top="0" tabpos="10">
+		<Cursor position="0" topLine="0" />
+	</File>
+	<File name="version.h" open="0" top="0" tabpos="9">
+		<Cursor position="574" topLine="0" />
+	</File>
+</CodeBlocks_layout_file>

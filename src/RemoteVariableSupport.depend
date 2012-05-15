@@ -1,0 +1,74 @@
+# depslib dependency file v1.0
+1273583638 source:/home/ammar/Documents/Programming/RemoteVariableSupport/RemoteVariableSupport.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	"helper.h"
+	"RemoteVariableSupport.h"
+	"NetworkFramework.h"
+	"VariableDatabase.h"
+
+1273763984 /home/ammar/Documents/Programming/RemoteVariableSupport/RemoteVariableSupport.h
+	<pthread.h>
+	<unistd.h>
+
+1273759374 source:/home/ammar/Documents/Programming/RemoteVariableSupport/VariableDatabase.c
+	"VariableDatabase.h"
+	"helper.h"
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	"HashFunctions.h"
+
+1273759377 /home/ammar/Documents/Programming/RemoteVariableSupport/VariableDatabase.h
+	"RemoteVariableSupport.h"
+
+1273188245 source:/home/ammar/Documents/Programming/RemoteVariableSupport/helper.c
+	"helper.h"
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	"version.h"
+
+1273186482 /home/ammar/Documents/Programming/RemoteVariableSupport/helper.h
+
+1273759369 source:/home/ammar/Documents/Programming/RemoteVariableSupport/NetworkFramework.c
+	<string.h>
+	<stdio.h>
+	<stdlib.h>
+	"VariableDatabase.h"
+	"NetworkFramework.h"
+	"JobTables.h"
+	"helper.h"
+
+1273114580 /home/ammar/Documents/Programming/RemoteVariableSupport/NetworkFramework.h
+	<sys/types.h>
+	<sys/socket.h>
+	<netinet/in.h>
+	<arpa/inet.h>
+	<netdb.h>
+	<sys/uio.h>
+	"RemoteVariableSupport.h"
+
+1273799322 /home/ammar/Documents/Programming/RemoteVariableSupport/JobTables.h
+	"RemoteVariableSupport.h"
+
+1273799316 source:/home/ammar/Documents/Programming/RemoteVariableSupport/JobTables.c
+	<stdio.h>
+	<stdlib.h>
+	"JobTables.h"
+	"RemoteVariableSupport.h"
+	"helper.h"
+
+1273365502 source:/home/ammar/Documents/Programming/RemoteVariableSupport/ProtocolThreads.c
+	"ProtocolThreads.h"
+
+1273186379 /home/ammar/Documents/Programming/RemoteVariableSupport/ProtocolThreads.h
+
+1273799352 /home/ammar/Documents/Programming/RemoteVariableSupport/version.h
+
+1263088248 source:/home/ammar/Documents/Programming/RemoteVariableSupport/HashFunctions.c
+	"HashFunctions.h"
+
+1263088251 /home/ammar/Documents/Programming/RemoteVariableSupport/HashFunctions.h
+
