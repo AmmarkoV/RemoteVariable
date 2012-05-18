@@ -122,7 +122,7 @@ int DeleteVariable_Database(struct VariableShare * vsh,char * var_name)
 
 signed int FindVariable_Database(struct VariableShare * vsh,char * var_name)
 {
- if ( VariableShareOk(vsh) == 0 ) return -1;
+ if ( VariableShareOk(vsh) == 0 ) return 0;
 
  int i;
  for ( i=0; i<vsh->share.total_variables_shared; i++)
@@ -132,7 +132,7 @@ signed int FindVariable_Database(struct VariableShare * vsh,char * var_name)
         return (signed int ) i;
       }
   }
- return -1;
+ return 0;
 }
 
 int CanWriteTo_VariableDatabase(struct VariableShare * vsh,unsigned int var_spot)
@@ -161,34 +161,34 @@ int RefreshLocalVariable_VariableDatabase(struct VariableShare * vsh,char * vari
 {
    debug_say(" RefreshLocalVariable_VariableDatabase , not implemented ");
    int var_id = FindVariable_Database(vsh,variable_name);
-   if ( var_id == -1 )
+   if ( var_id == 0 )
     {
       fprintf(stderr,"Variable %s not found , cannot be refreshed to local\n",variable_name);
-      return -1;
+      return 0;
     } else
     {
       /*TODO*/
       //vsh->share.variables[var_id].
       //UpdateLocalVariable(vsh,  our_varid, peer_varid);
     }
-   return -1;
+   return 0;
 }
 
 int RefreshRemoteVariable_VariableDatabase(struct VariableShare * vsh,char * variable_name)
 {
    debug_say(" RefreshRemoteVariable_VariableDatabase , not implemented ");
       int var_id = FindVariable_Database(vsh,variable_name);
-   if ( var_id == -1 )
+   if ( var_id == 0 )
     {
       fprintf(stderr,"Variable %s not found , cannot be refreshed to local\n",variable_name);
-      return -1;
+      return 0;
     } else
     {
       /*TODO*/
       //vsh->share.variables[var_id].
       //UpdateRemoteVariable(vsh,  our_varid, peer_varid);
     }
-   return -1;
+   return 0;
 }
 
 
@@ -219,7 +219,7 @@ int RefreshAllLocalVariables(struct VariableShare * vsh)
   }
 
  if ( retres>0 ) return retres;
- return -1;
+ return 0;
 }
 
 
@@ -255,6 +255,7 @@ int StartAutoRefreshVariable(struct VariableShare * vsh)
 {
   vsh->stop_refresh_thread=0;
   int retres = pthread_create( &vsh->refresh_thread, NULL,  AutoRefreshVariable_Thread ,(void*) vsh);
-  if (retres!=0) retres = -1;
+  if (retres!=0) retres = 0; else
+                 retres = 1;
   return retres;
 }

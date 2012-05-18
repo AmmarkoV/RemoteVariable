@@ -23,27 +23,27 @@
 #include "RemoteVariableSupport.h"
 #include "helper.h"
 
-int AddJob(struct VariableShare * vsh,unsigned int our_varid,unsigned int peer_varid , char operation_type)
+int AddJob(struct VariableShare * vsh,unsigned int our_varid,unsigned int peer_id , char operation_type)
 {
  if (  vsh->jobs_loaded < MAX_JOBS_PENDING )
   { // NEEDS TO BE REWRITTEN TO KEEP A SORTED LIST!
     unsigned int where_to_add=vsh->jobs_loaded;
-    vsh->job_list[where_to_add].our_cache_id=our_varid;
-    vsh->job_list[where_to_add].remote_cache_id=peer_varid;
+    vsh->job_list[where_to_add].our_sharelist_id=our_varid;
+    vsh->job_list[where_to_add].remote_peer_id=peer_id;
     vsh->job_list[where_to_add].action=operation_type;
     vsh->job_list[where_to_add].time=central_timer;
-    fprintf(stderr,"Added JOB %u , %u -> %u  - type %u @ %u\n",where_to_add,our_varid,peer_varid,operation_type,central_timer);
+    fprintf(stderr,"Added JOB %u , our variable %u must be shared with peer %u (%s)  - type %u @ %u\n",where_to_add,our_varid,peer_id,vsh->peer_list[peer_id].IP,operation_type,central_timer);
     ++vsh->jobs_loaded;
     return 1;
   } else
    fprintf(stderr,"Job queue is full discarding new request!!\n");
- return -1;
+ return 0;
 }
 
 int RemJob(struct VariableShare * vsh,int job_id)
 {
  debug_say("REMove Job not implemented \n");
- return -1;
+ return 0;
 }
 
 int DoneWithJob(struct VariableShare * vsh,int job_id)
@@ -52,7 +52,7 @@ int DoneWithJob(struct VariableShare * vsh,int job_id)
   {
      vsh->job_list[job_id].action=NOACTION;
   }
- return -1;
+ return 0;
 }
 
 int GetNextJobIDOperation(struct VariableShare * vsh,char operation_type)
@@ -72,7 +72,7 @@ int GetNextJobIDOperation(struct VariableShare * vsh,char operation_type)
          }
     }
 
-  return -1;
+  return 0;
 }
 
 

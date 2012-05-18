@@ -151,7 +151,7 @@ void HandleClientLoop(struct VariableShare * vsh,int clientsock,struct sockaddr_
 
    while (client_online)
     {
-       data_received = recv(clientsock, (char*) & peek_request, sizeof (request), MSG_PEEK);
+       data_received = recv(clientsock, (char*) & peek_request, sizeof (peek_request), MSG_PEEK);
 
        if (data_received < 0)
        {
@@ -286,7 +286,8 @@ StartRemoteVariableServer(struct VariableShare * vsh)
 {
   vsh->stop_server_thread=0;
   int retres = pthread_create( &vsh->server_thread, NULL,  RemoteVariableServer_Thread ,(void*) vsh);
-  if (retres!=0) retres = -1;
+  if (retres!=0) retres = 0; else
+                 retres = 1;
   return retres;
 }
 
@@ -295,6 +296,7 @@ StartRemoteVariableConnection(struct VariableShare * vsh)
 {
    vsh->stop_client_thread=0;
    int retres = pthread_create( &vsh->client_thread, NULL,  RemoteVariableClient_Thread ,(void*) vsh);
-   if (retres!=0) retres = -1;
+   if (retres!=0) retres = 0; else
+                  retres = 1;
    return retres;
 }

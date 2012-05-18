@@ -136,8 +136,8 @@ struct VariableShare
     unsigned int jobs_loaded;
 
     struct SharePeer master;
-    struct SharePeer client_list[100];
-    unsigned int clients_loaded;
+    struct SharePeer peer_list[100];
+    unsigned int peer_loaded;
 
 
 
@@ -166,6 +166,8 @@ int Delete_VariableFromSharingList(struct VariableShare * vsh,char * variable_na
 int Refresh_LocalVariable(struct VariableShare * vsh,char * variable_name);
 int Refresh_RemoteVariable(struct VariableShare * vsh,char * variable_name);
 int IsUptodate_RemoteVariable(struct VariableShare * vsh,char * variable_name);
+
+
 #ifdef __cplusplus
 }
 #endif

@@ -3,6 +3,18 @@
 #include <unistd.h>
 #include "../RemoteVariableSupport.h"
 
+
+
+int wait_for_var_to_become_x(int * var , unsigned int timeout , unsigned int x)
+{
+  unsigned int time_waited=0;
+  while ( (*var!= x )&&(time_waited<timeout) ) { usleep(1000); ++time_waited; }
+  if (*var==0) { fprintf(stderr,"Master : The experiment was a complete failure\n");  return 0;}
+
+  return 1;
+}
+
+
 int main()
 {
     printf("REMOTE VARIABLES MASTER !!!!!!!!!!!!! \n");
@@ -11,41 +23,42 @@ int main()
     struct VariableShare * vsh = Start_VariableSharing("SHARE2","0.0.0.0",12345,"password");
     if ( vsh == 0 )
      {
-         fprintf(stderr,"Error Creating share");
+         fprintf(stderr,"Master : Error Creating share\n");
          return 1;
      }
 
+
+
+    // We start up with a Variable with the value 666 , we expect the client program to alter it to 1 after it successfully connects
     int SHARED_VAR=666;
-    if ( Add_VariableToSharingList(vsh,"SHARED_VAR",7,&SHARED_VAR,sizeof(SHARED_VAR)) == 0 ) fprintf(stderr,"Error Adding Shared Variable");
-
-    printf("Starting Self Test!\n");
-    while (SHARED_VAR != 1 )
+    if ( Add_VariableToSharingList(vsh,"SHARED_VAR",7,&SHARED_VAR,sizeof(SHARED_VAR)) == 0 )
      {
-       usleep(1000);
-       SHARED_VAR = SHARED_VAR - 1;
+      fprintf(stderr,"Master : Error Adding Shared Variable\n");
+      return 1;
      }
-    printf("Ended Self Test ,if nothing printed since start test failed :P !\n");
-    SHARED_VAR=666;
 
-    while (SHARED_VAR != 1 )
+
+    int time_waited=0;
+    printf("Master : Starting Self Test!\n");
+    wait_for_var_to_become_x(&SHARED_VAR,10000,1);
+
+    SHARED_VAR=2;
+    printf("Master : Now we have changed the variable to 2 , will wait until it becomes 3\n");
+    wait_for_var_to_become_x(&SHARED_VAR,10000,3);
+
+    SHARED_VAR=4;
+    printf("Master : Now we have changed the variable to 4 , will wait until it becomes 5\n");
+    wait_for_var_to_become_x(&SHARED_VAR,10000,5);
+
+    SHARED_VAR=6;
+
+
+    fprintf(stderr,"Master : Closing things down \n");
+    if (!Stop_VariableSharing(vsh))
      {
-       usleep(100);
+         fprintf(stderr,"Master : Error Stopping Variable share\n");
+         return 1;
      }
-    printf("Received 1 \n");
 
-
-    while (SHARED_VAR != 2 )
-     {
-       usleep(100);
-     }
-    printf("Received 2 \n");
-
-     while (SHARED_VAR != 12345 )
-     {
-       usleep(100);
-     }
-    printf("Received 3 \n");
-
-    if ( Stop_VariableSharing(vsh) == 0 ) fprintf(stderr,"Error Deleting share\n");
     return 0;
 }

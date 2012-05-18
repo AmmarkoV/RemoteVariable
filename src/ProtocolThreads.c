@@ -52,13 +52,13 @@
 int InitGetVariableList_Handshake(struct VariableShare * vsh)
 {
 
-  return -1;
+  return 0;
 }
 
 int AcceptGetVariableList_Handshake(struct VariableShare * vsh)
 {
 
-  return -1;
+  return 0;
 }
 
 
@@ -66,13 +66,13 @@ int AcceptGetVariableList_Handshake(struct VariableShare * vsh)
 int InitCloneShare_Handshake(struct VariableShare * vsh)
 {
 
-  return -1;
+  return 0;
 }
 
 int AcceptCloneShare_Handshake(struct VariableShare * vsh)
 {
 
-  return -1;
+  return 0;
 }
 
 
@@ -80,25 +80,25 @@ int AcceptCloneShare_Handshake(struct VariableShare * vsh)
 int RequestVariable_Handshake(struct VariableShare * vsh)
 {
 
-  return -1;
+  return 0;
 }
 
 int SendVariable_Handshake(struct VariableShare * vsh)
 {
 
-  return -1;
+  return 0;
 }
 
 int MasterReceive_Handshake(struct VariableShare * vsh)
 {
 
-  return -1;
+  return 0;
 }
 
 int MasterSend_Handshake(struct VariableShare * vsh)
 {
 
-  return -1;
+  return 0;
 }
 
 

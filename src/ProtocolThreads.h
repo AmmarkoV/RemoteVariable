@@ -21,6 +21,7 @@
 #ifndef PROTOCOLTHREADS_H_INCLUDED
 #define PROTOCOLTHREADS_H_INCLUDED
 
+#include "RemoteVariableSupport.h"
 
 int InitGetVariableList_Handshake(struct VariableShare * vsh);
 int AcceptGetVariableList_Handshake(struct VariableShare * vsh);

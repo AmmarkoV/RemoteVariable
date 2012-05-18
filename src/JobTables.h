@@ -23,7 +23,7 @@
 
 #include "RemoteVariableSupport.h"
 
-int AddJob(struct VariableShare * vsh,unsigned int our_varid,unsigned int peer_varid ,char operation_type);
+int AddJob(struct VariableShare * vsh,unsigned int our_varid,unsigned int peer_id , char operation_type);
 int RemJob(struct VariableShare * vsh,int job_id);
 int DoneWithJob(struct VariableShare * vsh,int job_id);
 int GetNextJobIDOperation(struct VariableShare * vsh,char operation_type);
