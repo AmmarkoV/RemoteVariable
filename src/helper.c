@@ -54,5 +54,11 @@ void debug_say(char * msg)
  return;
 }
 
+void debug_say_nocr(char * msg)
+{
+ if ( debug_msg() == 1 ) fprintf(stderr,"%s",msg);
+ return;
+}
+
 
 

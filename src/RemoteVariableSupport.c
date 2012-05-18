@@ -39,12 +39,12 @@ extern unsigned int central_timer=0;
    This function is supposed to allocate a VariableShare structure ( vsh )
    and prepare the Variable Share Server in our machine as a master share
 */
-struct VariableShare * Start_VariableSharing(char * sharename,char * password)
+struct VariableShare * Start_VariableSharing(char * sharename,char * bindaddress,unsigned int port,char * password)
 {
     under_construction_msg();
 
     fprintf(stderr,"Starting Variable Sharing!\n");
-    struct VariableShare *  vsh = Create_VariableDatabase(sharename,"127.0.0.1",12345,password,128);
+    struct VariableShare *  vsh = Create_VariableDatabase(sharename,bindaddress,port,password,128);
     if ( vsh == 0 ) return 0;
 
     if ( vsh->global_state == 0 )

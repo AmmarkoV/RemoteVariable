@@ -1,6 +1,6 @@
 Remote Variable Sharing for C / C++ 
 ////////////////////////////////////////////////
-Variable Share is supposed to be a (cross-platform? :P ) GNU/GPL layer on top of regular C programs using TCP sockets with witch you can easily 
+Variable Share is supposed to be a (cross-platform? :P ) GNU/GPL layer on top of regular C programs using TCP sockets with which you can easily 
 share Variables between programs running on the same or different machines..
 
 Its usage should be straightforward , just including the header and linking the library and adding 2 lines of code

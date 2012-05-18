@@ -31,4 +31,6 @@ int GetNextJobIDOperation(struct VariableShare * vsh,char operation_type);
 int Job_UpdateLocalVariable(struct VariableShare * vsh,unsigned int our_varid,unsigned int peer_varid);
 int Job_UpdateRemoteVariable(struct VariableShare * vsh,unsigned int our_varid,unsigned int peer_varid);
 int Job_UpdateLocalVariableToAllPeers(struct VariableShare * vsh,unsigned int our_varid);
+
+int ExecutePendingJobs(struct VariableShare *vsh);
 #endif // JOBTABLES_H_INCLUDED

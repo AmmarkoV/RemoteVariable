@@ -32,11 +32,11 @@ int AddJob(struct VariableShare * vsh,unsigned int our_varid,unsigned int peer_v
     vsh->job_list[where_to_add].remote_cache_id=peer_varid;
     vsh->job_list[where_to_add].action=operation_type;
     vsh->job_list[where_to_add].time=central_timer;
-    printf("Added JOB %u , %u -> %u  - type %u @ %u\n",where_to_add,our_varid,peer_varid,operation_type,central_timer);
+    fprintf(stderr,"Added JOB %u , %u -> %u  - type %u @ %u\n",where_to_add,our_varid,peer_varid,operation_type,central_timer);
     ++vsh->jobs_loaded;
     return 1;
   } else
-   printf("Job queue is full discarding new request!!\n");
+   fprintf(stderr,"Job queue is full discarding new request!!\n");
  return -1;
 }
 
@@ -91,4 +91,42 @@ int Job_UpdateLocalVariableToAllPeers(struct VariableShare * vsh,unsigned int ou
  debug_say("TODO : Add jobs for each client that has registered itself as a client to our cache..");
 
  return 0;
+}
+
+
+int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
+{
+
+   return 0;
+}
+
+
+
+int ExecutePendingJobsForClient(struct VariableShare *vsh,unsigned int client_id)
+{
+   unsigned int successfull_jobs=0;
+   unsigned int i=0;
+   while (i<vsh->jobs_loaded)
+    {
+      if (client_id)
+       if (ExecuteJob(vsh,i)) { ++successfull_jobs; } else
+                              { fprintf(stderr,"Job %u on Share %s failed \n"); }
+       ++i;
+    }
+  return successfull_jobs;
+}
+
+
+
+int ExecutePendingJobs(struct VariableShare *vsh)
+{
+   unsigned int successfull_jobs=0;
+   unsigned int i=0;
+   while (i<vsh->jobs_loaded)
+    {
+       if (ExecuteJob(vsh,i)) { ++successfull_jobs; } else
+                              { fprintf(stderr,"Job %u on Share %s failed \n"); }
+       ++i;
+    }
+  return successfull_jobs;
 }

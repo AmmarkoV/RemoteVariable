@@ -22,5 +22,14 @@
 #define PROTOCOLTHREADS_H_INCLUDED
 
 
+int InitGetVariableList_Handshake(struct VariableShare * vsh);
+int AcceptGetVariableList_Handshake(struct VariableShare * vsh);
+int InitCloneShare_Handshake(struct VariableShare * vsh);
+int AcceptCloneShare_Handshake(struct VariableShare * vsh);
+int RequestVariable_Handshake(struct VariableShare * vsh);
+int SendVariable_Handshake(struct VariableShare * vsh);
+int MasterReceive_Handshake(struct VariableShare * vsh);
+int MasterSend_Handshake(struct VariableShare * vsh);
+
 
 #endif // PROTOCOLTHREADS_H_INCLUDED

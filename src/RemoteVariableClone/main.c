@@ -6,6 +6,7 @@
 int main()
 {
 
+    printf("REMOTE VARIABLES CLIENT !!!!!!!!!!!!! \n");
     printf("Hello world I Will try to Connect to Shared Variables now :) \n");
 
     struct VariableShare * vsh = ConnectToRemote_VariableSharing("127.0.0.1",12345,"password");

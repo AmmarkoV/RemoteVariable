@@ -62,7 +62,7 @@ int SendVariableTo(struct VariableShare * vsh,int clientsock,unsigned int variab
 
   int data_sent= send(clientsock, (char*) & data, sizeof (data_length), 0); // SEND START FRAME!
 
-  data_sent= send(clientsock, (char*) & vsh->share.variables[variable_id].ptr,data.data_size, 0); // SEND START FRAME!
+      data_sent= send(clientsock, (char*) & vsh->share.variables[variable_id].ptr,data.data_size, 0); // SEND VARIABLE!
 
   return 0;
 }
@@ -71,9 +71,8 @@ int SendVariableTo(struct VariableShare * vsh,int clientsock,unsigned int variab
 // HANDLE CLIENT
 
 
-void HandleClient(struct VariableShare * vsh,int clientsock,struct sockaddr_in client,unsigned int clientlen)
+int HandleClient(struct VariableShare * vsh,int clientsock,struct sockaddr_in client,unsigned int clientlen)
 {
-      printf( "Client connected: %s\n", inet_ntoa(client.sin_addr));
 
       struct NetworkRequestGeneralPacket request={0};
       int data_received = recv(clientsock, (char*) & request, sizeof (request), 0);
@@ -81,7 +80,12 @@ void HandleClient(struct VariableShare * vsh,int clientsock,struct sockaddr_in c
 
 
       int packeterror = 0;
-     if ( data_received < 0 ) error("Error RecvFrom , dropping session"); else
+     if ( data_received < 0 )
+     {
+        //We have a disconnect
+        error("Error RecvFrom , dropping session");
+        return 0;
+     }else
      {
          //RECEIVED PACKET OK
          packeterror = 0;
@@ -93,24 +97,19 @@ void HandleClient(struct VariableShare * vsh,int clientsock,struct sockaddr_in c
               A            B             C
          */
          if (request.RequestType>=INVALID_TYPE)
-         { //INVALID PACKET
-           packeterror=1; error("Invalid Packet Type Received, Wrong Version/Incompatible Client ?");
-         } else
+         { /*INVALID PACKET*/ packeterror=1; error("Invalid Packet Type Received, Wrong Version/Incompatible Client ?"); } else
          if (request.RequestType==ERROR)
-         { // ERROR PACKET
-           packeterror=1; error("Error Packet Received");
+         { /* ERROR PACKET*/  packeterror=1; error("Error Packet Received");
          } else
          if (request.RequestType==OK)
-         { // OK PACKET
-           packeterror=1; error("Packet Acknowledgement Received");
-         }
+         { /* OK PACKET */ packeterror=1; error("Packet Acknowledgement Received"); }
 
          if ( packeterror == 0 )
          { debug_say("No Packet Request Error , Passing through to VariableDatabase Check");
            if ( (request.RequestType==READVAR) || (request.RequestType==WRITEVAR) )
            {
               debug_say("Generic Packet should contain Variable Packet as a payload");
-              printf("Incoming Packet info \n Name : %s \n Type : %u \n Data Size : %u \n",request.name,request.RequestType,request.data_size);
+              fprintf(stderr,"Incoming Packet info \n Name : %s \n Type : %u \n Data Size : %u \n",request.name,request.RequestType,request.data_size);
 
               if ( request.RequestType==READVAR)
                {
@@ -119,7 +118,7 @@ void HandleClient(struct VariableShare * vsh,int clientsock,struct sockaddr_in c
                   {
                    RecvVariableFrom(vsh,clientsock,varnum);
                   } else
-                  { printf("No permission to READ \n");}
+                  { fprintf(stderr,"No permission to READ \n");}
                } else
               if ( request.RequestType==WRITEVAR)
                {
@@ -128,18 +127,57 @@ void HandleClient(struct VariableShare * vsh,int clientsock,struct sockaddr_in c
                  {
                   SendVariableTo(vsh,clientsock,varnum);
                  } else
-                  { printf("No permission to WRITE \n");}
+                 { fprintf(stderr,"No permission to WRITE \n");}
                }
            }
          }else
          {
-          printf("Incoming Request not passed through..\n");
+          fprintf(stderr,"Incoming Request not passed through..\n");
          }
-
      }//RECEIVED PACKET OK
 
+   return 1;
 } // CLIENT HANDLE !
 
+
+void HandleClientLoop(struct VariableShare * vsh,int clientsock,struct sockaddr_in client,unsigned int clientlen)
+{
+   fprintf(stderr,"Client connected: %s\n", inet_ntoa(client.sin_addr));
+   unsigned int client_online=1;
+
+   struct NetworkRequestGeneralPacket peek_request={0};
+      int data_received = 0;
+
+
+   while (client_online)
+    {
+       data_received = recv(clientsock, (char*) & peek_request, sizeof (request), MSG_PEEK);
+
+       if (data_received < 0)
+       {
+        //We have a disconnect
+        error("Error RecvFrom while peeking , dropping session");
+       } else
+       if (data_received == 0)
+       {
+         //Lets check our jobs..!
+
+       } else
+       if (data_received > 0)
+       {
+        fprintf(stderr,"Waiting For Client input\n");
+
+        if (HandleClient(vsh,clientsock,client,clientlen) )
+          {
+
+          } else
+          {
+           client_online=0;
+          }
+        usleep(5000);
+       }
+    }
+}
 
 void *
 RemoteVariableServer_Thread(void * ptr)
@@ -166,7 +204,7 @@ RemoteVariableServer_Thread(void * ptr)
   server.sin_addr.s_addr = INADDR_ANY;
   server.sin_port = htons(vsh->port);
 
-  if ( bind(serversock,(struct sockaddr *) &server,serverlen) < 0 ) { error("binding master port for atftp!"); return 0; }
+  if ( bind(serversock,(struct sockaddr *) &server,serverlen) < 0 ) { error("binding master port for RemoteVariables!"); return 0; }
   if (listen(serversock,10) < 0)  { error("Failed to listen on server socket"); return 0; }
 
 
@@ -176,7 +214,7 @@ RemoteVariableServer_Thread(void * ptr)
     /* Wait for client connection */
     if ( (clientsock = accept(serversock,(struct sockaddr *) &client, &clientlen)) < 0) { error("Failed to accept client connection"); } else
       {
-           HandleClient(vsh,clientsock,client,clientlen);
+           HandleClientLoop(vsh,clientsock,client,clientlen);
       }
  }
   return 0;
@@ -199,7 +237,7 @@ RemoteVariableClient_Thread(void * ptr)
       }*/
 
 
-     debug_say("Client Thread Waiting for a job");
+     debug_say_nocr(".c."); //Client Thread Waiting for a job
      usleep(100);
      /* */
      new_job_id=GetNextJobIDOperation(vsh,READFROM);
@@ -246,7 +284,7 @@ RemoteVariableClient_Thread(void * ptr)
 int
 StartRemoteVariableServer(struct VariableShare * vsh)
 {
-   vsh->stop_server_thread=0;
+  vsh->stop_server_thread=0;
   int retres = pthread_create( &vsh->server_thread, NULL,  RemoteVariableServer_Thread ,(void*) vsh);
   if (retres!=0) retres = -1;
   return retres;

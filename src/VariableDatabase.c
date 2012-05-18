@@ -43,6 +43,8 @@ struct VariableShare * Create_VariableDatabase(char * sharename,char * IP,unsign
   if (vsh->share.variables==0) { free(vsh); // ROLL BACK
                                  error("Could not allocate memory for share variables!"); return 0; }
 
+
+  vsh->share.auto_refresh_every_msec=DEFAULT_AUTO_REFRESH_OF_SHARE;
   vsh->share.total_variables_memory=newsize;
   vsh->share.total_variables_shared=0;
   return vsh;
@@ -228,12 +230,22 @@ AutoRefreshVariable_Thread(void * ptr)
   struct VariableShare *vsh;
   vsh = (struct VariableShare *) ptr;
 
-   int variables_changed=0;
+   unsigned int total_variables_changed=0;
+   unsigned int variables_changed=0;
    while ( (vsh->global_policy==VSP_AUTOMATIC) && (vsh->stop_refresh_thread==0) )
    {
-       usleep(1000);
-       variables_changed=RefreshAllLocalVariables(vsh);
+       usleep(vsh->share.auto_refresh_every_msec);
+       if (vsh->share.auto_refresh_every_msec==0)
+          {  // This means that auto refresh is disabled so we sleep things out till it is re-enabled
+             usleep(10000);
+          } else
+          {
+             variables_changed=RefreshAllLocalVariables(vsh);
+             total_variables_changed+=variables_changed;
+             fprintf(stderr,"%u variables changed in this loop\n",variables_changed);
+          }
    }
+   fprintf(stderr,"%u total variables changed detected by autorefresh thread\n",total_variables_changed);
 
    return 0;
 }
