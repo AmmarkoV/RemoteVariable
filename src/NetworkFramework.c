@@ -24,10 +24,20 @@
 #include "NetworkFramework.h"
 #include "JobTables.h"
 #include "helper.h"
+#include "ProtocolThreads.h"
 
 void * RemoteVariableServer_Thread(void * ptr);
 void * RemoteVariableClient_Thread(void * ptr);
 
+int SendRAWTo(int clientsock,char * message,unsigned int length)
+{
+  return send(clientsock,message,length, 0);
+}
+
+int RecvRAWFrom(int clientsock,char * message,unsigned int length)
+{
+  return recv(clientsock,message,length, 0);
+}
 
 int RecvVariableFrom(struct VariableShare * vsh,int clientsock,unsigned int variable_id)
 {
@@ -140,13 +150,26 @@ int HandleClient(struct VariableShare * vsh,int clientsock,struct sockaddr_in cl
 } // CLIENT HANDLE !
 
 
-void HandleClientLoop(struct VariableShare * vsh,int clientsock,struct sockaddr_in client,unsigned int clientlen)
+int HandleClientLoop(struct VariableShare * vsh,int clientsock,struct sockaddr_in client,unsigned int clientlen)
 {
    fprintf(stderr,"Client connected: %s\n", inet_ntoa(client.sin_addr));
+
+   //First thing to do negotiate with peer about the list , passwords etc
+   if (Accept_Handshake(vsh,clientsock))
+     {
+       debug_say("Successfully accepted connection handshake\n");
+     } else
+     {
+       fprintf(stderr,"Could not accept handshake for RemoteVariable Share , ignoring client\n");
+       close(clientsock);
+       return 0;
+     }
+
+
    unsigned int client_online=1;
 
    struct NetworkRequestGeneralPacket peek_request={0};
-      int data_received = 0;
+   int data_received = 0;
 
 
    while (client_online)
@@ -177,6 +200,8 @@ void HandleClientLoop(struct VariableShare * vsh,int clientsock,struct sockaddr_
         usleep(5000);
        }
     }
+
+    return 1;
 }
 
 void *
@@ -214,21 +239,65 @@ RemoteVariableServer_Thread(void * ptr)
     /* Wait for client connection */
     if ( (clientsock = accept(serversock,(struct sockaddr *) &client, &clientlen)) < 0) { error("Failed to accept client connection"); } else
       {
-           HandleClientLoop(vsh,clientsock,client,clientlen);
+           if (!HandleClientLoop(vsh,clientsock,client,clientlen))
+            {
+                fprintf(stderr,"Client failed, while handling him\n");
+            }
       }
  }
   return 0;
 }
 
 
+
+
+
+/*
+--------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------
+                /\  /\  /\   /\
+                ||  ||  ||   ||                   SERVER Framework
+
+--------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------
+
+
+
+--------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------
+
+                ||  ||  ||   ||                   Client Framework
+                \/  \/  \/   \/
+--------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------
+
+*/
+
 void *
 RemoteVariableClient_Thread(void * ptr)
 {
   debug_say("Remote Variable TCP Server thread started..\n");
-  struct VariableShare *vsh;
+  struct VariableShare *vsh=0;
   vsh = (struct VariableShare *) ptr;
-    int new_job_id=-1;
-    while (vsh->stop_client_thread==0)
+  if (vsh==0) { fprintf(stderr,"Virtual Share Parameter is damaged \n"); return 0; }
+
+
+
+
+   //First thing to do negotiate with peer about the list , passwords etc
+   if (Connect_Handshake(vsh,mastersock))
+     {
+       debug_say("Successfull connection handshake\n");
+     } else
+     {
+       fprintf(stderr,"Could not handshake for RemoteVariable Share , stopping everything\n");
+       vsh->global_state=VSS_HANDSHAKE_FAILED;
+       return 0;
+     }
+
+
+   int new_job_id=-1;
+   while (vsh->stop_client_thread==0)
    {
     /* if (vsh->global_policy!=VSP_MANUAL)
       {

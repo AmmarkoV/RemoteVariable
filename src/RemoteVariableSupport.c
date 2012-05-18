@@ -65,12 +65,12 @@ struct VariableShare * Start_VariableSharing(char * sharename,char * bindaddress
    This function is supposed to allocate a VariableShare structure ( vsh )
    and connect to a remote Share and replicate its data in our structures
 */
-struct VariableShare * ConnectToRemote_VariableSharing(char * IP,unsigned int port,char * password)
+struct VariableShare * ConnectToRemote_VariableSharing(char * sharename,char * IP,unsigned int port,char * password)
 {
     under_construction_msg();
 
-    struct VariableShare *  vsh = Create_VariableDatabase("RemoteShare",IP,port,password,128);
-    if ( vsh == 0 ) return 0;
+    struct VariableShare *  vsh = Create_VariableDatabase(sharename,IP,port,password,128);
+    if ( vsh == 0 ) { fprintf(stderr,"Could not create Remote variable database ( Name : %s , IP %s:%u )",sharename,IP,port); return 0; }
     if ( vsh->global_state == 0 )
                             {
                               vsh->global_state=VSS_NORMAL;
@@ -101,6 +101,19 @@ int Stop_VariableSharing(struct VariableShare * vsh)
     Destroy_VariableDatabase(vsh);
     return 0;
 }
+
+
+
+
+int PeersActive_VariableShare(struct VariableShare * vsh)
+{
+  if (vsh==0) { return 0; }
+  return vsh->peers_active;
+}
+
+
+
+
 
 /* #Add_VariableToSharingList#
    Adds a new variable to the Variable Share with chosen permissions

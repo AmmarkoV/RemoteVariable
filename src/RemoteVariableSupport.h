@@ -103,11 +103,12 @@ struct ShareJob
 enum VariableShareStates
 {
     VSS_UNITIALIZED=0,
-    VSS_NORMAL,
+    VSS_HANDSHAKE_FAILED,
+    VSS_ALL_TRANSACTIONS_DISABLED,
     VSS_INCOMING_TRANSACTIONS_DISABLED,
     VSS_OUTGOING_TRANSACTIONS_DISABLED,
-    VSS_ALL_TRANSACTIONS_DISABLED,
-    VSS_CLOSING
+    VSS_CLOSING,
+    VSS_NORMAL
 };
 
 enum VariableSharePolicies
@@ -137,7 +138,7 @@ struct VariableShare
 
     struct SharePeer master;
     struct SharePeer peer_list[100];
-    unsigned int peer_loaded;
+    unsigned int peers_active;
 
 
 
@@ -159,8 +160,9 @@ struct VariableShare
 
 
 struct VariableShare * Start_VariableSharing(char * sharename,char * bindaddress,unsigned int port,char * password);
-struct VariableShare * ConnectToRemote_VariableSharing(char * IP,unsigned int port,char * password);
+struct VariableShare * ConnectToRemote_VariableSharing(char * sharename,char * IP,unsigned int port,char * password);
 int Stop_VariableSharing(struct VariableShare * vsh);
+int PeersActive_VariableShare(struct VariableShare * vsh);
 int Add_VariableToSharingList(struct VariableShare * vsh,char * variable_name,unsigned int permissions,void * ptr,unsigned int ptr_size);
 int Delete_VariableFromSharingList(struct VariableShare * vsh,char * variable_name);
 int Refresh_LocalVariable(struct VariableShare * vsh,char * variable_name);

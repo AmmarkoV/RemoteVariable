@@ -47,6 +47,7 @@ struct VariableShare * Create_VariableDatabase(char * sharename,char * IP,unsign
   vsh->share.auto_refresh_every_msec=DEFAULT_AUTO_REFRESH_OF_SHARE;
   vsh->share.total_variables_memory=newsize;
   vsh->share.total_variables_shared=0;
+  vsh->peers_active=0;
   return vsh;
 }
 
