@@ -19,6 +19,9 @@
 ***************************************************************************/
 
 #include "ProtocolThreads.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /*
 
@@ -48,20 +51,27 @@
 */
 
 
-
-int Connect_Handshake(struct VariableShare * vsh,int clientsock)
+int Connect_Handshake(struct VariableShare * vsh,int peersock)
 {
+  char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
+  fprintf(stderr,"Awaiting challenge\n");
+  RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+  fprintf(stderr,"Received %s challenge\n",message);
+
+  strcpy(message,"ISITMEYOULOOKINGFO?\0");
+  SendRAWTo(peersock,message,strlen(message));
+
 
   return 0;
 }
 
-int Accept_Handshake(struct VariableShare * vsh,int clientsock)
+int Accept_Handshake(struct VariableShare * vsh,int peersock)
 {
-  char message[10];
+  char message[64]={0};
+  strcpy(message,"HELLO\0");
+  SendRAWTo(peersock,message,strlen(message));
 
-  strncpy(message,"HELLO\n",10);
-
-  SendRAWTo(clientsock,message,strlen(message));
+  RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
   return 0;
 }
 

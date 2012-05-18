@@ -32,12 +32,15 @@ void * RemoteVariableClient_Thread(void * ptr);
 
 int SendRAWTo(int clientsock,char * message,unsigned int length)
 {
+  fprintf(stderr,"Trying to send %s \n",message);
   return send(clientsock,message,length, 0);
 }
 
 int RecvRAWFrom(int clientsock,char * message,unsigned int length)
 {
-  return recv(clientsock,message,length, 0);
+  int retres=recv(clientsock,message,length, 0);
+  fprintf(stderr,"Received %s \n",message);
+  return retres;
 }
 
 int RecvVariableFrom(struct VariableShare * vsh,int clientsock,unsigned int variable_id)
@@ -276,8 +279,7 @@ RemoteVariableServer_Thread(void * ptr)
 
 int RemoteVariable_InitiateConnection(struct VariableShare * vsh)
 {
-  int sockfd, numbytes;
-  char buf[RVS_MAX_RAW_MESSAGE]={0};
+  int sockfd;
   struct hostent *he=0;
   struct sockaddr_in their_addr;
 
@@ -290,22 +292,37 @@ int RemoteVariable_InitiateConnection(struct VariableShare * vsh)
     else
     printf("Client-The remote host is: %s\n", vsh->ip);
 
+  if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+  {
+    error("Could not create the socket for the connection\n");
+    return 0;
+  }
+    else
+    printf("Client socket ok\n");
 
 
-if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+    // host byte order
+    their_addr.sin_family = AF_INET;
+    // short, network byte order
+    printf("Server-Using %s:%d...\n", vsh->ip, vsh->port);
+    their_addr.sin_port = htons(vsh->port);
+    their_addr.sin_addr = *((struct in_addr *)he->h_addr);
+    // zero the rest of the struct
 
-{
-
-    perror("socket()");
-
-    exit(1);
-
-}
+     memset(&(their_addr.sin_zero), '\0', 8);
 
 
-  vsh->master.socket_to_client=sockfd;
 
-  return 0;
+   if(connect(sockfd, (struct sockaddr *)&their_addr, sizeof(struct sockaddr)) == -1)
+   {
+    error("Could not connect the created socket \n");
+    return 0;
+   }
+    else
+    printf("Client-The connect() is OK...\n");
+
+   vsh->master.socket_to_client=sockfd;
+   return 1;
 }
 
 
@@ -319,7 +336,12 @@ RemoteVariableClient_Thread(void * ptr)
   if (vsh==0) { fprintf(stderr,"Virtual Share Parameter is damaged \n"); return 0; }
 
 
-  if (!RemoteVariable_InitiateConnection(vsh)) { fprintf(stderr,""); return 0; }
+  if (!RemoteVariable_InitiateConnection(vsh))
+    {
+      fprintf(stderr,"Could not Initiate Connection\n");
+      vsh->global_state=VSS_CONNECTION_FAILED;
+      return 0;
+    }
 
    //First thing to do negotiate with peer about the list , passwords etc
    if (Connect_Handshake(vsh,vsh->master.socket_to_client))

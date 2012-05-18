@@ -31,7 +31,7 @@ extern "C" {
 #define RVS_MAX_JOBS_PENDING 100
 #define RVS_DEFAULT_AUTO_REFRESH_OF_SHARE 1000
 
-#define RVS_MAX_RAW_MESSAGE 128
+#define RVS_MAX_RAW_HANDSHAKE_MESSAGE 128
 #define RVS_MAX_SHARE_IP_CHARS 64
 
 extern char byte_order; // 0 = intel ,  network
@@ -106,6 +106,7 @@ struct ShareJob
 enum VariableShareStates
 {
     VSS_UNITIALIZED=0,
+    VSS_CONNECTION_FAILED,
     VSS_HANDSHAKE_FAILED,
     VSS_ALL_TRANSACTIONS_DISABLED,
     VSS_INCOMING_TRANSACTIONS_DISABLED,

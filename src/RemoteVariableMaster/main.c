@@ -19,7 +19,7 @@ int main()
 {
     unsigned int WAIT_TIME=100;
     printf("REMOTE VARIABLES MASTER STARTUP!!!!!!!!!!!!! \n");
-    struct VariableShare * vsh = Start_VariableSharing("SHARE2","0.0.0.0",12345,"password");
+    struct VariableShare * vsh = Start_VariableSharing("SHARE2","127.0.0.1",12345,"password");
     if ( vsh == 0 )
      {
          fprintf(stderr,"Master : Error Creating share\n");
