@@ -22,8 +22,8 @@
 #define PROTOCOLTHREADS_H_INCLUDED
 
 #include "RemoteVariableSupport.h"
-int Connect_Handshake(struct VariableShare * vsh);
-int Accept_Handshake(struct VariableShare * vsh);
+int Connect_Handshake(struct VariableShare * vsh,int clientsock);
+int Accept_Handshake(struct VariableShare * vsh,int clientsock);
 int InitCloneShare_Handshake(struct VariableShare * vsh);
 int AcceptCloneShare_Handshake(struct VariableShare * vsh);
 int RequestVariable_Handshake(struct VariableShare * vsh);

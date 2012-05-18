@@ -28,8 +28,11 @@ extern "C" {
 #include <pthread.h>
 #include <unistd.h>
 
-#define MAX_JOBS_PENDING 100
-#define DEFAULT_AUTO_REFRESH_OF_SHARE 1000
+#define RVS_MAX_JOBS_PENDING 100
+#define RVS_DEFAULT_AUTO_REFRESH_OF_SHARE 1000
+
+#define RVS_MAX_RAW_MESSAGE 128
+#define RVS_MAX_SHARE_IP_CHARS 64
 
 extern char byte_order; // 0 = intel ,  network
 extern unsigned int central_timer;
@@ -75,7 +78,7 @@ struct ShareList
 struct SharePeer
 {
     /*TODO ADD MORE DATA*/
-    char IP[10];
+    char IP[RVS_MAX_SHARE_IP_CHARS];
     unsigned int port;
 
     int socket_to_client;
@@ -130,10 +133,10 @@ struct VariableShare
     unsigned int global_state; /* enum VariableShareStates */
     unsigned int global_policy; /* enum VariableSharePolicies */
 
-    char ip[32];
+    char ip[RVS_MAX_SHARE_IP_CHARS];
     unsigned int port;
 
-    struct ShareJob job_list[MAX_JOBS_PENDING];
+    struct ShareJob job_list[RVS_MAX_JOBS_PENDING];
     unsigned int jobs_loaded;
 
     struct SharePeer master;

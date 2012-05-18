@@ -49,18 +49,19 @@
 
 
 
-int Connect_Handshake(struct VariableShare * vsh)
+int Connect_Handshake(struct VariableShare * vsh,int clientsock)
 {
 
   return 0;
 }
 
-int Accept_Handshake(struct VariableShare * vsh)
+int Accept_Handshake(struct VariableShare * vsh,int clientsock)
 {
-  char message[10]={0};
+  char message[10];
 
-  strcpy(message,"HELLO\n");
-  SendRAWTo(int clientsock,message,strlen(message));
+  strncpy(message,"HELLO\n",10);
+
+  SendRAWTo(clientsock,message,strlen(message));
   return 0;
 }
 

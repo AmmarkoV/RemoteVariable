@@ -25,6 +25,7 @@
 #include "JobTables.h"
 #include "helper.h"
 #include "ProtocolThreads.h"
+#include "RemoteVariableSupport.h"
 
 void * RemoteVariableServer_Thread(void * ptr);
 void * RemoteVariableClient_Thread(void * ptr);
@@ -273,6 +274,42 @@ RemoteVariableServer_Thread(void * ptr)
 
 */
 
+int RemoteVariable_InitiateConnection(struct VariableShare * vsh)
+{
+  int sockfd, numbytes;
+  char buf[RVS_MAX_RAW_MESSAGE]={0};
+  struct hostent *he=0;
+  struct sockaddr_in their_addr;
+
+
+  if ((he=gethostbyname(vsh->ip)) == 0)
+  {
+    fprintf(stderr,"Error getting host by name %s \n",vsh->ip);
+    return 0;
+   }
+    else
+    printf("Client-The remote host is: %s\n", vsh->ip);
+
+
+
+if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+
+{
+
+    perror("socket()");
+
+    exit(1);
+
+}
+
+
+  vsh->master.socket_to_client=sockfd;
+
+  return 0;
+}
+
+
+
 void *
 RemoteVariableClient_Thread(void * ptr)
 {
@@ -282,10 +319,10 @@ RemoteVariableClient_Thread(void * ptr)
   if (vsh==0) { fprintf(stderr,"Virtual Share Parameter is damaged \n"); return 0; }
 
 
-
+  if (!RemoteVariable_InitiateConnection(vsh)) { fprintf(stderr,""); return 0; }
 
    //First thing to do negotiate with peer about the list , passwords etc
-   if (Connect_Handshake(vsh,mastersock))
+   if (Connect_Handshake(vsh,vsh->master.socket_to_client))
      {
        debug_say("Successfull connection handshake\n");
      } else

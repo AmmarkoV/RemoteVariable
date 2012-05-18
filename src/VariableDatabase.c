@@ -44,7 +44,9 @@ struct VariableShare * Create_VariableDatabase(char * sharename,char * IP,unsign
                                  error("Could not allocate memory for share variables!"); return 0; }
 
 
-  vsh->share.auto_refresh_every_msec=DEFAULT_AUTO_REFRESH_OF_SHARE;
+  strncpy(vsh->ip,IP,RVS_MAX_SHARE_IP_CHARS);
+
+  vsh->share.auto_refresh_every_msec=RVS_DEFAULT_AUTO_REFRESH_OF_SHARE;
   vsh->share.total_variables_memory=newsize;
   vsh->share.total_variables_shared=0;
   vsh->peers_active=0;

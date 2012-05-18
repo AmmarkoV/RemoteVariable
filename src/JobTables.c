@@ -25,7 +25,7 @@
 
 int AddJob(struct VariableShare * vsh,unsigned int our_varid,unsigned int peer_id , char operation_type)
 {
- if (  vsh->jobs_loaded < MAX_JOBS_PENDING )
+ if (  vsh->jobs_loaded < RVS_MAX_JOBS_PENDING )
   { // NEEDS TO BE REWRITTEN TO KEEP A SORTED LIST!
     unsigned int where_to_add=vsh->jobs_loaded;
     vsh->job_list[where_to_add].our_sharelist_id=our_varid;
