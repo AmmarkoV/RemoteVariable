@@ -277,6 +277,7 @@ RemoteVariableServer_Thread(void * ptr)
 
 */
 
+
 int RemoteVariable_InitiateConnection(struct VariableShare * vsh)
 {
   int sockfd;

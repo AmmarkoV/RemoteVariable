@@ -43,6 +43,7 @@ struct VariableShare * Create_VariableDatabase(char * sharename,char * IP,unsign
   if (vsh->share.variables==0) { free(vsh); // ROLL BACK
                                  error("Could not allocate memory for share variables!"); return 0; }
 
+  strncpy(vsh->sharename,sharename,RVS_MAX_SHARE_NAME_CHARS);
 
   strncpy(vsh->ip,IP,RVS_MAX_SHARE_IP_CHARS);
   vsh->port=port;

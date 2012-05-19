@@ -28,10 +28,13 @@ extern "C" {
 #include <pthread.h>
 #include <unistd.h>
 
+
+
 #define RVS_MAX_JOBS_PENDING 100
 #define RVS_DEFAULT_AUTO_REFRESH_OF_SHARE 1000
 
 #define RVS_MAX_RAW_HANDSHAKE_MESSAGE 128
+#define RVS_MAX_SHARE_NAME_CHARS 64
 #define RVS_MAX_SHARE_IP_CHARS 64
 
 extern char byte_order; // 0 = intel ,  network
@@ -128,7 +131,7 @@ enum VariableSharePolicies
 
 struct VariableShare
 {
-    char sharename[32];
+    char sharename[RVS_MAX_SHARE_NAME_CHARS];
     char this_address_space_is_master;
 
     unsigned int global_state; /* enum VariableShareStates */

@@ -50,29 +50,90 @@
    #3 Carry out the jobs mentioned above
 */
 
+char RVS_PROTOCOL_VERSION='A';
 
 int Connect_Handshake(struct VariableShare * vsh,int peersock)
 {
-  char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
   fprintf(stderr,"Awaiting challenge\n");
+
+  char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
   RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
   fprintf(stderr,"Received %s challenge\n",message);
 
-  strcpy(message,"ISITMEYOULOOKINGFO?\0");
+  if (strcmp(message,"HELLO")!=0) { error("Error at connect handshaking : 1 "); return 0; }
+
+  // 2ND MESSAGE SENT
+  sprintf(message,"VERSION=%c\0",RVS_PROTOCOL_VERSION);
   SendRAWTo(peersock,message,strlen(message));
 
+  //THIS MESSAGE RECEIVES THE VERSION OF THE PEER
+  RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+  if (strncmp(message,"VERSION=",8)!=0) { error("Error at connect handshaking : 2"); return 0;}
+  if ((unsigned int ) message[8]!= RVS_PROTOCOL_VERSION) { error("Error at connect handshaking : Incorrect version for peer"); return 0;}
+
+
+  // FOURTH MESSAGE SENT
+  sprintf(message,"GET=%s\0",vsh->sharename);
+  SendRAWTo(peersock,message,strlen(message));
+
+
+  RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+  if ( strncmp(message,"NO",2) == 0 )
+    {
+          fprintf(stderr,"Peer declined access to share %s\n",vsh->sharename);
+          return 0;
+    } else
+  if ( strncmp(message,"OK",2) == 0 )
+    {
+          fprintf(stderr,"Peer accepted access to share %s\n",vsh->sharename);
+          return 1;
+    }
+
+  fprintf(stderr,"Did not understand peer reply .. :S , disconnecting \n",message);
 
   return 0;
 }
 
 int Accept_Handshake(struct VariableShare * vsh,int peersock)
 {
+
   char message[64]={0};
+  // 1ST MESSAGE SENT
   strcpy(message,"HELLO\0");
   SendRAWTo(peersock,message,strlen(message));
 
+
+  //THIS MESSAGE RECEIVES THE VERSION OF THE PEER
   RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
-  return 0;
+  if (strncmp(message,"VERSION=",8)!=0) { error("Error at accept handshaking : 1"); return 0;}
+  if ((unsigned int ) message[8]!= RVS_PROTOCOL_VERSION) { error("Error at accept handshaking : Incorrect version for peer"); return 0;}
+
+  // THIRD MESSAGE SENT
+  sprintf(message,"VERSION=%c\0",RVS_PROTOCOL_VERSION);
+  SendRAWTo(peersock,message,strlen(message));
+
+
+  RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+  if (strncmp(message,"GET=",4)!=0) { error("Error at accept handshaking : 2"); return 0;}
+  if ( strlen(message) <= 4 ) { error("Error at accepting handshake , very small share name "); return 0; }
+  memmove (message,message+4,strlen(message)-3);
+
+  fprintf(stderr,"Peer Wants Access to %s\n",message);
+
+  if (strcmp(message,vsh->sharename)!=0)
+   {
+     error(" Peer asked for the wrong share ..");
+     fprintf(stderr,"Requested share = `%s` , our share = `%s` \n",message,vsh->sharename);
+
+     strcpy(message,"NO\0");
+     SendRAWTo(peersock,message,strlen(message));
+     return 0;
+   }
+
+  strcpy(message,"OK\0");
+  SendRAWTo(peersock,message,strlen(message));
+
+  return 1;
 }
 
 
