@@ -203,7 +203,7 @@ int IfLocalVariableChanged_SignalUpdateToJoblist(struct VariableShare * vsh,unsi
   if (newhash!=vsh->share.variables[var_id].hash )
     {
       debug_say("Variable Changed !");
-      Job_UpdateLocalVariableToAllPeers(vsh,var_id);
+      Job_SingalLocalVariableChanged(vsh,var_id);
       /*We keep the new hash as the current hash :)*/
       vsh->share.variables[var_id].hash=newhash;
 

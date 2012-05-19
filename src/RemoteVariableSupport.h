@@ -45,6 +45,7 @@ enum jobactions
     NOACTION = 0 ,
     WRITETO,
     READFROM,
+    SIGNALCHANGED,
     SYNC
 };
 

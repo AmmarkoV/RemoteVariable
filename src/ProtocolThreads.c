@@ -52,6 +52,11 @@
 
 char RVS_PROTOCOL_VERSION='A';
 
+
+
+
+
+
 int Connect_Handshake(struct VariableShare * vsh,int peersock)
 {
   fprintf(stderr,"Awaiting challenge\n");
@@ -136,6 +141,11 @@ int Accept_Handshake(struct VariableShare * vsh,int peersock)
   return 1;
 }
 
+/*
+ ----------------------------------------------------------------------------------
+ ----------------------------------------------------------------------------------
+ ----------------------------------------------------------------------------------
+*/
 
 
 int InitCloneShare_Handshake(struct VariableShare * vsh)
@@ -151,6 +161,12 @@ int AcceptCloneShare_Handshake(struct VariableShare * vsh)
 }
 
 
+/*
+ ----------------------------------------------------------------------------------
+ ----------------------------------------------------------------------------------
+ ----------------------------------------------------------------------------------
+*/
+
 
 int RequestVariable_Handshake(struct VariableShare * vsh)
 {
@@ -164,13 +180,21 @@ int SendVariable_Handshake(struct VariableShare * vsh)
   return 0;
 }
 
-int MasterReceive_Handshake(struct VariableShare * vsh)
+
+/*
+ ----------------------------------------------------------------------------------
+ ----------------------------------------------------------------------------------
+ ----------------------------------------------------------------------------------
+*/
+
+
+int MasterSignalChange_Handshake(struct VariableShare * vsh,unsigned int var_changed)
 {
 
   return 0;
 }
 
-int MasterSend_Handshake(struct VariableShare * vsh)
+int MasterAcceptChange_Handshake(struct VariableShare * vsh)
 {
 
   return 0;

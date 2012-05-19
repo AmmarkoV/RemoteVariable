@@ -30,8 +30,10 @@
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
+			<Add option="-pg" />
 		</Compiler>
 		<Linker>
+			<Add option="-pg" />
 			<Add option="-pthread" />
 			<Add library="../libRemoteVariableSupport.a" />
 		</Linker>

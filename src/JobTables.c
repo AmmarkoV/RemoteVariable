@@ -40,9 +40,37 @@ int AddJob(struct VariableShare * vsh,unsigned int our_varid,unsigned int peer_i
  return 0;
 }
 
+
+int SwapJobs(struct VariableShare * vsh,int job_id1,int job_id2)
+{
+ if ( (job_id1<vsh->jobs_loaded)&&(job_id2<vsh->jobs_loaded) )
+  {
+    struct ShareJob temp=vsh->job_list[job_id1];
+    vsh->job_list[job_id1]=vsh->job_list[job_id2];
+    vsh->job_list[job_id2]=temp;
+  } else
+  {
+    fprintf(stderr,"SwapJobs called for jobs %u and %u which are out of bounds ( %u ) \n",job_id1,job_id2,vsh->jobs_loaded);
+    return 0;
+  }
+ return 1;
+}
+
+
 int RemJob(struct VariableShare * vsh,int job_id)
 {
- debug_say("REMove Job not implemented \n");
+ if ( (vsh->jobs_loaded==1)&&(job_id==0)) { vsh->jobs_loaded=0; vsh->job_list[0].action=NOACTION; return 1; }
+ if ( (vsh->jobs_loaded>1) )
+  {
+    unsigned int last_job = vsh->jobs_loaded-1;
+    SwapJobs(vsh,job_id,last_job);
+    vsh->job_list[last_job].action=NOACTION;
+    --vsh->jobs_loaded;
+    return 1;
+  }
+
+
+
  return 0;
 }
 
@@ -86,18 +114,31 @@ int Job_UpdateRemoteVariable(struct VariableShare * vsh,unsigned int our_varid,u
  return AddJob(vsh,our_varid,peer_varid,WRITETO);
 }
 
-int Job_UpdateLocalVariableToAllPeers(struct VariableShare * vsh,unsigned int our_varid)
+int Job_SingalLocalVariableChanged(struct VariableShare * vsh,unsigned int our_varid)
 {
- debug_say("TODO : Add jobs for each client that has registered itself as a client to our cache..");
-
- return 0;
+ return AddJob(vsh,our_varid,0,SIGNALCHANGED);
 }
 
 
 int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
 {
+   if (job_id>=vsh->jobs_loaded) { error("Job Execute call on jobid out of bounds\n"); return 0; }
 
-   return 0;
+   switch ( vsh->job_list[job_id].action )
+   {
+      case NOACTION : break;
+      case WRITETO : break;
+      case READFROM : break;
+      case SIGNALCHANGED : break;
+      case SYNC : break;
+      default :
+
+        fprintf(stderr,"Unhandled job type\n");
+      break;
+   };
+
+
+   return 1;
 }
 
 
@@ -109,8 +150,11 @@ int ExecutePendingJobsForClient(struct VariableShare *vsh,unsigned int client_id
    while (i<vsh->jobs_loaded)
     {
       if (client_id)
+      {
        if (ExecuteJob(vsh,i)) { ++successfull_jobs; } else
                               { fprintf(stderr,"Job %u on Share %s failed \n"); }
+
+      }
        ++i;
     }
   return successfull_jobs;

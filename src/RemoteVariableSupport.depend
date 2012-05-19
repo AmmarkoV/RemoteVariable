@@ -77,7 +77,7 @@
 
 1263088251 /home/ammar/Documents/Programming/RemoteVariableSupport/src/HashFunctions.h
 
-1337372445 source:/home/ammar/Documents/Programming/RemoteVariableSupport/src/NetworkFramework.c
+1337384291 source:/home/ammar/Documents/Programming/RemoteVariableSupport/src/NetworkFramework.c
 	<string.h>
 	<stdio.h>
 	<stdlib.h>
@@ -85,11 +85,13 @@
 	"NetworkFramework.h"
 	"JobTables.h"
 	"helper.h"
+	"ProtocolThreads.h"
+	"RemoteVariableSupport.h"
 
 1273759377 /home/ammar/Documents/Programming/RemoteVariableSupport/src/VariableDatabase.h
 	"RemoteVariableSupport.h"
 
-1337384269 /home/ammar/Documents/Programming/RemoteVariableSupport/src/RemoteVariableSupport.h
+1337470756 /home/ammar/Documents/Programming/RemoteVariableSupport/src/RemoteVariableSupport.h
 	<pthread.h>
 	<unistd.h>
 
@@ -102,15 +104,18 @@
 	<sys/uio.h>
 	"RemoteVariableSupport.h"
 
-1337372172 /home/ammar/Documents/Programming/RemoteVariableSupport/src/JobTables.h
+1337470474 /home/ammar/Documents/Programming/RemoteVariableSupport/src/JobTables.h
 	"RemoteVariableSupport.h"
 
 1337110846 /home/ammar/Documents/Programming/RemoteVariableSupport/src/helper.h
 
-1337371963 source:/home/ammar/Documents/Programming/RemoteVariableSupport/src/ProtocolThreads.c
+1337470241 source:/home/ammar/Documents/Programming/RemoteVariableSupport/src/ProtocolThreads.c
 	"ProtocolThreads.h"
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
 
-1337372465 /home/ammar/Documents/Programming/RemoteVariableSupport/src/ProtocolThreads.h
+1337470338 /home/ammar/Documents/Programming/RemoteVariableSupport/src/ProtocolThreads.h
 	"RemoteVariableSupport.h"
 
 1337377643 source:/home/ammar/Documents/Programming/RemoteVariableSupport/src/RemoteVariableSupport.c
@@ -129,7 +134,7 @@
 	<string.h>
 	"version.h"
 
-1337384307 /home/ammar/Documents/Programming/RemoteVariableSupport/src/version.h
+1337471419 /home/ammar/Documents/Programming/RemoteVariableSupport/src/version.h
 
 1337379673 source:/home/ammar/Documents/Programming/RemoteVariableSupport/src/JobTables.c
 	<stdio.h>
@@ -138,7 +143,7 @@
 	"RemoteVariableSupport.h"
 	"helper.h"
 
-1337381299 source:/home/ammar/Documents/Programming/RemoteVariableSupport/src/VariableDatabase.c
+1337470457 source:/home/ammar/Documents/Programming/RemoteVariableSupport/src/VariableDatabase.c
 	"VariableDatabase.h"
 	"helper.h"
 	<stdio.h>
