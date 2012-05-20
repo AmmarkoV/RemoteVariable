@@ -23,6 +23,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <sys/uio.h>
 /*
 
     HERE IS THE SPACE WHERE THE SERVER THREAD AND CLIENT THREAD OF EACH VARIABLE SHARE WILL
@@ -102,7 +110,7 @@ int Connect_Handshake(struct VariableShare * vsh,int peersock)
 int Accept_Handshake(struct VariableShare * vsh,int peersock)
 {
 
-  char message[64]={0};
+  char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
   // 1ST MESSAGE SENT
   strcpy(message,"HELLO\0");
   SendRAWTo(peersock,message,strlen(message));
@@ -188,16 +196,34 @@ int SendVariable_Handshake(struct VariableShare * vsh)
 */
 
 
-int MasterSignalChange_Handshake(struct VariableShare * vsh,unsigned int var_changed)
+int MasterSignalChange_Handshake(struct VariableShare * vsh,unsigned int var_changed,int peersock)
 {
+  char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
+  // 1ST MESSAGE SENT
+  sprintf(message,"SIG=%s\n",vsh->share.variables->ptr_name);
+  SendRAWTo(peersock,message,strlen(message));
 
-  return 0;
+  RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+  if (strncmp(message,"OK",2)!=0) { error("Error at signal change handshaking : 1"); return 0;}
+
+
+  return 1;
 }
 
-int MasterAcceptChange_Handshake(struct VariableShare * vsh)
+int MasterAcceptChange_Handshake(struct VariableShare * vsh,int peersock)
 {
+  char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
+  RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+  fprintf(stderr,"Received %s signal\n",message);
+  if (strncmp(message,"SIG=",4)!=0) { error("Error at accept change  handshaking : 1"); return 0;}
+  if ( strlen(message) <= 4 ) { error("Error at accepting change  handshake , very small share name "); return 0; }
+  memmove (message,message+4,strlen(message)-3);
 
-  return 0;
+  fprintf(stderr,"Peer Signaled that variable %s changed \n",message);
+  strcpy(message,"OK\0");
+  SendRAWTo(peersock,message,2);
+
+  return 1;
 }
 
 
@@ -208,3 +234,21 @@ int MasterAcceptChange_Handshake(struct VariableShare * vsh)
   ALL THE MESSAGES SENT/RECEVEIED SHOULD BE PROCESSED HERE
 
 */
+
+
+int ProtocolServeResponse(struct VariableShare * vsh , unsigned int peersock)
+{
+   char peek_request[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
+   int data_received = recv(peersock, (char*) peek_request,RVS_MAX_RAW_HANDSHAKE_MESSAGE, MSG_PEEK);
+   if (data_received>0)
+   {
+     if (strncmp(peek_request,"SIG=",4)==0)
+      { return MasterAcceptChange_Handshake(vsh,peersock); } else
+      {
+        fprintf(stderr,"Uncatched incoming message = %s \n",peek_request);
+      }
+   }
+   return 0;
+}
+
+

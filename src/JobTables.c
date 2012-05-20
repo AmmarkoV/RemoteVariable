@@ -128,14 +128,22 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
    unsigned int peer = vsh->job_list[job_id].remote_peer_id;
    unsigned int var_id = vsh->job_list[job_id].our_var_id;
    char * variable_name = vsh->share.variables[var_id].ptr_name;
-
+   unsigned int peer_socket = vsh->peer_list[peer].socket_to_client;
 
    switch ( vsh->job_list[job_id].action )
    {
       case NOACTION : break;
       case WRITETO  : fprintf(stderr,"Simulating Execution of Write to peer : %u of variable %s with var id %u \n",peer,variable_name,var_id); DoneWithJob(vsh,job_id);  break;
       case READFROM : fprintf(stderr,"Simulating Execution of Read from peer : %u of variable %s with var id %u \n",peer,variable_name,var_id); DoneWithJob(vsh,job_id);  break;
-      case SIGNALCHANGED : fprintf(stderr,"Simulating Execution of Singal Changed to peer : %u of variable %s with var id %u \n",peer,variable_name,var_id); DoneWithJob(vsh,job_id);  break;
+      case SIGNALCHANGED : fprintf(stderr,"Simulating Execution of Singal Changed to peer : %u of variable %s with var id %u \n",peer,variable_name,var_id);
+                            if ( MasterSignalChange_Handshake(vsh,var_id,peer_socket) )
+                             {
+                                DoneWithJob(vsh,job_id);
+                             } else
+                             {
+                                fprintf(stderr,"Could not signal change\n");
+                             }
+                            break;
       case SYNC : break;
       default :
         fprintf(stderr,"Unhandled job type\n");

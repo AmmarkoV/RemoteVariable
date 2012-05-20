@@ -27,6 +27,14 @@
 #include "ProtocolThreads.h"
 #include "RemoteVariableSupport.h"
 
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <sys/uio.h>
+
 void * RemoteVariableServer_Thread(void * ptr);
 void * RemoteVariableClient_Thread(void * ptr);
 
@@ -81,6 +89,17 @@ int SendVariableTo(struct VariableShare * vsh,int clientsock,unsigned int variab
   return 0;
 }
 
+
+int RecvFileFrom(struct VariableShare * vsh,int clientsock,unsigned int variable_id)
+{
+  return 0;
+}
+
+int SendFileTo(struct VariableShare * vsh,int clientsock,unsigned int variable_id)
+{
+  return 0;
+}
+
 // ________________________________________________________
 // HANDLE CLIENT
 
@@ -88,7 +107,9 @@ int SendVariableTo(struct VariableShare * vsh,int clientsock,unsigned int variab
 int HandleClient(struct VariableShare * vsh,int clientsock,struct sockaddr_in client,unsigned int clientlen)
 {
 
-      struct NetworkRequestGeneralPacket request={0};
+     return ProtocolServeResponse(vsh,clientsock);
+
+/*    struct NetworkRequestGeneralPacket request={0};
       int data_received = recv(clientsock, (char*) & request, sizeof (request), 0);
 
 
@@ -105,18 +126,21 @@ int HandleClient(struct VariableShare * vsh,int clientsock,struct sockaddr_in cl
          packeterror = 0;
 
 
-         /*DISASSEMBLE REQUEST @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-           RQST ID        NAME       PAYLOAD SIZE
-           1 byte   |   32 bytes   |   2 bytes       ....  PACKET CONTINUES DATA WILL BE RECEIVED BY SUB FUNCTIONS ...................
-              A            B             C
-         */
+         //DISASSEMBLE REQUEST @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+         //RQST ID        NAME       PAYLOAD SIZE
+         //1 byte   |   32 bytes   |   2 bytes       ....  PACKET CONTINUES DATA WILL BE RECEIVED BY SUB FUNCTIONS ...................
+         //   A            B             C
+         // ---------------------------------------------------------------------------------------
          if (request.RequestType>=INVALID_TYPE)
-         { /*INVALID PACKET*/ packeterror=1; error("Invalid Packet Type Received, Wrong Version/Incompatible Client ?"); } else
+         { //INVALID PACKET
+             packeterror=1; error("Invalid Packet Type Received, Wrong Version/Incompatible Client ?"); } else
          if (request.RequestType==ERROR)
-         { /* ERROR PACKET*/  packeterror=1; error("Error Packet Received");
+         { // ERROR PACKET
+             packeterror=1; error("Error Packet Received");
          } else
          if (request.RequestType==OK)
-         { /* OK PACKET */ packeterror=1; error("Packet Acknowledgement Received"); }
+         { // OK PACKET
+             packeterror=1; error("Packet Acknowledgement Received"); }
 
          if ( packeterror == 0 )
          { debug_say("No Packet Request Error , Passing through to VariableDatabase Check");
@@ -149,7 +173,7 @@ int HandleClient(struct VariableShare * vsh,int clientsock,struct sockaddr_in cl
           fprintf(stderr,"Incoming Request not passed through..\n");
          }
      }//RECEIVED PACKET OK
-
+*/
    return 1;
 } // CLIENT HANDLE !
 

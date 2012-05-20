@@ -77,7 +77,7 @@
 
 1263088251 /home/ammar/Documents/Programming/RemoteVariableSupport/src/HashFunctions.h
 
-1337384291 source:/home/ammar/Documents/Programming/RemoteVariableSupport/src/NetworkFramework.c
+1337553451 source:/home/ammar/Documents/Programming/RemoteVariableSupport/src/NetworkFramework.c
 	<string.h>
 	<stdio.h>
 	<stdlib.h>
@@ -87,15 +87,21 @@
 	"helper.h"
 	"ProtocolThreads.h"
 	"RemoteVariableSupport.h"
+	<sys/types.h>
+	<sys/socket.h>
+	<netinet/in.h>
+	<arpa/inet.h>
+	<netdb.h>
+	<sys/uio.h>
 
 1273759377 /home/ammar/Documents/Programming/RemoteVariableSupport/src/VariableDatabase.h
 	"RemoteVariableSupport.h"
 
-1337471971 /home/ammar/Documents/Programming/RemoteVariableSupport/src/RemoteVariableSupport.h
+1337472389 /home/ammar/Documents/Programming/RemoteVariableSupport/src/RemoteVariableSupport.h
 	<pthread.h>
 	<unistd.h>
 
-1337378641 /home/ammar/Documents/Programming/RemoteVariableSupport/src/NetworkFramework.h
+1337552002 /home/ammar/Documents/Programming/RemoteVariableSupport/src/NetworkFramework.h
 	<sys/types.h>
 	<sys/socket.h>
 	<netinet/in.h>
@@ -104,7 +110,7 @@
 	<sys/uio.h>
 	"RemoteVariableSupport.h"
 
-1337470474 /home/ammar/Documents/Programming/RemoteVariableSupport/src/JobTables.h
+1337472350 /home/ammar/Documents/Programming/RemoteVariableSupport/src/JobTables.h
 	"RemoteVariableSupport.h"
 
 1337110846 /home/ammar/Documents/Programming/RemoteVariableSupport/src/helper.h
@@ -115,7 +121,7 @@
 	<stdlib.h>
 	<string.h>
 
-1337470338 /home/ammar/Documents/Programming/RemoteVariableSupport/src/ProtocolThreads.h
+1337551847 /home/ammar/Documents/Programming/RemoteVariableSupport/src/ProtocolThreads.h
 	"RemoteVariableSupport.h"
 
 1337377643 source:/home/ammar/Documents/Programming/RemoteVariableSupport/src/RemoteVariableSupport.c
@@ -136,7 +142,7 @@
 
 1337472111 /home/ammar/Documents/Programming/RemoteVariableSupport/src/version.h
 
-1337379673 source:/home/ammar/Documents/Programming/RemoteVariableSupport/src/JobTables.c
+1337472721 source:/home/ammar/Documents/Programming/RemoteVariableSupport/src/JobTables.c
 	<stdio.h>
 	<stdlib.h>
 	"JobTables.h"

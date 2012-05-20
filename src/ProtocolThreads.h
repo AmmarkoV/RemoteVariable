@@ -28,8 +28,9 @@ int InitCloneShare_Handshake(struct VariableShare * vsh);
 int AcceptCloneShare_Handshake(struct VariableShare * vsh);
 int RequestVariable_Handshake(struct VariableShare * vsh);
 int SendVariable_Handshake(struct VariableShare * vsh);
-int MasterSignalChange_Handshake(struct VariableShare * vsh,unsigned int var_changed);
-int MasterAcceptChange_Handshake(struct VariableShare * vsh);
+int MasterSignalChange_Handshake(struct VariableShare * vsh,unsigned int var_changed,int peersock);
+int MasterAcceptChange_Handshake(struct VariableShare * vsh,int peersock);
 
+int ProtocolPickResponse(struct VariableShare * vsh , unsigned int peersock);
 
 #endif // PROTOCOLTHREADS_H_INCLUDED
