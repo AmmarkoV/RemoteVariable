@@ -33,4 +33,8 @@ int Job_UpdateRemoteVariable(struct VariableShare * vsh,unsigned int our_varid,u
 int Job_SingalLocalVariableChanged(struct VariableShare * vsh,unsigned int our_varid);
 
 int ExecutePendingJobs(struct VariableShare *vsh);
+
+
+void * JobExecutioner_Thread(void * ptr);
+int StartJobExecutioner(struct VariableShare * vsh);
 #endif // JOBTABLES_H_INCLUDED

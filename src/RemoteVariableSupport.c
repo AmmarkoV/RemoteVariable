@@ -58,6 +58,7 @@ struct VariableShare * Start_VariableSharing(char * sharename,char * bindaddress
                             }
     StartRemoteVariableServer(vsh);
     StartAutoRefreshVariable(vsh);
+    StartJobExecutioner(vsh);
     return vsh;
 }
 
@@ -83,6 +84,7 @@ struct VariableShare * ConnectToRemote_VariableSharing(char * sharename,char * I
 
     StartRemoteVariableConnection(vsh);
     StartAutoRefreshVariable(vsh);
+    StartJobExecutioner(vsh);
     return vsh;
 }
 

@@ -98,7 +98,7 @@ struct ShareJob
 {
      unsigned char status;
 
-     unsigned int our_sharelist_id;
+     unsigned int our_var_id;
      unsigned int remote_peer_id;
 
      char action; // 0 no action , 1 = write to , 2 = read from , 3 = check if it is the same on the other end
@@ -149,6 +149,8 @@ struct VariableShare
     unsigned int peers_active;
 
 
+    pthread_t job_thread;
+    unsigned int stop_job_thread;
 
     pthread_t refresh_thread;
     unsigned int stop_refresh_thread;

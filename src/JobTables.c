@@ -28,7 +28,7 @@ int AddJob(struct VariableShare * vsh,unsigned int our_varid,unsigned int peer_i
  if (  vsh->jobs_loaded < RVS_MAX_JOBS_PENDING )
   { // NEEDS TO BE REWRITTEN TO KEEP A SORTED LIST!
     unsigned int where_to_add=vsh->jobs_loaded;
-    vsh->job_list[where_to_add].our_sharelist_id=our_varid;
+    vsh->job_list[where_to_add].our_var_id=our_varid;
     vsh->job_list[where_to_add].remote_peer_id=peer_id;
     vsh->job_list[where_to_add].action=operation_type;
     vsh->job_list[where_to_add].time=central_timer;
@@ -79,6 +79,7 @@ int DoneWithJob(struct VariableShare * vsh,int job_id)
  if ( job_id < vsh->jobs_loaded )
   {
      vsh->job_list[job_id].action=NOACTION;
+     RemJob(vsh,job_id);
   }
  return 0;
 }
@@ -124,16 +125,21 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
 {
    if (job_id>=vsh->jobs_loaded) { error("Job Execute call on jobid out of bounds\n"); return 0; }
 
+   unsigned int peer = vsh->job_list[job_id].remote_peer_id;
+   unsigned int var_id = vsh->job_list[job_id].our_var_id;
+   char * variable_name = vsh->share.variables[var_id].ptr_name;
+
+
    switch ( vsh->job_list[job_id].action )
    {
       case NOACTION : break;
-      case WRITETO : break;
-      case READFROM : break;
-      case SIGNALCHANGED : break;
+      case WRITETO  : fprintf(stderr,"Simulating Execution of Write to peer : %u of variable %s with var id %u \n",peer,variable_name,var_id); DoneWithJob(vsh,job_id);  break;
+      case READFROM : fprintf(stderr,"Simulating Execution of Read from peer : %u of variable %s with var id %u \n",peer,variable_name,var_id); DoneWithJob(vsh,job_id);  break;
+      case SIGNALCHANGED : fprintf(stderr,"Simulating Execution of Singal Changed to peer : %u of variable %s with var id %u \n",peer,variable_name,var_id); DoneWithJob(vsh,job_id);  break;
       case SYNC : break;
       default :
-
         fprintf(stderr,"Unhandled job type\n");
+        return 0;
       break;
    };
 
@@ -149,10 +155,10 @@ int ExecutePendingJobsForClient(struct VariableShare *vsh,unsigned int client_id
    unsigned int i=0;
    while (i<vsh->jobs_loaded)
     {
-      if (client_id)
+      if (client_id==vsh->job_list[i].remote_peer_id)
       {
        if (ExecuteJob(vsh,i)) { ++successfull_jobs; } else
-                              { fprintf(stderr,"Job %u on Share %s failed \n"); }
+                              { fprintf(stderr,"Job %u on Share %s failed \n",i,vsh->sharename); }
 
       }
        ++i;
@@ -169,8 +175,41 @@ int ExecutePendingJobs(struct VariableShare *vsh)
    while (i<vsh->jobs_loaded)
     {
        if (ExecuteJob(vsh,i)) { ++successfull_jobs; } else
-                              { fprintf(stderr,"Job %u on Share %s failed \n"); }
+                              { fprintf(stderr,"Job %u on Share %s failed \n",i,vsh->sharename); }
        ++i;
     }
   return successfull_jobs;
 }
+
+
+
+
+void *
+JobExecutioner_Thread(void * ptr)
+{
+  debug_say("JobExecutioner Thread started..\n");
+  struct VariableShare *vsh;
+  vsh = (struct VariableShare *) ptr;
+
+   unsigned int total_jobs_done=0 ;
+   while ( vsh->stop_job_thread==0 )
+   {
+     usleep(1000);
+     total_jobs_done+=ExecutePendingJobs(vsh);
+   }
+
+   return 0;
+}
+
+/* THREAD STARTER */
+int StartJobExecutioner(struct VariableShare * vsh)
+{
+  vsh->stop_job_thread=0;
+  int retres = pthread_create( &vsh->job_thread, NULL,  JobExecutioner_Thread ,(void*) vsh);
+  if (retres!=0) retres = 0; else
+                 retres = 1;
+  return retres;
+}
+
+
+
