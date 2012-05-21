@@ -40,14 +40,14 @@ void * RemoteVariableClient_Thread(void * ptr);
 
 int SendRAWTo(int clientsock,char * message,unsigned int length)
 {
-  fprintf(stderr,"Trying to send %s \n",message);
+  fprintf(stderr,"Trying to send `%s` \n",message);
   return send(clientsock,message,length, 0);
 }
 
 int RecvRAWFrom(int clientsock,char * message,unsigned int length)
 {
   int retres=recv(clientsock,message,length, 0);
-  fprintf(stderr,"Received %s \n",message);
+  fprintf(stderr,"Received `%s` \n",message);
   return retres;
 }
 

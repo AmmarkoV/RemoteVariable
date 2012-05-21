@@ -129,7 +129,7 @@ int DeleteVariable_Database(struct VariableShare * vsh,char * var_name)
   return 0;
 }
 
-signed int FindVariable_Database(struct VariableShare * vsh,char * var_name)
+unsigned int FindVariable_Database(struct VariableShare * vsh,char * var_name)
 {
  if ( VariableShareOk(vsh) == 0 ) return 0;
 
@@ -138,7 +138,7 @@ signed int FindVariable_Database(struct VariableShare * vsh,char * var_name)
   {
      if ( strcmp(vsh->share.variables[i].ptr_name,var_name)==0 )
       {
-        return (signed int ) i;
+        return i+1;
       }
   }
  return 0;
@@ -176,6 +176,7 @@ int RefreshLocalVariable_VariableDatabase(struct VariableShare * vsh,char * vari
       return 0;
     } else
     {
+      --var_id; // FindVariableDatabase returns +1 results ( to signal failure with 0 )
       /*TODO*/
       //vsh->share.variables[var_id].
       //UpdateLocalVariable(vsh,  our_varid, peer_varid);
@@ -193,6 +194,7 @@ int RefreshRemoteVariable_VariableDatabase(struct VariableShare * vsh,char * var
       return 0;
     } else
     {
+      --var_id; // FindVariableDatabase returns +1 results ( to signal failure with 0 )
       /*TODO*/
       //vsh->share.variables[var_id].
       //UpdateRemoteVariable(vsh,  our_varid, peer_varid);
@@ -201,7 +203,7 @@ int RefreshRemoteVariable_VariableDatabase(struct VariableShare * vsh,char * var
 }
 
 
-int MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,char * variable_name)
+int MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,char * variable_name,int clientsock)
 {
    int var_id = FindVariable_Database(vsh,variable_name);
    if ( var_id == 0 )
@@ -210,8 +212,9 @@ int MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,char 
       return 0;
     } else
     {
+      --var_id; // FindVariableDatabase returns +1 results ( to signal failure with 0 )
       fprintf(stderr,"Variable %s has been marked , as \"needs refresh\" \n",variable_name);
-      vsh->share.variables[var_id].flag_needs_refresh=1;
+      vsh->share.variables[var_id].flag_needs_refresh_from_sock=clientsock;
     }
    return 0;
 }
@@ -231,7 +234,7 @@ int IfLocalVariableChanged_SignalUpdateToJoblist(struct VariableShare * vsh,unsi
   return 0;
 }
 
-int RefreshAllLocalVariables(struct VariableShare * vsh)
+int SignalUpdatesForAllLocalVariablesThatNeedIt(struct VariableShare * vsh)
 {
  if ( vsh->share.total_variables_shared == 0 ) { return -1; /* NO VARIABLES TO SHARE OR UPDATE!*/}
  int retres=0;
@@ -247,6 +250,27 @@ int RefreshAllLocalVariables(struct VariableShare * vsh)
 }
 
 
+
+int RefreshAllVariablesThatNeedIt(struct VariableShare *vsh)
+{
+   unsigned int added_jobs=0;
+   unsigned int i=0;
+   while (i<vsh->share.total_variables_shared)
+    {
+       if ( vsh->share.variables[i].flag_needs_refresh_from_sock > 0 )
+        {
+           fprintf(stderr,"Detected that a variable needs refresh , and automatically adding a job to receive it\n");
+           AddJob(vsh,i,vsh->share.variables[i].flag_needs_refresh_from_sock ,READFROM);
+           ++added_jobs;
+        }
+       ++i;
+    }
+  return added_jobs;
+}
+
+
+
+
 void *
 AutoRefreshVariable_Thread(void * ptr)
 {
@@ -255,7 +279,7 @@ AutoRefreshVariable_Thread(void * ptr)
   vsh = (struct VariableShare *) ptr;
 
    unsigned int total_variables_changed=0;
-   unsigned int variables_changed=0;
+   unsigned int variables_changed=0,variables_refreshed=0;
    while ( (vsh->global_policy==VSP_AUTOMATIC) && (vsh->stop_refresh_thread==0) )
    {
        usleep(vsh->share.auto_refresh_every_msec);
@@ -264,9 +288,13 @@ AutoRefreshVariable_Thread(void * ptr)
              usleep(10000);
           } else
           {
-             variables_changed=RefreshAllLocalVariables(vsh);
+             variables_changed=SignalUpdatesForAllLocalVariablesThatNeedIt(vsh);
              total_variables_changed+=variables_changed;
-             fprintf(stderr,"%u variables changed in this loop\n",variables_changed);
+             fprintf(stderr,"%u variables changed ",variables_changed);
+
+
+             variables_refreshed=RefreshAllVariablesThatNeedIt(vsh);
+             fprintf(stderr,"%u variables refreshed\n",variables_refreshed);
           }
    }
    fprintf(stderr,"%u total variables changed detected by autorefresh thread\n",total_variables_changed);

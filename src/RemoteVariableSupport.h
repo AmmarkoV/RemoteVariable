@@ -60,7 +60,8 @@ struct ShareListItem
     unsigned int permissions;
 
     unsigned char lock_refresh;
-    unsigned char flag_needs_refresh;
+
+    int flag_needs_refresh_from_sock;
 
     unsigned long hash;
 

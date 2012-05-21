@@ -178,6 +178,9 @@ int ExecutePendingJobs(struct VariableShare *vsh)
 
 
 
+
+
+
 void *
 JobExecutioner_Thread(void * ptr)
 {
@@ -185,7 +188,7 @@ JobExecutioner_Thread(void * ptr)
   struct VariableShare *vsh;
   vsh = (struct VariableShare *) ptr;
 
-   unsigned int total_jobs_done=0 ;
+   unsigned int total_jobs_done=0;
    while ( vsh->stop_job_thread==0 )
    {
      usleep(1000);

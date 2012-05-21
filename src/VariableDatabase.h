@@ -28,9 +28,9 @@ int Destroy_VariableDatabase(struct VariableShare * vsh);
 
 int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int permissions,void * ptr,unsigned int ptr_size);
 int DeleteVariable_Database(struct VariableShare * vsh,char * var_name);
-signed int FindVariable_Database(struct VariableShare * vsh,char * var_name);
+unsigned int FindVariable_Database(struct VariableShare * vsh,char * var_name);
 
-int MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,char * variable_name);
+int  MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,char * variable_name,int clientsock);
 
 int CanWriteTo_VariableDatabase(struct VariableShare * vsh,unsigned int var_spot);
 int CanReadFrom_VariableDatabase(struct VariableShare * vsh,unsigned int var_spot);

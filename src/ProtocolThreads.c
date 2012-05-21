@@ -201,7 +201,7 @@ int MasterSignalChange_Handshake(struct VariableShare * vsh,unsigned int var_cha
 {
   char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
   // 1ST MESSAGE SENT
-  sprintf(message,"SIG=%s\n",vsh->share.variables->ptr_name);
+  sprintf(message,"SIG=%s\0",vsh->share.variables->ptr_name);
   SendRAWTo(peersock,message,strlen(message));
 
   RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
@@ -225,7 +225,7 @@ int MasterAcceptChange_Handshake(struct VariableShare * vsh,int peersock)
 
   fprintf(stderr,"Peer Signaled that variable %s changed \n",message);
   strcpy(message,"OK\0");
-  SendRAWTo(peersock,message,2);
+  SendRAWTo(peersock,message,3);
 
 
   return 1;
