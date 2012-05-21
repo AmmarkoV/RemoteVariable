@@ -29,12 +29,6 @@ int main()
         return 1;
       }
 
-/*
-    if (PeersActive_VariableShare(vsh)==0)
-     {
-        fprintf(stderr,"Client : Error No Peers returned by Variable Sharing\n");
-        return 1;
-     }*/
 
 
     int SHARED_VAR=0;

@@ -68,11 +68,17 @@ int RemJob(struct VariableShare * vsh,int job_id)
     --vsh->jobs_loaded;
     return 1;
   }
-
-
-
  return 0;
 }
+
+
+int ClearAllJobs(struct VariableShare * vsh)
+{
+  fprintf(stderr,"Flushing all jobs\n");
+  vsh->jobs_loaded=0;
+  return 1;
+}
+
 
 int DoneWithJob(struct VariableShare * vsh,int job_id)
 {
@@ -82,26 +88,6 @@ int DoneWithJob(struct VariableShare * vsh,int job_id)
      RemJob(vsh,job_id);
   }
  return 0;
-}
-
-int GetNextJobIDOperation(struct VariableShare * vsh,char operation_type)
-{
-  if (operation_type==NOACTION) { return -1; /*No sense in returning the next null job :P */ }
-
-  unsigned int total_jobs=vsh->jobs_loaded;
-  unsigned int i=0;
-   if ( total_jobs > 0 )
-    {
-        for ( i=0; i<total_jobs; i++)
-         {
-              if (vsh->job_list[i].action == operation_type)
-                 {
-                      return i;
-                 }
-         }
-    }
-
-  return 0;
 }
 
 

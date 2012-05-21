@@ -30,6 +30,7 @@ extern "C" {
 
 
 
+#define RVS_MAX_PEERS 100
 #define RVS_MAX_JOBS_PENDING 100
 #define RVS_DEFAULT_AUTO_REFRESH_OF_SHARE 1000
 
@@ -145,7 +146,7 @@ struct VariableShare
     unsigned int jobs_loaded;
 
     struct SharePeer master;
-    struct SharePeer peer_list[100];
+    struct SharePeer peer_list[RVS_MAX_PEERS];
     unsigned int peers_active;
 
 

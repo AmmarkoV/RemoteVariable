@@ -26,5 +26,6 @@ void error(char * msg);
 int debug_msg();
 void debug_say(char * msg);
 void debug_say_nocr(char * msg);
+void remove_ending_nl(char * str);
 
 #endif // HELPER_H_INCLUDED

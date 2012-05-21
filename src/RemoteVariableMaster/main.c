@@ -28,12 +28,14 @@ int main()
 
 
     // We start up with a Variable with the value 666 , we expect the client program to alter it to 1 after it successfully connects
-    int SHARED_VAR=666;
+    int SHARED_VAR=0;
     if ( Add_VariableToSharingList(vsh,"SHARED_VAR",7,&SHARED_VAR,sizeof(SHARED_VAR)) == 0 )
      {
       fprintf(stderr,"Master : Error Adding Shared Variable\n");
       return 1;
      }
+
+    SHARED_VAR=666; // This will propagate to the client
 
     printf("Master : Starting Self Test waiting for value 1 from peer !\n");
     if (!wait_for_var_to_become_x(&SHARED_VAR,WAIT_TIME,1)) { fprintf(stderr,"Master : Failed the test\n"); return 1; }

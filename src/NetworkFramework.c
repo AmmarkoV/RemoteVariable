@@ -104,79 +104,64 @@ int SendFileTo(struct VariableShare * vsh,int clientsock,unsigned int variable_i
 // HANDLE CLIENT
 
 
-int HandleClient(struct VariableShare * vsh,int clientsock,struct sockaddr_in client,unsigned int clientlen)
+
+int AddPeer(struct VariableShare * vsh,char * name,unsigned int port , int clientsock)
 {
+  if (vsh->peers_active < RVS_MAX_PEERS)
+   {
+       unsigned int pos = vsh->peers_active;
+       strncpy(vsh->peer_list[pos].IP,name,RVS_MAX_SHARE_IP_CHARS);
+       vsh->peer_list[pos].port=port;
+       vsh->peer_list[pos].socket_to_client = clientsock;
+       ++vsh->peers_active;
+       return 1;
+   }
+  return 0;
+}
 
-     return ProtocolServeResponse(vsh,clientsock);
-
-/*    struct NetworkRequestGeneralPacket request={0};
-      int data_received = recv(clientsock, (char*) & request, sizeof (request), 0);
-
-
-
-      int packeterror = 0;
-     if ( data_received < 0 )
-     {
-        //We have a disconnect
-        error("Error RecvFrom , dropping session");
-        return 0;
-     }else
-     {
-         //RECEIVED PACKET OK
-         packeterror = 0;
+int SwapPeers(struct VariableShare * vsh,int peer_id1,int peer_id2)
+{
+ if ( (peer_id1<vsh->peers_active)&&(peer_id2<vsh->peers_active) )
+  {
+    struct SharePeer temp=vsh->peer_list[peer_id1];
+    vsh->peer_list[peer_id1]=vsh->peer_list[peer_id2];
+    vsh->peer_list[peer_id2]=temp;
+  } else
+  {
+    fprintf(stderr,"SwapPeers called for peers %u and %u which are out of bounds ( %u ) \n",peer_id1,peer_id2,vsh->peers_active);
+    return 0;
+  }
+ return 1;
+}
 
 
-         //DISASSEMBLE REQUEST @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-         //RQST ID        NAME       PAYLOAD SIZE
-         //1 byte   |   32 bytes   |   2 bytes       ....  PACKET CONTINUES DATA WILL BE RECEIVED BY SUB FUNCTIONS ...................
-         //   A            B             C
-         // ---------------------------------------------------------------------------------------
-         if (request.RequestType>=INVALID_TYPE)
-         { //INVALID PACKET
-             packeterror=1; error("Invalid Packet Type Received, Wrong Version/Incompatible Client ?"); } else
-         if (request.RequestType==ERROR)
-         { // ERROR PACKET
-             packeterror=1; error("Error Packet Received");
-         } else
-         if (request.RequestType==OK)
-         { // OK PACKET
-             packeterror=1; error("Packet Acknowledgement Received"); }
+int RemPeer(struct VariableShare * vsh,int peer_id)
+{
+ if ( (vsh->peers_active==1)&&(peer_id==0)) { vsh->peers_active=0; return 1; }
+ if ( (vsh->peers_active>1) )
+  {
+    unsigned int last_peer = vsh->peers_active-1;
+    SwapJobs(vsh,peer_id,last_peer);
+    --vsh->peers_active;
+    return 1;
+  }
+ return 0;
+}
 
-         if ( packeterror == 0 )
-         { debug_say("No Packet Request Error , Passing through to VariableDatabase Check");
-           if ( (request.RequestType==READVAR) || (request.RequestType==WRITEVAR) )
-           {
-              debug_say("Generic Packet should contain Variable Packet as a payload");
-              fprintf(stderr,"Incoming Packet info \n Name : %s \n Type : %u \n Data Size : %u \n",request.name,request.RequestType,request.data_size);
 
-              if ( request.RequestType==READVAR)
-               {
-                 signed int varnum = FindVariable_Database(vsh,request.name);
-                 if ( CanWriteTo_VariableDatabase(vsh,varnum) == 1 )
-                  {
-                   RecvVariableFrom(vsh,clientsock,varnum);
-                  } else
-                  { fprintf(stderr,"No permission to READ \n");}
-               } else
-              if ( request.RequestType==WRITEVAR)
-               {
-                 signed int varnum = FindVariable_Database(vsh,request.name);
-                 if ( CanWriteTo_VariableDatabase(vsh,varnum) == 1 )
-                 {
-                  SendVariableTo(vsh,clientsock,varnum);
-                 } else
-                 { fprintf(stderr,"No permission to WRITE \n");}
-               }
-           }
-         }else
-         {
-          fprintf(stderr,"Incoming Request not passed through..\n");
-         }
-     }//RECEIVED PACKET OK
-*/
-   return 1;
-} // CLIENT HANDLE !
-
+int RemPeerBySock(struct VariableShare * vsh,int clientsock)
+{
+  unsigned int i=0;
+  while ( i < vsh->peers_active )
+   {
+      if (vsh->peer_list[i].socket_to_client == clientsock )
+       {
+           return RemPeer(vsh,i);
+       }
+      ++i;
+   }
+  return 0;
+}
 
 int HandleClientLoop(struct VariableShare * vsh,int clientsock,struct sockaddr_in client,unsigned int clientlen)
 {
@@ -196,9 +181,11 @@ int HandleClientLoop(struct VariableShare * vsh,int clientsock,struct sockaddr_i
 
    unsigned int client_online=1;
 
+
    struct NetworkRequestGeneralPacket peek_request={0};
    int data_received = 0;
 
+   AddPeer(vsh,inet_ntoa(client.sin_addr),0,clientsock);
 
    while (client_online)
     {
@@ -218,16 +205,20 @@ int HandleClientLoop(struct VariableShare * vsh,int clientsock,struct sockaddr_i
        {
         fprintf(stderr,"Waiting For Client input\n");
 
-        if (HandleClient(vsh,clientsock,client,clientlen) )
+       // if (HandleClient(vsh,clientsock,client,clientlen) )
+          if(ProtocolServeResponse(vsh,clientsock))
           {
-
+            fprintf(stderr,"Handled Client successfully\n");
           } else
           {
+           fprintf(stderr,"Error while handling client\n");
            client_online=0;
           }
         usleep(5000);
        }
     }
+
+    RemPeerBySock(vsh,clientsock);
 
     return 1;
 }
@@ -265,8 +256,10 @@ RemoteVariableServer_Thread(void * ptr)
   {
     debug_say("Waiting for a client");
     /* Wait for client connection */
-    if ( (clientsock = accept(serversock,(struct sockaddr *) &client, &clientlen)) < 0) { error("Failed to accept client connection"); } else
+    if ( (clientsock = accept(serversock,(struct sockaddr *) &client, &clientlen)) < 0) { error("Failed to accept client connection"); }
+      else
       {
+          fprintf(stderr,"Accepted new client \n");
            if (!HandleClientLoop(vsh,clientsock,client,clientlen))
             {
                 fprintf(stderr,"Client failed, while handling him\n");
@@ -368,8 +361,10 @@ RemoteVariableClient_Thread(void * ptr)
       return 0;
     }
 
+
+   int peersock =  vsh->master.socket_to_client;
    //First thing to do negotiate with peer about the list , passwords etc
-   if (Connect_Handshake(vsh,vsh->master.socket_to_client))
+   if (Connect_Handshake(vsh,peersock))
      {
        debug_say("Successfull connection handshake\n");
      } else
@@ -379,6 +374,7 @@ RemoteVariableClient_Thread(void * ptr)
        return 0;
      }
 
+   // ClearAllJobs(vsh); // <- This has to be added later to enforce sync issues .. we are now synced to master so clear all local jobs
 
    int new_job_id=-1;
    while (vsh->stop_client_thread==0)
@@ -389,43 +385,11 @@ RemoteVariableClient_Thread(void * ptr)
         FindJobsFrom_VariableDatabase(vsh);
       }*/
 
-
+     ProtocolServeResponse(vsh,peersock);
      debug_say_nocr(".c."); //Client Thread Waiting for a job
-     usleep(100);
-     /* */
-     new_job_id=GetNextJobIDOperation(vsh,READFROM);
-     if (new_job_id!=-1)
-       {
-           /* TODO CALL THE NETWORK FUNCTION
-           TO DO THE TCP/UDP TRANSACTION AND THEN DECLARE THE JOB DONE
-           WHERE -1 GOES I SHOULD ADD THE RESULT OF THE OPERATION
-           */
-           if ( -1 != -1 )
-             { /* JOB DONE! */
-               DoneWithJob(vsh,new_job_id);
-               RemJob(vsh,new_job_id);
-               new_job_id=-1;
-             }
-       }
+     usleep(1000);
 
-     new_job_id=GetNextJobIDOperation(vsh,WRITETO);
 
-     if (new_job_id!=-1)
-       {
-           /* TODO CALL THE NETWORK FUNCTION
-           TO DO THE TCP/UDP TRANSACTION AND THEN DECLARE THE JOB DONE
-           WHERE -1 GOES I SHOULD ADD THE RESULT OF THE OPERATION
-
-           */
-           //SendVariableTo(struct VariableShare * vsh,int clientsock,unsigned int variable_id)
-
-           if ( -1 != -1 )
-             { /* JOB DONE! */
-               DoneWithJob(vsh,new_job_id);
-               RemJob(vsh,new_job_id);
-               new_job_id=-1;
-             }
-       }
    }
 
   return 0;
@@ -433,6 +397,7 @@ RemoteVariableClient_Thread(void * ptr)
 
 // ________________________________________________________
 // THREAD STARTERS
+// ________________________________________________________
 
 int
 StartRemoteVariableServer(struct VariableShare * vsh)

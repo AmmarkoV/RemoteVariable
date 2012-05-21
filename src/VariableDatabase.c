@@ -114,6 +114,8 @@ int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int
     vsh->share.variables[spot_to_take].ptr=ptr;
     vsh->share.variables[spot_to_take].size_of_ptr=ptr_size;
 
+    vsh->share.variables[spot_to_take].hash=GetVariableHash(vsh,spot_to_take);
+
     ++vsh->share.total_variables_shared;
   }
 
@@ -198,6 +200,21 @@ int RefreshRemoteVariable_VariableDatabase(struct VariableShare * vsh,char * var
    return 0;
 }
 
+
+int MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,char * variable_name)
+{
+   int var_id = FindVariable_Database(vsh,variable_name);
+   if ( var_id == 0 )
+    {
+      fprintf(stderr,"Variable %s not found , cannot be refreshed to local\n",variable_name);
+      return 0;
+    } else
+    {
+      fprintf(stderr,"Variable %s has been marked , as \"needs refresh\" \n",variable_name);
+      vsh->share.variables[var_id].flag_needs_refresh=1;
+    }
+   return 0;
+}
 
 int IfLocalVariableChanged_SignalUpdateToJoblist(struct VariableShare * vsh,unsigned int var_id)
 {

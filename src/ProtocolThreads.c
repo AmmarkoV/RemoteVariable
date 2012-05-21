@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "helper.h"
 
 
 
@@ -205,7 +206,7 @@ int MasterSignalChange_Handshake(struct VariableShare * vsh,unsigned int var_cha
 
   RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
   if (strncmp(message,"OK",2)!=0) { error("Error at signal change handshaking : 1"); return 0;}
-
+  fprintf(stderr,"Successfull Signal change handshaking..!\n");
 
   return 1;
 }
@@ -218,10 +219,14 @@ int MasterAcceptChange_Handshake(struct VariableShare * vsh,int peersock)
   if (strncmp(message,"SIG=",4)!=0) { error("Error at accept change  handshaking : 1"); return 0;}
   if ( strlen(message) <= 4 ) { error("Error at accepting change  handshake , very small share name "); return 0; }
   memmove (message,message+4,strlen(message)-3);
+  remove_ending_nl(message);
+
+  MarkVariableAsNeedsRefresh_VariableDatabase(vsh,message);
 
   fprintf(stderr,"Peer Signaled that variable %s changed \n",message);
   strcpy(message,"OK\0");
   SendRAWTo(peersock,message,2);
+
 
   return 1;
 }
@@ -243,7 +248,10 @@ int ProtocolServeResponse(struct VariableShare * vsh , unsigned int peersock)
    if (data_received>0)
    {
      if (strncmp(peek_request,"SIG=",4)==0)
-      { return MasterAcceptChange_Handshake(vsh,peersock); } else
+      {
+          fprintf(stderr,"ProtocolServeResponse peeked on a Signal request \n");
+          return MasterAcceptChange_Handshake(vsh,peersock);
+      } else
       {
         fprintf(stderr,"Uncatched incoming message = %s \n",peek_request);
       }

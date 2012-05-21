@@ -60,5 +60,18 @@ void debug_say_nocr(char * msg)
  return;
 }
 
+void remove_ending_nl(char * str)
+{
+  int length = strlen(str);
+  if ( length == 0 ) { return ; }
 
+  while ( (str[length]==10) || (str[length]==13) )
+   {
+       str[length]=0;
+       --length;
+       if (length == 0) { break; }
+   }
+
+  if ( (str[0]==10) || (str[0]==13) ) { str[0]=0; }
+}
 
