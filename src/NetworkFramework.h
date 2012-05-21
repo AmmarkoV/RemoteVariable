@@ -60,6 +60,8 @@ int SendVariableTo(struct VariableShare * vsh,int clientsock,unsigned int variab
 int RecvFileFrom(struct VariableShare * vsh,int clientsock,unsigned int variable_id);
 int SendFileTo(struct VariableShare * vsh,int clientsock,unsigned int variable_id);
 
+int GetPeerIdBySock(struct VariableShare * vsh,int clientsock);
+
 int StartRemoteVariableServer(struct VariableShare * vsh);
 int StartRemoteVariableConnection(struct VariableShare * vsh);
 

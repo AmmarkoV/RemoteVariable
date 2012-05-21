@@ -21,18 +21,32 @@
 #include <stdlib.h>
 #include "JobTables.h"
 #include "RemoteVariableSupport.h"
+#include "ProtocolThreads.h"
+#include "NetworkFramework.h"
 #include "helper.h"
 
-int AddJob(struct VariableShare * vsh,unsigned int our_varid,unsigned int peer_id , char operation_type)
+
+int AddJob(struct VariableShare * vsh,unsigned int our_varid,unsigned int sockpeer , char operation_type)
 {
  if (  vsh->jobs_loaded < RVS_MAX_JOBS_PENDING )
   { // NEEDS TO BE REWRITTEN TO KEEP A SORTED LIST!
     unsigned int where_to_add=vsh->jobs_loaded;
     vsh->job_list[where_to_add].our_var_id=our_varid;
-    vsh->job_list[where_to_add].remote_peer_id=peer_id;
+    vsh->job_list[where_to_add].remote_peer_id=sockpeer;
+    unsigned int peer_id = GetPeerIdBySock(vsh,sockpeer);
     vsh->job_list[where_to_add].action=operation_type;
-    vsh->job_list[where_to_add].time=central_timer;
-    fprintf(stderr,"Added JOB %u , our variable %u must be shared with peer %u (%s)  - type %u @ %u\n",where_to_add,our_varid,peer_id,vsh->peer_list[peer_id].IP,operation_type,central_timer);
+    vsh->job_list[where_to_add].time=vsh->central_timer;
+
+    fprintf(stderr,"Added JOB %u , our variable %u must be shared with peer %u - ",where_to_add,our_varid,peer_id);
+    if (operation_type==READFROM)       fprintf(stderr," READFROM "); else
+    if (operation_type==WRITETO)        fprintf(stderr," WRITETO "); else
+    if (operation_type==SIGNALCHANGED)  fprintf(stderr," SIGNALCHANGED "); else
+    if (operation_type==SYNC)           fprintf(stderr," SYNC "); else
+    if (operation_type==NOACTION)       fprintf(stderr," NOACTION ");
+
+
+    fprintf(stderr," @ %u\n",vsh->central_timer);
+
     ++vsh->jobs_loaded;
     return 1;
   } else
@@ -206,6 +220,8 @@ JobExecutioner_Thread(void * ptr)
    {
      usleep(1000);
      total_jobs_done+=ExecutePendingJobs(vsh);
+
+     ++vsh->central_timer;
    }
 
    return 0;

@@ -84,7 +84,7 @@ int SendVariableTo(struct VariableShare * vsh,int clientsock,unsigned int variab
 
   int data_sent= send(clientsock, (char*) & data, sizeof (data_length), 0); // SEND START FRAME!
 
-      data_sent= send(clientsock, (char*) & vsh->share.variables[variable_id].ptr,data.data_size, 0); // SEND VARIABLE!
+       data_sent= send(clientsock, (char*) & vsh->share.variables[variable_id].ptr,data.data_size, 0); // SEND VARIABLE!
 
   return 0;
 }
@@ -141,26 +141,32 @@ int RemPeer(struct VariableShare * vsh,int peer_id)
  if ( (vsh->peers_active>1) )
   {
     unsigned int last_peer = vsh->peers_active-1;
-    SwapJobs(vsh,peer_id,last_peer);
+    SwapPeers(vsh,peer_id,last_peer);
     --vsh->peers_active;
     return 1;
   }
  return 0;
 }
 
-
-int RemPeerBySock(struct VariableShare * vsh,int clientsock)
+int GetPeerIdBySock(struct VariableShare * vsh,int clientsock)
 {
   unsigned int i=0;
   while ( i < vsh->peers_active )
    {
       if (vsh->peer_list[i].socket_to_client == clientsock )
        {
-           return RemPeer(vsh,i);
+           return i;
        }
       ++i;
    }
   return 0;
+}
+
+
+
+int RemPeerBySock(struct VariableShare * vsh,int clientsock)
+{
+ return RemPeer(vsh,GetPeerIdBySock(vsh,clientsock));
 }
 
 int HandleClientLoop(struct VariableShare * vsh,int clientsock,struct sockaddr_in client,unsigned int clientlen)
@@ -171,6 +177,7 @@ int HandleClientLoop(struct VariableShare * vsh,int clientsock,struct sockaddr_i
    if (Accept_Handshake(vsh,clientsock))
      {
        debug_say("Successfully accepted connection handshake\n");
+       vsh->global_state=VSS_NORMAL;
      } else
      {
        fprintf(stderr,"Could not accept handshake for RemoteVariable Share , ignoring client\n");
@@ -334,10 +341,13 @@ int RemoteVariable_InitiateConnection(struct VariableShare * vsh)
    if(connect(sockfd, (struct sockaddr *)&their_addr, sizeof(struct sockaddr)) == -1)
    {
     error("Could not connect the created socket \n");
+    vsh->global_state=VSS_CONNECTION_FAILED;
     return 0;
    }
     else
+   {
     printf("Client-The connect() is OK...\n");
+   }
 
    vsh->master.socket_to_client=sockfd;
    return 1;
@@ -367,6 +377,7 @@ RemoteVariableClient_Thread(void * ptr)
    if (Connect_Handshake(vsh,peersock))
      {
        debug_say("Successfull connection handshake\n");
+       vsh->global_state=VSS_NORMAL;
      } else
      {
        fprintf(stderr,"Could not handshake for RemoteVariable Share , stopping everything\n");
@@ -376,7 +387,7 @@ RemoteVariableClient_Thread(void * ptr)
 
    // ClearAllJobs(vsh); // <- This has to be added later to enforce sync issues .. we are now synced to master so clear all local jobs
 
-   int new_job_id=-1;
+//   int new_job_id=-1;
    while (vsh->stop_client_thread==0)
    {
     /* if (vsh->global_policy!=VSP_MANUAL)

@@ -24,7 +24,8 @@
 #include <string.h>
 #include "helper.h"
 
-
+#include "VariableDatabase.h"
+#include "NetworkFramework.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -103,7 +104,7 @@ int Connect_Handshake(struct VariableShare * vsh,int peersock)
           return 1;
     }
 
-  fprintf(stderr,"Did not understand peer reply .. :S , disconnecting \n",message);
+  fprintf(stderr,"Did not understand peer reply .. :S , disconnecting \n");
 
   return 0;
 }
@@ -184,9 +185,11 @@ int RequestVariable_Handshake(struct VariableShare * vsh,unsigned int var_id,int
   sprintf(message,"GET=%s\0",vsh->share.variables[var_id].ptr_name);
   SendRAWTo(peersock,message,strlen(message));
 
-  RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+  RecvRAWFrom(peersock,message,3);
   if (strncmp(message,"OK",2)!=0) { error("Error at RequestVariable_Handshake handshaking : 1"); return 0;}
   fprintf(stderr,"Successfull RequestVariable_Handshake handshaking..!\n");
+  return RecvVariableFrom(vsh,peersock,var_id);
+
   return 0;
 }
 
@@ -198,13 +201,26 @@ int AcceptRequestVariable_Handshake(struct VariableShare * vsh,int peersock)
   if (strncmp(message,"GET=",4)!=0) { error("Error at accept request for variable  handshaking : 1"); return 0;}
   if ( strlen(message) <= 4 ) { error("Error at accepting request for variable handshake , very small share name "); return 0; }
   memmove (message,message+4,strlen(message)-3);
-  remove_ending_nl(message);
 
-  fprintf(stderr,"TODO");
+  fprintf(stderr,"Peer Signaled that it wants a variable %s changed \n",message);
 
-  fprintf(stderr,"Peer Signaled that variable %s changed \n",message);
-  strcpy(message,"OK\0");
-  SendRAWTo(peersock,message,3);
+  unsigned int var_id = FindVariable_Database(vsh,message);
+
+  if (var_id == 0)
+  {
+     fprintf(stderr,"Variable %s doesnt exist\n",message);
+     strcpy(message,"NO\0");
+     SendRAWTo(peersock,message,3);
+  } else
+  {
+     --var_id; // FindVariable offsets results by +1 to have null return value for negative find operations
+     fprintf(stderr,"TODO Add check for weather it is in security/policy to send him the variable requested\n");
+
+     strcpy(message,"OK\0");
+     SendRAWTo(peersock,message,3);
+     return SendVariableTo(vsh,peersock,var_id);
+  }
+
 
   return 0;
 }
@@ -228,6 +244,7 @@ int MasterSignalChange_Handshake(struct VariableShare * vsh,unsigned int var_cha
   if (strncmp(message,"OK",2)!=0) { error("Error at signal change handshaking : 1"); return 0;}
   fprintf(stderr,"Successfull Signal change handshaking..!\n");
 
+
   return 1;
 }
 
@@ -239,9 +256,8 @@ int MasterAcceptChange_Handshake(struct VariableShare * vsh,int peersock)
   if (strncmp(message,"SIG=",4)!=0) { error("Error at accept change  handshaking : 1"); return 0;}
   if ( strlen(message) <= 4 ) { error("Error at accepting change  handshake , very small share name "); return 0; }
   memmove (message,message+4,strlen(message)-3);
-  remove_ending_nl(message);
 
-  MarkVariableAsNeedsRefresh_VariableDatabase(vsh,message);
+  MarkVariableAsNeedsRefresh_VariableDatabase(vsh,message,peersock);
 
   fprintf(stderr,"Peer Signaled that variable %s changed \n",message);
   strcpy(message,"OK\0");

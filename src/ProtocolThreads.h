@@ -33,6 +33,5 @@ int AcceptRequestVariable_Handshake(struct VariableShare * vsh,int peersock);
 int MasterSignalChange_Handshake(struct VariableShare * vsh,unsigned int var_changed,int peersock);
 int MasterAcceptChange_Handshake(struct VariableShare * vsh,int peersock);
 
-int ProtocolPickResponse(struct VariableShare * vsh , unsigned int peersock);
-
+int ProtocolServeResponse(struct VariableShare * vsh , unsigned int peersock);
 #endif // PROTOCOLTHREADS_H_INCLUDED

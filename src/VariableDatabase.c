@@ -52,6 +52,9 @@ struct VariableShare * Create_VariableDatabase(char * sharename,char * IP,unsign
   vsh->share.total_variables_memory=newsize;
   vsh->share.total_variables_shared=0;
   vsh->peers_active=0;
+
+  vsh->central_timer=0;
+  vsh->byte_order=0;
   return vsh;
 }
 
@@ -144,6 +147,7 @@ unsigned int FindVariable_Database(struct VariableShare * vsh,char * var_name)
  return 0;
 }
 
+/*
 int CanWriteTo_VariableDatabase(struct VariableShare * vsh,unsigned int var_spot)
 {
  if ( VariableShareOk(vsh) == 0 ) return 0;
@@ -177,7 +181,7 @@ int RefreshLocalVariable_VariableDatabase(struct VariableShare * vsh,char * vari
     } else
     {
       --var_id; // FindVariableDatabase returns +1 results ( to signal failure with 0 )
-      /*TODO*/
+      //TODO
       //vsh->share.variables[var_id].
       //UpdateLocalVariable(vsh,  our_varid, peer_varid);
     }
@@ -195,13 +199,13 @@ int RefreshRemoteVariable_VariableDatabase(struct VariableShare * vsh,char * var
     } else
     {
       --var_id; // FindVariableDatabase returns +1 results ( to signal failure with 0 )
-      /*TODO*/
+      //TODO
       //vsh->share.variables[var_id].
       //UpdateRemoteVariable(vsh,  our_varid, peer_varid);
     }
    return 0;
 }
-
+*/
 
 int MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,char * variable_name,int clientsock)
 {
@@ -255,16 +259,19 @@ int RefreshAllVariablesThatNeedIt(struct VariableShare *vsh)
 {
    unsigned int added_jobs=0;
    unsigned int i=0;
-   while (i<vsh->share.total_variables_shared)
-    {
-       if ( vsh->share.variables[i].flag_needs_refresh_from_sock > 0 )
+
+    for ( i=0; i<vsh->share.total_variables_shared; i++)
+   {
+      if ( vsh->share.variables[i].flag_needs_refresh_from_sock > 0 )
         {
            fprintf(stderr,"Detected that a variable (%u) needs refresh , and automatically adding a job to receive it\n",i);
            AddJob(vsh,i,vsh->share.variables[i].flag_needs_refresh_from_sock ,READFROM);
            ++added_jobs;
+           fprintf(stderr,"Carrying on after job adding\n");
         }
-       ++i;
-    }
+   }
+
+
   return added_jobs;
 }
 
@@ -283,6 +290,12 @@ AutoRefreshVariable_Thread(void * ptr)
    while ( (vsh->global_policy==VSP_AUTOMATIC) && (vsh->stop_refresh_thread==0) )
    {
        usleep(vsh->share.auto_refresh_every_msec);
+
+
+       if (vsh->global_state!=VSS_NORMAL)
+          {
+             usleep(1000);
+          }
        if (vsh->share.auto_refresh_every_msec==0)
           {  // This means that auto refresh is disabled so we sleep things out till it is re-enabled
              usleep(10000);

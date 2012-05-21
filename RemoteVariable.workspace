@@ -2,7 +2,7 @@
 <CodeBlocks_workspace_file>
 	<Workspace title="Workspace">
 		<Project filename="src/RemoteVariableSupport.cbp" />
-		<Project filename="src/RemoteVariableClone/RemoteVariableTesterClient.cbp" />
-		<Project filename="src/RemoteVariableMaster/RemoteVariableSupportTester.cbp" active="1" />
+		<Project filename="src/RemoteVariableClone/RemoteVariableTesterClient.cbp" active="1" />
+		<Project filename="src/RemoteVariableMaster/RemoteVariableSupportTester.cbp" />
 	</Workspace>
 </CodeBlocks_workspace_file>

@@ -38,8 +38,6 @@ extern "C" {
 #define RVS_MAX_SHARE_NAME_CHARS 64
 #define RVS_MAX_SHARE_IP_CHARS 64
 
-extern char byte_order; // 0 = intel ,  network
-extern unsigned int central_timer;
 
 enum jobactions
 {
@@ -112,6 +110,7 @@ struct ShareJob
 enum VariableShareStates
 {
     VSS_UNITIALIZED=0,
+    VSS_WAITING_FOR_HANDSHAKE=0,
     VSS_CONNECTION_FAILED,
     VSS_HANDSHAKE_FAILED,
     VSS_ALL_TRANSACTIONS_DISABLED,
@@ -164,6 +163,8 @@ struct VariableShare
     unsigned int stop_server_thread;
 
 
+    char byte_order; // 0 = intel ,  network
+    unsigned int central_timer;
 
     struct ShareList share;
 

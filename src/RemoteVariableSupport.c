@@ -26,11 +26,9 @@
 #include "RemoteVariableSupport.h"
 #include "NetworkFramework.h"
 #include "VariableDatabase.h"
+#include "JobTables.h"
 
 
-
-extern char byte_order=0; // 0 = intel ,  network
-extern unsigned int central_timer=0;
 
 
 
@@ -49,7 +47,7 @@ struct VariableShare * Start_VariableSharing(char * sharename,char * bindaddress
 
     if ( vsh->global_state == 0 )
                             {
-                              vsh->global_state=VSS_NORMAL;
+                              vsh->global_state=VSS_WAITING_FOR_HANDSHAKE;
                               vsh->global_policy=VSP_AUTOMATIC;
                               vsh->this_address_space_is_master=1;
                             } else
@@ -74,7 +72,7 @@ struct VariableShare * ConnectToRemote_VariableSharing(char * sharename,char * I
     if ( vsh == 0 ) { fprintf(stderr,"Could not create Remote variable database ( Name : %s , IP %s:%u )",sharename,IP,port); return 0; }
     if ( vsh->global_state == 0 )
                             {
-                              vsh->global_state=VSS_NORMAL;
+                              vsh->global_state=VSS_WAITING_FOR_HANDSHAKE;
                               vsh->global_policy=VSP_AUTOMATIC;
                               vsh->this_address_space_is_master=0;
                             } else
@@ -164,7 +162,8 @@ int Unlock_LocalVariable(struct VariableShare * vsh,char * variable_name)
 */
 int Refresh_LocalVariable(struct VariableShare * vsh,char * variable_name)
 {
-    return RefreshLocalVariable_VariableDatabase(vsh,variable_name);
+  return 0;
+ //    return RefreshLocalVariable_VariableDatabase(vsh,variable_name);
 }
 
 /* #Refresh_RemoteVariable#
@@ -174,7 +173,8 @@ int Refresh_LocalVariable(struct VariableShare * vsh,char * variable_name)
 */
 int Refresh_RemoteVariable(struct VariableShare * vsh,char * variable_name)
 {
-    return RefreshRemoteVariable_VariableDatabase(vsh,variable_name);
+  return 0;
+  //  return RefreshRemoteVariable_VariableDatabase(vsh,variable_name);
 }
 
 
