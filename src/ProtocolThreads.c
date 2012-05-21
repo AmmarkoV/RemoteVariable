@@ -177,14 +177,34 @@ int AcceptCloneShare_Handshake(struct VariableShare * vsh)
 */
 
 
-int RequestVariable_Handshake(struct VariableShare * vsh)
+int RequestVariable_Handshake(struct VariableShare * vsh,unsigned int var_id,int peersock)
 {
+  char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
+  // 1ST MESSAGE SENT
+  sprintf(message,"GET=%s\0",vsh->share.variables[var_id].ptr_name);
+  SendRAWTo(peersock,message,strlen(message));
 
+  RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+  if (strncmp(message,"OK",2)!=0) { error("Error at RequestVariable_Handshake handshaking : 1"); return 0;}
+  fprintf(stderr,"Successfull RequestVariable_Handshake handshaking..!\n");
   return 0;
 }
 
-int SendVariable_Handshake(struct VariableShare * vsh)
+int AcceptRequestVariable_Handshake(struct VariableShare * vsh,int peersock)
 {
+  char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
+  RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+  fprintf(stderr,"Received %s request for variable\n",message);
+  if (strncmp(message,"GET=",4)!=0) { error("Error at accept request for variable  handshaking : 1"); return 0;}
+  if ( strlen(message) <= 4 ) { error("Error at accepting request for variable handshake , very small share name "); return 0; }
+  memmove (message,message+4,strlen(message)-3);
+  remove_ending_nl(message);
+
+  fprintf(stderr,"TODO");
+
+  fprintf(stderr,"Peer Signaled that variable %s changed \n",message);
+  strcpy(message,"OK\0");
+  SendRAWTo(peersock,message,3);
 
   return 0;
 }
@@ -201,7 +221,7 @@ int MasterSignalChange_Handshake(struct VariableShare * vsh,unsigned int var_cha
 {
   char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
   // 1ST MESSAGE SENT
-  sprintf(message,"SIG=%s\0",vsh->share.variables->ptr_name);
+  sprintf(message,"SIG=%s\0",vsh->share.variables[var_changed].ptr_name);
   SendRAWTo(peersock,message,strlen(message));
 
   RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
@@ -251,6 +271,11 @@ int ProtocolServeResponse(struct VariableShare * vsh , unsigned int peersock)
       {
           fprintf(stderr,"ProtocolServeResponse peeked on a Signal request \n");
           return MasterAcceptChange_Handshake(vsh,peersock);
+      } else
+     if (strncmp(peek_request,"GET=",4)==0)
+      {
+          fprintf(stderr,"ProtocolServeResponse peeked on a Get Share request \n");
+          return AcceptRequestVariable_Handshake(vsh,peersock);
       } else
       {
         fprintf(stderr,"Uncatched incoming message = %s \n",peek_request);

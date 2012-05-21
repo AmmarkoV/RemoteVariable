@@ -26,8 +26,10 @@ int Connect_Handshake(struct VariableShare * vsh,int peersock);
 int Accept_Handshake(struct VariableShare * vsh,int peersock);
 int InitCloneShare_Handshake(struct VariableShare * vsh);
 int AcceptCloneShare_Handshake(struct VariableShare * vsh);
-int RequestVariable_Handshake(struct VariableShare * vsh);
-int SendVariable_Handshake(struct VariableShare * vsh);
+
+int RequestVariable_Handshake(struct VariableShare * vsh,unsigned int var_id,int peersock);
+int AcceptRequestVariable_Handshake(struct VariableShare * vsh,int peersock);
+
 int MasterSignalChange_Handshake(struct VariableShare * vsh,unsigned int var_changed,int peersock);
 int MasterAcceptChange_Handshake(struct VariableShare * vsh,int peersock);
 

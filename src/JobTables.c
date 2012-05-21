@@ -120,8 +120,21 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
    {
       case NOACTION : break;
       case WRITETO  : fprintf(stderr,"Simulating Execution of Write to peer : %u of variable %s with var id %u \n",peer,variable_name,var_id); DoneWithJob(vsh,job_id);  break;
-      case READFROM : fprintf(stderr,"Simulating Execution of Read from peer : %u of variable %s with var id %u \n",peer,variable_name,var_id); DoneWithJob(vsh,job_id);  break;
-      case SIGNALCHANGED : fprintf(stderr,"Simulating Execution of Singal Changed to peer : %u of variable %s with var id %u \n",peer,variable_name,var_id);
+      case READFROM : fprintf(stderr,"Execution of Read from peer : %u of variable %s with var id %u \n",peer,variable_name,var_id);
+
+                       if (RequestVariable_Handshake(vsh,var_id,peer_socket))
+                        {
+                            DoneWithJob(vsh,job_id);
+                        }  else
+                        {
+                            fprintf(stderr,"Request of variable %u failed \n",var_id);
+                        }
+
+
+                       break;
+
+
+      case SIGNALCHANGED : fprintf(stderr,"Execution of Singal Changed to peer : %u of variable %s with var id %u \n",peer,variable_name,var_id);
                             if ( MasterSignalChange_Handshake(vsh,var_id,peer_socket) )
                              {
                                 DoneWithJob(vsh,job_id);

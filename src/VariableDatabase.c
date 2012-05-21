@@ -259,7 +259,7 @@ int RefreshAllVariablesThatNeedIt(struct VariableShare *vsh)
     {
        if ( vsh->share.variables[i].flag_needs_refresh_from_sock > 0 )
         {
-           fprintf(stderr,"Detected that a variable needs refresh , and automatically adding a job to receive it\n");
+           fprintf(stderr,"Detected that a variable (%u) needs refresh , and automatically adding a job to receive it\n",i);
            AddJob(vsh,i,vsh->share.variables[i].flag_needs_refresh_from_sock ,READFROM);
            ++added_jobs;
         }
@@ -290,11 +290,10 @@ AutoRefreshVariable_Thread(void * ptr)
           {
              variables_changed=SignalUpdatesForAllLocalVariablesThatNeedIt(vsh);
              total_variables_changed+=variables_changed;
-             fprintf(stderr,"%u variables changed ",variables_changed);
-
 
              variables_refreshed=RefreshAllVariablesThatNeedIt(vsh);
-             fprintf(stderr,"%u variables refreshed\n",variables_refreshed);
+
+             fprintf(stderr,"%u variables changed and %u variables refreshed\n",variables_changed,variables_refreshed);
           }
    }
    fprintf(stderr,"%u total variables changed detected by autorefresh thread\n",total_variables_changed);
