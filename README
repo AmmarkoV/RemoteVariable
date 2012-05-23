@@ -39,11 +39,14 @@ the Admin PC program should have the following structure :
 
 struct VariableShare * vsh = ConnectToVariableSharing("xxx.xxx.xxx.xxx:12345","password");
 
-int ServiceNeeded=0;
-while ( ServiceNeeded == 0 ) 
+int RemoteServiceNeeded=0;
+AddVariableToSharingList(vsh,"ServiceNeeded","R",&RemoteServiceNeeded,sizeof(RemoteServiceNeeded));
+/* Now the RemoteServiceNeeded will change ( from the background thread ) in the event that th PC#1 program changes the ServiceNeeded variable..! */
+
+while ( RemoteServiceNeeded == 0 ) 
   {
        Sleep(1000);
-       RefreshLocalVariable(vsh,"ServiceNeeded",&ServiceNeeded,sizeof(ServiceNeeded));
+
   }
 fprintf("Service needed at machine %s\n",vsh->sharename);
 
@@ -51,6 +54,7 @@ StopVariableSharing(vsh);
 ------------------------------------------------------------------------------------------------------------------
 
 For more info , check the Documentation directory 
+or the RemoteVariableClone and RemoteVariableMaster test apps..!
 
 ////////////////////////////////////////////////
 Ammar Qammaz 2010-2012
