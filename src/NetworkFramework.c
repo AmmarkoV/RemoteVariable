@@ -65,18 +65,19 @@ int RecvVariableFrom(struct VariableShare * vsh,int clientsock,unsigned int vari
 
 
  //TODO BEEF UP SECURITY HERE :P
- int test = ( int ) vsh->share.variables[variable_id].ptr;
-
- fprintf(stderr,"Receiving Payload ( var was %d ",test);
+ fprintf(stderr,"Receiving Payload ( var was %u ",(unsigned int) vsh->share.variables[variable_id].ptr);
  data_recv= recv(clientsock,vsh->share.variables[variable_id].ptr,data.data_size, 0); // GET VAR PAYLOAD!
- test = ( int ) vsh->share.variables[variable_id].ptr;
 
- fprintf(stderr,"now %d )\n",test);
+
+ fprintf(stderr,"now %u  )\n",vsh->share.variables[variable_id].ptr);
  if ( data_recv != data.data_size ) { fprintf(stderr,"Incorrect payload received ( %u instead of %u )\n",data_recv , vsh->share.variables[variable_id].size_of_ptr ); return 0; }
  if ( vsh->share.variables[variable_id].GUARD_BYTE != RVS_GUARD_VALUE ) {  error("Buffer overflow attack @ RecvVariableFrom detected\n"); vsh->global_state=VSS_SECURITY_ALERT; return 0; }
 
  // TODO CHECK OPERATIONS ETC HERE!
-   fprintf(stderr,"RecvVariableFrom , Great Success :) \n");
+ fprintf(stderr,"Updating hash value  \n");
+ vsh->share.variables[variable_id].hash=GetVariableHash(vsh,variable_id);
+
+ fprintf(stderr,"RecvVariableFrom , Great Success :) \n");
   return 1;
 }
 
