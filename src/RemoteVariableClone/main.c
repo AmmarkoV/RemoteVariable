@@ -20,7 +20,7 @@ int wait_for_var_to_become_x(int * var , unsigned int timeout , unsigned int x)
 
 int main()
 {
-    unsigned int WAIT_TIME=500;
+    unsigned int WAIT_TIME=1000;
     printf("REMOTE VARIABLES CLIENT STARTUP !!!!!!!!!!!!! \n");
     struct VariableShare * vsh = ConnectToRemote_VariableSharing("SHARE2","127.0.0.1",12345,"password");
     if ( vsh == 0 )
@@ -43,19 +43,27 @@ int main()
     if ( !wait_for_var_to_become_x(&SHARED_VAR,WAIT_TIME,666)) { fprintf(stderr,"Client : Failed the test\n"); return 1; }
 
 
+    fprintf(stderr,"TEST STEP 1\n");
     SHARED_VAR=1;
     printf("Client : Now we have changed the variable to 1 , will wait until it becomes 2\n");
     if ( !wait_for_var_to_become_x(&SHARED_VAR,WAIT_TIME,2)) { fprintf(stderr,"Client : Failed the test\n"); return 1; }
 
+    fprintf(stderr,"TEST STEP 2\n");
     SHARED_VAR=3;
     printf("Client : Now we have changed the variable to 3 , will wait until it becomes 4\n");
     if ( !wait_for_var_to_become_x(&SHARED_VAR,WAIT_TIME,4)) { fprintf(stderr,"Client : Failed the test\n"); return 1; }
 
+    fprintf(stderr,"TEST STEP 3\n");
     SHARED_VAR=5;
     printf("Client : Now we have changed the variable to 5 , will wait until it becomes 6\n");
-    if ( !wait_for_var_to_become_x(&SHARED_VAR,WAIT_TIME,6)) { fprintf(stderr,"Client : Failed the test ( last step )\n"); return 1; }
+    if ( !wait_for_var_to_become_x(&SHARED_VAR,WAIT_TIME,6)) { fprintf(stderr,"Client : Failed the test\n"); return 1; }
 
+    fprintf(stderr,"TEST STEP 4\n");
+    SHARED_VAR=7;
+    printf("Client : Now we have changed the variable to 7 , will wait until it becomes 8\n");
+    if ( !wait_for_var_to_become_x(&SHARED_VAR,WAIT_TIME,8)) { fprintf(stderr,"Client : Failed the test ( last step )\n"); return 1; }
 
+    fprintf(stderr,"TEST STEPS DONE \n");
     fprintf(stderr,"Client : Test is successfull!\n");
 
      if ( Stop_VariableSharing(vsh) == 0 ) fprintf(stderr,"Client : Error Deleting share\n");

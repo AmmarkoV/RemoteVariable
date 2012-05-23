@@ -349,7 +349,8 @@ AutoRefreshVariable_Thread(void * ptr)
 
              variables_refreshed=RefreshAllVariablesThatNeedIt(vsh);
 
-             fprintf(stderr,"%u variables changed and %u variables refreshed\n",variables_changed,variables_refreshed);
+             if ( (variables_changed==0 ) && ( variables_refreshed == 0) ) { fprintf(stderr,"."); } else
+                                                                           { fprintf(stderr,"%u variables changed and %u variables refreshed\n",variables_changed,variables_refreshed); }
           }
    }
    fprintf(stderr,"%u total variables changed detected by autorefresh thread\n",total_variables_changed);
