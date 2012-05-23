@@ -29,10 +29,10 @@ extern "C" {
 #include <unistd.h>
 
 #define RVS_GUARD_VALUE 123
+#define RVS_VARIABLEDATABASE_THREAD_TIME 1000
 
 #define RVS_MAX_PEERS 100
 #define RVS_MAX_JOBS_PENDING 100
-#define RVS_DEFAULT_AUTO_REFRESH_OF_SHARE 1000
 
 #define RVS_MAX_RAW_HANDSHAKE_MESSAGE 128
 #define RVS_MAX_SHARE_NAME_CHARS 64
@@ -187,6 +187,9 @@ int Refresh_RemoteVariable(struct VariableShare * vsh,char * variable_name);
 int IsUptodate_RemoteVariable(struct VariableShare * vsh,char * variable_name);
 int MakeSureVarReachedPeers_RemoteVariable(struct VariableShare * vsh,char * variable_name);
 
+
+int RVS_EnableAutoRefresh(struct VariableShare * vsh);
+int RVS_DisableAutoRefresh(struct VariableShare * vsh);
 
 #ifdef __cplusplus
 }

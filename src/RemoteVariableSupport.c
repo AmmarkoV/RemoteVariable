@@ -187,6 +187,19 @@ int MakeSureVarReachedPeers_RemoteVariable(struct VariableShare * vsh,char * var
   return MakeSureVarReachedPeers(vsh,variable_name);
 }
 
+
+int RVS_EnableAutoRefresh(struct VariableShare * vsh)
+{
+   vsh->share.auto_refresh_every_msec=RVS_VARIABLEDATABASE_THREAD_TIME;
+}
+
+
+int RVS_DisableAutoRefresh(struct VariableShare * vsh)
+{
+   vsh->share.auto_refresh_every_msec=0;
+}
+
+
 /*
    TODO ADD POLICY SWITCHES
 */

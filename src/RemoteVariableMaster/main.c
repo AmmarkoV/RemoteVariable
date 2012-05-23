@@ -35,8 +35,20 @@ int main()
       return 1;
      }
 
+   fprintf(stderr,"Master : Waiting for a peer to startup test..\n");
+    while (!PeersActive_VariableShare(vsh))
+     {
+       fprintf(stderr,"*");
+       usleep(1000);
+     }
+   fprintf(stderr,"Master : Peer found , proceeding..\n");
+
+
     fprintf(stderr,"TEST STEP 1\n");
     SHARED_VAR=666; // This will propagate to the client
+
+
+
 
     printf("Master : Starting Self Test waiting for value 1 from peer !\n");
     if (!wait_for_var_to_become_x(&SHARED_VAR,WAIT_TIME,1)) { fprintf(stderr,"Master : Failed the test\n"); return 1; }
