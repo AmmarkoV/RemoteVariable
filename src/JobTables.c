@@ -143,7 +143,8 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
                        fprintf(stderr,"Simulating Execution of Write to peer : %u of variable %s with var id %u \n",peer,variable_name,var_id); DoneWithJob(vsh,job_id);
                        break;
       case READFROM :
-                        fprintf(stderr,"Execution of Read from peer : %u of variable %s with var id %u \n",peer,variable_name,var_id);
+                       fprintf(stderr,"Execution of Read from peer : %u of variable %s with var id %u \n",peer,variable_name,var_id);
+                       vsh->share.auto_refresh_every_msec=0;
 
                        if (RequestVariable_Handshake(vsh,var_id,peer_socket))
                         {
@@ -153,12 +154,14 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
                             fprintf(stderr,"Request of variable %u failed \n",var_id);
                         }
 
-
+                       vsh->share.auto_refresh_every_msec=1;
                        break;
 
 
       case SIGNALCHANGED :
                            fprintf(stderr,"Execution of Singal Changed to peer : %u of variable %s with var id %u \n",peer,variable_name,var_id);
+                           vsh->share.auto_refresh_every_msec=0;
+
                             if ( MasterSignalChange_Handshake(vsh,var_id,peer_socket) )
                              {
                                 DoneWithJob(vsh,job_id);
@@ -166,7 +169,8 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
                              {
                                 fprintf(stderr,"Could not signal change\n");
                              }
-                            break;
+                           vsh->share.auto_refresh_every_msec=1;
+                           break;
       case SYNC :
                      fprintf(stderr,"Simulating Execution of Sync Operation : %u of variable %s with var id %u \n",peer,variable_name,var_id);
                      DoneWithJob(vsh,job_id);

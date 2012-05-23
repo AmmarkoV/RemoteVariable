@@ -49,7 +49,9 @@ int main()
     if (!wait_for_var_to_become_x(&SHARED_VAR,WAIT_TIME,5)) { fprintf(stderr,"Master : Failed the test\n"); return 1; }
 
     SHARED_VAR=6;
+    MakeSureVarReachedPeers_RemoteVariable(vsh,"SHARED_VAR");
 
+    fprintf(stderr,"Master : Test is successfull!\n");
 
     fprintf(stderr,"Master : Closing things down \n");
     if (!Stop_VariableSharing(vsh))

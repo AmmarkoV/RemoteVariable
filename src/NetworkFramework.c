@@ -322,7 +322,7 @@ RemoteVariableClient_Thread(void * ptr)
    if (Connect_Handshake(vsh,peersock))
      {
        debug_say("Successfull connection handshake\n");
-       AddPeer(vsh,"",0,peersock);
+       AddPeer(vsh,vsh->ip,vsh->port,peersock);
        vsh->global_state=VSS_NORMAL;
      } else
      {

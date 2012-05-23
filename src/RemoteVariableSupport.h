@@ -60,6 +60,7 @@ struct ShareListItem
     unsigned char lock_refresh;
 
     int flag_needs_refresh_from_sock;
+    // TODO : NOTE THAT THIS SHOULD ACTUALLY BE AN ARRAY AS LONG AS THE POSSIBLE PEERS
 
     unsigned long hash;
 
@@ -184,6 +185,7 @@ int Delete_VariableFromSharingList(struct VariableShare * vsh,char * variable_na
 int Refresh_LocalVariable(struct VariableShare * vsh,char * variable_name);
 int Refresh_RemoteVariable(struct VariableShare * vsh,char * variable_name);
 int IsUptodate_RemoteVariable(struct VariableShare * vsh,char * variable_name);
+int MakeSureVarReachedPeers_RemoteVariable(struct VariableShare * vsh,char * variable_name);
 
 
 #ifdef __cplusplus

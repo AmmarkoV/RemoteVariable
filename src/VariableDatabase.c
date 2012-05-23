@@ -64,8 +64,12 @@ int Destroy_VariableDatabase(struct VariableShare * vsh)
   if (vsh==0) { debug_say("Memory for share , already deallocated!"); return 1; }
   if ( vsh->share.variables == 0 ) { debug_say("Memory for shared variables , already deallocated!"); return 1; }
 
+  //TODO CLOSE SOCKETS ETC PROPERLY
+
+
   free(vsh->share.variables);
   free(vsh);
+
   return 1;
 }
 
@@ -283,7 +287,36 @@ int RefreshAllVariablesThatNeedIt(struct VariableShare *vsh)
   return added_jobs;
 }
 
+int MakeSureVarReachedPeers(struct VariableShare *vsh,char * varname)
+{
+  fprintf(stderr,"MakeSureVarReachedPeers waiting for var %s \n",varname);
 
+  unsigned int var_id = FindVariable_Database(vsh,varname);
+  if (!var_id) { fprintf(stderr,"MakeSureVarReachedPeers called for non existing variable ( %s ) \n",varname); return 0; }
+  --var_id;
+
+  while ( vsh->share.auto_refresh_every_msec==0)
+   {
+     usleep(100);
+   }
+
+  if ( SignalUpdatesForAllLocalVariablesThatNeedIt(vsh) ) // <- this will make any variables that have just changed be set as flag_needs_refres_from_sock
+   {
+       fprintf(stderr,"Found changed variables..!\n");
+   }
+
+  unsigned int wait_time=10000;
+  while (wait_time>0)
+  {
+      if ( (vsh->share.variables[var_id].flag_needs_refresh_from_sock==0) && ( vsh->jobs_loaded ==0 )) { return 1; }
+
+      --wait_time;
+      usleep (1000);
+  }
+
+  fprintf(stderr,"Timed out while MakeSureVarReachedPeers waiting for var to reach clients\n");
+  return 0;
+}
 
 
 void *
@@ -304,6 +337,8 @@ AutoRefreshVariable_Thread(void * ptr)
           {
              usleep(1000);
           }
+
+
        if (vsh->share.auto_refresh_every_msec==0)
           {  // This means that auto refresh is disabled so we sleep things out till it is re-enabled
              usleep(10000);

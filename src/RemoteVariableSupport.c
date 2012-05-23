@@ -29,10 +29,6 @@
 #include "JobTables.h"
 
 
-
-
-
-
 /* #Start_VariableSharing#
    This function is supposed to allocate a VariableShare structure ( vsh )
    and prepare the Variable Share Server in our machine as a master share
@@ -100,8 +96,7 @@ int Stop_VariableSharing(struct VariableShare * vsh)
     vsh->stop_client_thread=1;
     vsh->stop_refresh_thread=1;
 
-    Destroy_VariableDatabase(vsh);
-    return 0;
+    return Destroy_VariableDatabase(vsh);
 }
 
 
@@ -184,6 +179,12 @@ int IsUptodate_RemoteVariable(struct VariableShare * vsh,char * variable_name)
 {
   fprintf(stderr,"IsUptodate_RemoteVariable not implemented yet ,returning false!");
   return 0;
+}
+
+
+int MakeSureVarReachedPeers_RemoteVariable(struct VariableShare * vsh,char * variable_name)
+{
+  return MakeSureVarReachedPeers(vsh,variable_name);
 }
 
 /*
