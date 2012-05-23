@@ -66,12 +66,13 @@ int RecvVariableFrom(struct VariableShare * vsh,int clientsock,unsigned int vari
 
  //TODO BEEF UP SECURITY HERE :P
  int test = ( int ) vsh->share.variables[variable_id].ptr;
+
  fprintf(stderr,"Receiving Payload ( var was %d ",test);
- data_recv= recv(clientsock, (char*) & vsh->share.variables[variable_id].ptr,data.data_size, 0); // GET VAR PAYLOAD!
- test = (unsigned int ) vsh->share.variables[variable_id].ptr;
+ data_recv= recv(clientsock,vsh->share.variables[variable_id].ptr,data.data_size, 0); // GET VAR PAYLOAD!
+ test = ( int ) vsh->share.variables[variable_id].ptr;
+
  fprintf(stderr,"now %d )\n",test);
  if ( data_recv != data.data_size ) { fprintf(stderr,"Incorrect payload received ( %u instead of %u )\n",data_recv , vsh->share.variables[variable_id].size_of_ptr ); return 0; }
-
  if ( vsh->share.variables[variable_id].GUARD_BYTE != RVS_GUARD_VALUE ) {  error("Buffer overflow attack @ RecvVariableFrom detected\n"); vsh->global_state=VSS_SECURITY_ALERT; return 0; }
 
  // TODO CHECK OPERATIONS ETC HERE!
@@ -91,7 +92,7 @@ int SendVariableTo(struct VariableShare * vsh,int clientsock,unsigned int variab
   if ( data_sent != sizeof (data) ) { fprintf(stderr,"Incorrect starting frame transmission ( %u instead of %u )\n",data_sent , sizeof (data) ); return 0; }
 
   fprintf(stderr,"Sending Payload\n");
-  data_sent= send(clientsock, (char*) & vsh->share.variables[variable_id].ptr,data.data_size , 0); // SEND VARIABLE!
+  data_sent= send(clientsock,vsh->share.variables[variable_id].ptr,data.data_size , 0); // SEND VARIABLE!
   if ( data_sent != data.data_size ) { fprintf(stderr,"Incorrect payload transmission ( %u instead of %u )\n",data_sent , data.data_size ); return 0; }
 
 
