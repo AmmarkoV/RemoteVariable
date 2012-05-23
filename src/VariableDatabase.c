@@ -265,9 +265,15 @@ int RefreshAllVariablesThatNeedIt(struct VariableShare *vsh)
       if ( vsh->share.variables[i].flag_needs_refresh_from_sock > 0 )
         {
            fprintf(stderr,"Detected that a variable (%u) needs refresh , and automatically adding a job to receive it\n",i);
-           AddJob(vsh,i,vsh->share.variables[i].flag_needs_refresh_from_sock ,READFROM);
-           ++added_jobs;
-           fprintf(stderr,"Carrying on after job adding\n");
+           if ( AddJob(vsh,i,vsh->share.variables[i].flag_needs_refresh_from_sock ,READFROM) )
+             {
+               ++added_jobs;
+               fprintf(stderr,"Carrying on after job adding\n");
+               vsh->share.variables[i].flag_needs_refresh_from_sock=0; // We trust that the "add job" will do its job :P
+             } else
+             {
+               fprintf(stderr,"Could not add job\n");
+             }
         }
    }
 

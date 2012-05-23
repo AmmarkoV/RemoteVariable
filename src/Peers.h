@@ -3,6 +3,7 @@
 
 #include "RemoteVariableSupport.h"
 
+int AddMaster(struct VariableShare * vsh,char * name,unsigned int port , int clientsock);
 int AddPeer(struct VariableShare * vsh,char * name,unsigned int port , int clientsock) ;
 int SwapPeers(struct VariableShare * vsh,int peer_id1,int peer_id2) ;
 int RemPeer(struct VariableShare * vsh,int peer_id) ;

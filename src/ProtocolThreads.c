@@ -98,6 +98,7 @@ int Connect_Handshake(struct VariableShare * vsh,int peersock)
   if ( strncmp(message,"OK",2) == 0 )
     {
           fprintf(stderr,"Peer accepted access to share %s\n",vsh->sharename);
+          AddMaster(vsh,"NOTSET\0",0,peersock);
           return 1;
     }
 
@@ -211,7 +212,7 @@ int AcceptRequestVariable_Handshake(struct VariableShare * vsh,int peersock)
   } else
   {
      --var_id; // FindVariable offsets results by +1 to have null return value for negative find operations
-     fprintf(stderr,"TODO Add check for weather it is in security/policy to send him the variable requested\n");
+     fprintf(stderr,"TODO Add check for wether it is in security/policy to send him the variable requested\n");
 
      strcpy(message,"OK\0");
      SendRAWTo(peersock,message,3);

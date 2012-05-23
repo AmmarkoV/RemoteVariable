@@ -40,14 +40,14 @@ void * RemoteVariableClient_Thread(void * ptr);
 
 int SendRAWTo(int clientsock,char * message,unsigned int length)
 {
-  fprintf(stderr,"Trying to send `%s` \n",message);
+  fprintf(stderr,"Trying to send `%s` to peer socket %d \n",message,clientsock);
   return send(clientsock,message,length, 0);
 }
 
 int RecvRAWFrom(int clientsock,char * message,unsigned int length)
 {
   int retres=recv(clientsock,message,length, 0);
-  fprintf(stderr,"Received `%s` \n",message);
+  fprintf(stderr,"Received `%s` from peer socket %d  \n",message,clientsock);
   return retres;
 }
 
@@ -141,17 +141,11 @@ int HandleClientLoop(struct VariableShare * vsh,int clientsock,struct sockaddr_i
        {
         //We have a disconnect
         error("Error RecvFrom while peeking , dropping session");
-       } else
-       if (data_received == 0)
-       {
-         //Lets check our jobs..!
-
-       } else
+       }  else
        if (data_received > 0)
        {
         fprintf(stderr,"Waiting For Client input\n");
 
-       // if (HandleClient(vsh,clientsock,client,clientlen) )
           if(ProtocolServeResponse(vsh,clientsock))
           {
             fprintf(stderr,"Handled Client successfully\n");
@@ -326,20 +320,10 @@ RemoteVariableClient_Thread(void * ptr)
 
    // ClearAllJobs(vsh); // <- This has to be added later to enforce sync issues .. we are now synced to master so clear all local jobs
 
-//   int new_job_id=-1;
    while (vsh->stop_client_thread==0)
    {
-    /* if (vsh->global_policy!=VSP_MANUAL)
-      {
-        debug_say("Trying to auto-generate a job");
-        FindJobsFrom_VariableDatabase(vsh);
-      }*/
-
-     ProtocolServeResponse(vsh,peersock);
-     debug_say_nocr(".c."); //Client Thread Waiting for a job
-     usleep(1000);
-
-
+       ProtocolServeResponse(vsh,peersock);
+       usleep(1000);
    }
 
   return 0;

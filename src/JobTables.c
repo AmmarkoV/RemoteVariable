@@ -54,7 +54,6 @@ int AddJob(struct VariableShare * vsh,unsigned int our_varid,unsigned int sockpe
  return 0;
 }
 
-
 int SwapJobs(struct VariableShare * vsh,int job_id1,int job_id2)
 {
  if ( (job_id1<vsh->jobs_loaded)&&(job_id2<vsh->jobs_loaded) )
@@ -70,7 +69,6 @@ int SwapJobs(struct VariableShare * vsh,int job_id1,int job_id2)
  return 1;
 }
 
-
 int RemJob(struct VariableShare * vsh,int job_id)
 {
  if ( (vsh->jobs_loaded==1)&&(job_id==0)) { vsh->jobs_loaded=0; vsh->job_list[0].action=NOACTION; return 1; }
@@ -85,14 +83,12 @@ int RemJob(struct VariableShare * vsh,int job_id)
  return 0;
 }
 
-
 int ClearAllJobs(struct VariableShare * vsh)
 {
   fprintf(stderr,"Flushing all jobs\n");
   vsh->jobs_loaded=0;
   return 1;
 }
-
 
 int DoneWithJob(struct VariableShare * vsh,int job_id)
 {
@@ -104,22 +100,29 @@ int DoneWithJob(struct VariableShare * vsh,int job_id)
  return 0;
 }
 
-
 int Job_UpdateLocalVariable(struct VariableShare * vsh,unsigned int our_varid,unsigned int peer_varid)
 {
- return AddJob(vsh,our_varid,peer_varid,READFROM);
+  return AddJob(vsh,our_varid,peer_varid,READFROM);
 }
 
 int Job_UpdateRemoteVariable(struct VariableShare * vsh,unsigned int our_varid,unsigned int peer_varid)
 {
- return AddJob(vsh,our_varid,peer_varid,WRITETO);
+  return AddJob(vsh,our_varid,peer_varid,WRITETO);
 }
 
 int Job_SingalLocalVariableChanged(struct VariableShare * vsh,unsigned int our_varid)
 {
- return AddJob(vsh,our_varid,0,SIGNALCHANGED);
-}
+  unsigned int sent_to=0;
+  fprintf(stderr,"Job_SingalLocalVariableChanged broadcasting to all peers ( %u ) \n",vsh->peers_active);
+   unsigned int i=0;
+   for (i=0; i< vsh->peers_active; i++)
+    {
+      fprintf(stderr,"Job_SingalLocalVariableChanged broadcasting to %s \n",vsh->peer_list[i].IP);
+      sent_to+=AddJob(vsh,our_varid,vsh->peer_list[i].socket_to_client,SIGNALCHANGED);
+    }
 
+  return sent_to;
+}
 
 int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
 {
@@ -128,13 +131,19 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
    unsigned int peer = vsh->job_list[job_id].remote_peer_id;
    unsigned int var_id = vsh->job_list[job_id].our_var_id;
    char * variable_name = vsh->share.variables[var_id].ptr_name;
-   unsigned int peer_socket = vsh->peer_list[peer].socket_to_client;
+   unsigned int peer_socket =  vsh->job_list[job_id].remote_peer_id;  //vsh->peer_list[peer].socket_to_client;
 
    switch ( vsh->job_list[job_id].action )
    {
-      case NOACTION : break;
-      case WRITETO  : fprintf(stderr,"Simulating Execution of Write to peer : %u of variable %s with var id %u \n",peer,variable_name,var_id); DoneWithJob(vsh,job_id);  break;
-      case READFROM : fprintf(stderr,"Execution of Read from peer : %u of variable %s with var id %u \n",peer,variable_name,var_id);
+      case NOACTION :
+                       fprintf(stderr,"No Action came up for execution:P \n");
+                       DoneWithJob(vsh,job_id);
+                       break;
+      case WRITETO  :
+                       fprintf(stderr,"Simulating Execution of Write to peer : %u of variable %s with var id %u \n",peer,variable_name,var_id); DoneWithJob(vsh,job_id);
+                       break;
+      case READFROM :
+                        fprintf(stderr,"Execution of Read from peer : %u of variable %s with var id %u \n",peer,variable_name,var_id);
 
                        if (RequestVariable_Handshake(vsh,var_id,peer_socket))
                         {
@@ -148,7 +157,8 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
                        break;
 
 
-      case SIGNALCHANGED : fprintf(stderr,"Execution of Singal Changed to peer : %u of variable %s with var id %u \n",peer,variable_name,var_id);
+      case SIGNALCHANGED :
+                           fprintf(stderr,"Execution of Singal Changed to peer : %u of variable %s with var id %u \n",peer,variable_name,var_id);
                             if ( MasterSignalChange_Handshake(vsh,var_id,peer_socket) )
                              {
                                 DoneWithJob(vsh,job_id);
@@ -157,7 +167,10 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
                                 fprintf(stderr,"Could not signal change\n");
                              }
                             break;
-      case SYNC : break;
+      case SYNC :
+                     fprintf(stderr,"Simulating Execution of Sync Operation : %u of variable %s with var id %u \n",peer,variable_name,var_id);
+                     DoneWithJob(vsh,job_id);
+                    break;
       default :
         fprintf(stderr,"Unhandled job type\n");
         return 0;
@@ -167,8 +180,6 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
 
    return 1;
 }
-
-
 
 int ExecutePendingJobsForClient(struct VariableShare *vsh,unsigned int client_id)
 {
@@ -187,8 +198,6 @@ int ExecutePendingJobsForClient(struct VariableShare *vsh,unsigned int client_id
   return successfull_jobs;
 }
 
-
-
 int ExecutePendingJobs(struct VariableShare *vsh)
 {
    unsigned int successfull_jobs=0;
@@ -201,11 +210,6 @@ int ExecutePendingJobs(struct VariableShare *vsh)
     }
   return successfull_jobs;
 }
-
-
-
-
-
 
 
 void *
