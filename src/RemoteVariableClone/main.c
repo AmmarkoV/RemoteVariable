@@ -42,6 +42,7 @@ int main()
     printf("Client : Starting Self Test , Waiting to get the 666 initial value!\n");
     if ( !wait_for_var_to_become_x(&SHARED_VAR,WAIT_TIME,666)) { fprintf(stderr,"Client : Failed the test\n"); return 1; }
 
+    fprintf(stderr,"Client : STEP 1 PASSED :D hurrray , var became %u from 0 \n",SHARED_VAR);
 
     SHARED_VAR=1;
     printf("Client : Now we have changed the variable to 1 , will wait until it becomes 2\n");

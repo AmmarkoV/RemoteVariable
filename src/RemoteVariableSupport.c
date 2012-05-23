@@ -80,6 +80,8 @@ struct VariableShare * ConnectToRemote_VariableSharing(char * sharename,char * I
                               error("Variable Shared already initialized , stop it before starting it again as connect to remote!");
                             }
 
+
+
     StartRemoteVariableConnection(vsh);
     StartAutoRefreshVariable(vsh);
     StartJobExecutioner(vsh);

@@ -293,7 +293,7 @@ int ProtocolServeResponse(struct VariableShare * vsh , unsigned int peersock)
           return AcceptRequestVariable_Handshake(vsh,peersock);
       } else
       {
-        fprintf(stderr,"Uncatched incoming message = %s \n",peek_request);
+        fprintf(stderr,"Incoming message from background data processed of length %u received and ignored \n",strlen(peek_request) );
       }
    }
    return 0;
