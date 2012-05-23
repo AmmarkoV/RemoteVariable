@@ -1,7 +1,7 @@
 Remote Variable Sharing for C / C++ 
 ////////////////////////////////////////////////
-Variable Share is supposed to be a (cross-platform? :P ) GNU/GPL layer on top of regular C programs using TCP sockets with which you can easily 
-share Variables between programs running on the same or different machines..
+Variable Share is  a GNU/GPL layer on top of regular C programs using TCP sockets with which you can easily 
+share portions of your address space ( Variables ) using the network,  between programs running on the same or different machines..
 
 Its usage should be straightforward , just including the header and linking the library and adding 2 lines of code
 one for initialization and one for closing it. From there on for each variable ( pointer ) shared an aditional line should 
@@ -11,10 +11,11 @@ It should allow local variables on the scope of a process to be viewed and/or wr
 As for security there will only be base line security measures and the whole point is to use it via SSH tunneling or wrap it in an otherwise secured 
 connection. 
 
-For debugging ValGrind is a great tool that will be used during the development
+For debugging ValGrind is a great tool that will is used during the development
+The project is not mature yet  so be sure to check updates on this repo..
 
 
-Simple Practical Example
+Simple Practical use case scenario for the library 
 ------------------------------------------------------------------------------------------------------------------
 For example lets say an admin has a very complex program on PC#1 and wants to find out the value of the variable "int ServiceNeeded;"
 
@@ -52,4 +53,4 @@ StopVariableSharing(vsh);
 For more info , check the Documentation directory 
 
 ////////////////////////////////////////////////
-Ammar Qammaz 2010
+Ammar Qammaz 2010-2012
