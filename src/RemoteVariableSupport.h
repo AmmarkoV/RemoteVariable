@@ -28,7 +28,7 @@ extern "C" {
 #include <pthread.h>
 #include <unistd.h>
 
-
+#define RVS_GUARD_VALUE 123
 
 #define RVS_MAX_PEERS 100
 #define RVS_MAX_JOBS_PENDING 100
@@ -65,6 +65,8 @@ struct ShareListItem
 
     unsigned int size_of_ptr;
     void * ptr;
+
+    unsigned char GUARD_BYTE;
 };
 
 
@@ -117,6 +119,7 @@ enum VariableShareStates
     VSS_INCOMING_TRANSACTIONS_DISABLED,
     VSS_OUTGOING_TRANSACTIONS_DISABLED,
     VSS_CLOSING,
+    VSS_SECURITY_ALERT,
     VSS_NORMAL
 };
 

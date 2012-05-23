@@ -117,6 +117,8 @@ int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int
     vsh->share.variables[spot_to_take].ptr=ptr;
     vsh->share.variables[spot_to_take].size_of_ptr=ptr_size;
 
+    vsh->share.variables[spot_to_take].GUARD_BYTE = RVS_GUARD_VALUE ;
+
     vsh->share.variables[spot_to_take].hash=GetVariableHash(vsh,spot_to_take);
 
     ++vsh->share.total_variables_shared;

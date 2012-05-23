@@ -186,9 +186,10 @@ int RequestVariable_Handshake(struct VariableShare * vsh,unsigned int var_id,int
   RecvRAWFrom(peersock,message,3);
   if (strncmp(message,"OK",2)!=0) { error("Error at RequestVariable_Handshake handshaking : 1"); return 0;}
   fprintf(stderr,"Successfull RequestVariable_Handshake handshaking..!\n");
-  return RecvVariableFrom(vsh,peersock,var_id);
+  int opres=RecvVariableFrom(vsh,peersock,var_id);
 
-  return 0;
+  fprintf(stderr,"RequestVariable_Handshake exiting\n");
+  return opres;
 }
 
 int AcceptRequestVariable_Handshake(struct VariableShare * vsh,int peersock)

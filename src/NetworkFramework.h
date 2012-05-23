@@ -43,11 +43,7 @@ enum RequestTypeEnum
 struct NetworkRequestGeneralPacket
 {
   char RequestType;
-
-  char name[32];
-
   unsigned int data_size;
-  unsigned char * data;
 };
 
 
