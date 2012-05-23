@@ -64,9 +64,6 @@ char RVS_PROTOCOL_VERSION='A';
 
 
 
-
-
-
 int Connect_Handshake(struct VariableShare * vsh,int peersock)
 {
   fprintf(stderr,"Awaiting challenge\n");
