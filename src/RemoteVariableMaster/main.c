@@ -70,7 +70,7 @@ int main()
 
     fprintf(stderr,"TEST STEP 5\n");
     SHARED_VAR=8;
-    usleep(12314);
+
     MakeSureVarReachedPeers_RemoteVariable(vsh,"SHARED_VAR");
 
     fprintf(stderr,"Master : Test is successfull!\n");

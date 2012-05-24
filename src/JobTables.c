@@ -114,10 +114,12 @@ int Job_SingalLocalVariableChanged(struct VariableShare * vsh,unsigned int our_v
 {
   unsigned int sent_to=0;
   fprintf(stderr,"Job_SingalLocalVariableChanged broadcasting to all peers ( %u ) \n",vsh->peers_active);
+  if (vsh->peers_active==0) { fprintf(stderr,"No peers to signal to..\n"); return 0; }
    unsigned int i=0;
    for (i=0; i< vsh->peers_active; i++)
     {
-      fprintf(stderr,"Job_SingalLocalVariableChanged broadcasting to %s \n",vsh->peer_list[i].IP);
+      fprintf(stderr,"Job_SingalLocalVariableChanged broadcasting to peer number %u \n",i);
+      fprintf(stderr,"Is this correct ? \n");
       sent_to+=AddJob(vsh,our_varid,vsh->peer_list[i].socket_to_client,SIGNALCHANGED);
     }
 

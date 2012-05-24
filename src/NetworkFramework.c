@@ -46,6 +46,7 @@ int SendRAWTo(int clientsock,char * message,unsigned int length)
 
 int RecvRAWFrom(int clientsock,char * message,unsigned int length)
 {
+  fprintf(stderr,"Trying RecvRAWFrom\n");
   int retres=recv(clientsock,message,length, 0);
   fprintf(stderr,"Received `%s` from peer socket %d  \n",message,clientsock);
   return retres;
@@ -140,14 +141,14 @@ int HandleClientLoop(struct VariableShare * vsh,int clientsock,struct sockaddr_i
    unsigned int client_online=1;
 
 
-   struct NetworkRequestGeneralPacket peek_request={0};
+   char peek_request[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
    int data_received = 0;
 
    AddPeer(vsh,inet_ntoa(client.sin_addr),0,clientsock);
 
    while (client_online)
     {
-       data_received = recv(clientsock, (char*) & peek_request, sizeof (peek_request), MSG_PEEK);
+       data_received = recv(clientsock,peek_request,RVS_MAX_RAW_HANDSHAKE_MESSAGE, MSG_PEEK);
 
        if (data_received < 0)
        {
@@ -157,8 +158,7 @@ int HandleClientLoop(struct VariableShare * vsh,int clientsock,struct sockaddr_i
        if (data_received > 0)
        {
         fprintf(stderr,"Waiting For Client input\n");
-
-          if(ProtocolServeResponse(vsh,clientsock))
+        if(ProtocolServeResponse(vsh,clientsock))
           {
             fprintf(stderr,"Handled Client successfully\n");
           } else
@@ -321,8 +321,8 @@ RemoteVariableClient_Thread(void * ptr)
    //First thing to do negotiate with peer about the list , passwords etc
    if (Connect_Handshake(vsh,peersock))
      {
-       debug_say("Successfull connection handshake\n");
-       AddPeer(vsh,vsh->ip,vsh->port,peersock);
+       fprintf(stderr,"Successfull connection handshake , socket to master = %d \n",peersock);
+       AddPeer(vsh,vsh->ip,vsh->port,peersock); // peersock doesnt seem to be the right value to pass :S or it gets overflowed
        vsh->global_state=VSS_NORMAL;
      } else
      {

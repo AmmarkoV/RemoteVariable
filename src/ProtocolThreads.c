@@ -183,6 +183,8 @@ int RequestVariable_Handshake(struct VariableShare * vsh,unsigned int var_id,int
   sprintf(message,"GET=%s\0",vsh->share.variables[var_id].ptr_name);
   SendRAWTo(peersock,message,strlen(message));
 
+  fprintf(stderr,"Trying to RecvRAWFrom\n");
+
   RecvRAWFrom(peersock,message,3);
   if (strncmp(message,"OK",2)!=0) { error("Error at RequestVariable_Handshake handshaking : 1"); return 0;}
   fprintf(stderr,"Successfull RequestVariable_Handshake handshaking..!\n");
