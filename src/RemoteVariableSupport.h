@@ -88,6 +88,7 @@ struct SharePeer
     unsigned int port;
 
     int socket_to_client;
+    int socket_locked;
 
     unsigned int ping;
     unsigned int last_transaction;
