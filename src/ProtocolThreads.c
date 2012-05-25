@@ -76,7 +76,7 @@ int Connect_Handshake(struct VariableShare * vsh,int peersock)
 
   // 2ND MESSAGE SENT
   sprintf(message,"VERSION=%c\0",RVS_PROTOCOL_VERSION);
-  SendRAWTo(peersock,message,strlen(message));
+  SendRAWTo(peersock,message,strlen(message)+1);
 
   //THIS MESSAGE RECEIVES THE VERSION OF THE PEER
   RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
@@ -86,7 +86,7 @@ int Connect_Handshake(struct VariableShare * vsh,int peersock)
 
   // FOURTH MESSAGE SENT
   sprintf(message,"GET=%s\0",vsh->sharename);
-  SendRAWTo(peersock,message,strlen(message));
+  SendRAWTo(peersock,message,strlen(message)+1);
 
 
   RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
@@ -98,7 +98,7 @@ int Connect_Handshake(struct VariableShare * vsh,int peersock)
   if ( strncmp(message,"OK",2) == 0 )
     {
           fprintf(stderr,"Peer accepted access to share %s\n",vsh->sharename);
-          AddMaster(vsh,"NOTSET\0",0,peersock);
+//          AddMaster(vsh,"NOTSET\0",0,peersock);
           return 1;
     }
 
@@ -113,7 +113,7 @@ int Accept_Handshake(struct VariableShare * vsh,int peersock)
   char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
   // 1ST MESSAGE SENT
   strcpy(message,"HELLO\0");
-  SendRAWTo(peersock,message,strlen(message));
+  SendRAWTo(peersock,message,strlen(message)+1); //+1 for sending null termination accross
 
 
   //THIS MESSAGE RECEIVES THE VERSION OF THE PEER
@@ -123,7 +123,7 @@ int Accept_Handshake(struct VariableShare * vsh,int peersock)
 
   // THIRD MESSAGE SENT
   sprintf(message,"VERSION=%c\0",RVS_PROTOCOL_VERSION);
-  SendRAWTo(peersock,message,strlen(message));
+  SendRAWTo(peersock,message,strlen(message)+1); //+1 for sending null termination accross
 
 
   RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
@@ -139,12 +139,12 @@ int Accept_Handshake(struct VariableShare * vsh,int peersock)
      fprintf(stderr,"Requested share = `%s` , our share = `%s` \n",message,vsh->sharename);
 
      strcpy(message,"NO\0");
-     SendRAWTo(peersock,message,strlen(message));
+     SendRAWTo(peersock,message,3); //+1 for sending null termination accross
      return 0;
    }
 
   strcpy(message,"OK\0");
-  SendRAWTo(peersock,message,strlen(message));
+  SendRAWTo(peersock,message,3);  //+1 for sending null termination accross
 
   return 1;
 }
@@ -181,14 +181,14 @@ int RequestVariable_Handshake(struct VariableShare * vsh,unsigned int var_id,int
   char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
   // 1ST MESSAGE SENT
   sprintf(message,"GET=%s\0",vsh->share.variables[var_id].ptr_name);
-  SendRAWTo(peersock,message,strlen(message));
+  int opres=SendRAWTo(peersock,message,strlen(message)+1); // +1 to send the null termination accross
+  if (opres!=strlen(message)+1) { fprintf(stderr,"Error @RequestVariable_Handshake got response %d instead of %u",opres,strlen(message)+1); return 0; }
 
-  fprintf(stderr,"Trying to RecvRAWFrom\n");
 
-  RecvRAWFrom(peersock,message,3);
+  opres=RecvRAWFrom(peersock,message,3);
   if (strncmp(message,"OK",2)!=0) { error("Error at RequestVariable_Handshake handshaking : 1"); return 0;}
   fprintf(stderr,"Successfull RequestVariable_Handshake handshaking..!\n");
-  int opres=RecvVariableFrom(vsh,peersock,var_id);
+  opres=RecvVariableFrom(vsh,peersock,var_id);
 
   fprintf(stderr,"RequestVariable_Handshake exiting\n");
   return opres;
@@ -197,7 +197,8 @@ int RequestVariable_Handshake(struct VariableShare * vsh,unsigned int var_id,int
 int AcceptRequestVariable_Handshake(struct VariableShare * vsh,int peersock)
 {
   char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
-  RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+  int opres=RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+
   fprintf(stderr,"Received %s request for variable\n",message);
   if (strncmp(message,"GET=",4)!=0) { error("Error at accept request for variable  handshaking : 1"); return 0;}
   if ( strlen(message) <= 4 ) { error("Error at accepting request for variable handshake , very small share name "); return 0; }
@@ -211,14 +212,14 @@ int AcceptRequestVariable_Handshake(struct VariableShare * vsh,int peersock)
   {
      fprintf(stderr,"Variable %s doesnt exist\n",message);
      strcpy(message,"NO\0");
-     SendRAWTo(peersock,message,3);
+     opres=SendRAWTo(peersock,message,3);
   } else
   {
      --var_id; // FindVariable offsets results by +1 to have null return value for negative find operations
      fprintf(stderr,"TODO Add check for wether it is in security/policy to send him the variable requested\n");
 
      strcpy(message,"OK\0");
-     SendRAWTo(peersock,message,3);
+     opres=SendRAWTo(peersock,message,3);
      return SendVariableTo(vsh,peersock,var_id);
   }
 
@@ -239,7 +240,7 @@ int MasterSignalChange_Handshake(struct VariableShare * vsh,unsigned int var_cha
   char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
   // 1ST MESSAGE SENT
   sprintf(message,"SIG=%s\0",vsh->share.variables[var_changed].ptr_name);
-  SendRAWTo(peersock,message,strlen(message));
+  SendRAWTo(peersock,message,strlen(message)+1);
 
   RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
   if (strncmp(message,"OK",2)!=0) { error("Error at signal change handshaking : 1"); return 0;}
@@ -270,11 +271,8 @@ int MasterAcceptChange_Handshake(struct VariableShare * vsh,int peersock)
 
 
 /*
-
   ALL THE SOCKET STUFF SHOULD BE WRITTEN IN NETWORK FRAMEWORK
-
   ALL THE MESSAGES SENT/RECEVEIED SHOULD BE PROCESSED HERE
-
 */
 
 
@@ -282,6 +280,7 @@ int ProtocolServeResponse(struct VariableShare * vsh , unsigned int peersock)
 {
    char peek_request[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
    int data_received = recv(peersock, (char*) peek_request,RVS_MAX_RAW_HANDSHAKE_MESSAGE, MSG_PEEK);
+
    if (data_received>0)
    {
      if (strncmp(peek_request,"SIG=",4)==0)

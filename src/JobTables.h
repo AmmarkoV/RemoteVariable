@@ -36,5 +36,7 @@ int ExecutePendingJobs(struct VariableShare *vsh);
 
 
 void * JobExecutioner_Thread(void * ptr);
+void JobExecutioner_Thread_Pause(struct VariableShare * vsh);
+void JobExecutioner_Thread_Resume(struct VariableShare * vsh);
 int StartJobExecutioner(struct VariableShare * vsh);
 #endif // JOBTABLES_H_INCLUDED

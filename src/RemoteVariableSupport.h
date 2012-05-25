@@ -57,7 +57,6 @@ struct ShareListItem
     unsigned int last_write_inc;
     unsigned int permissions;
 
-    unsigned char lock_refresh;
 
     int flag_needs_refresh_from_sock;
     // TODO : NOTE THAT THIS SHOULD ACTUALLY BE AN ARRAY AS LONG AS THE POSSIBLE PEERS
@@ -155,15 +154,19 @@ struct VariableShare
 
 
     pthread_t job_thread;
+    unsigned int pause_job_thread;
     unsigned int stop_job_thread;
 
     pthread_t refresh_thread;
+    unsigned int pause_refresh_thread;
     unsigned int stop_refresh_thread;
 
     pthread_t client_thread;
+    unsigned int pause_client_thread;
     unsigned int stop_client_thread;
 
     pthread_t server_thread;
+    unsigned int pause_server_thread;
     unsigned int stop_server_thread;
 
 
@@ -187,9 +190,6 @@ int Refresh_RemoteVariable(struct VariableShare * vsh,char * variable_name);
 int IsUptodate_RemoteVariable(struct VariableShare * vsh,char * variable_name);
 int MakeSureVarReachedPeers_RemoteVariable(struct VariableShare * vsh,char * variable_name);
 
-
-int RVS_EnableAutoRefresh(struct VariableShare * vsh);
-int RVS_DisableAutoRefresh(struct VariableShare * vsh);
 
 #ifdef __cplusplus
 }

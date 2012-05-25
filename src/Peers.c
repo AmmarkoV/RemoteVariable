@@ -8,7 +8,7 @@ int AddMaster(struct VariableShare * vsh,char * name,unsigned int port , int cli
 {
   unsigned int name_len = strlen(name);
   if ( name_len > RVS_MAX_SHARE_IP_CHARS ) { name_len = RVS_MAX_SHARE_IP_CHARS; }
-  strncpy(vsh->master.IP,name,name_len);
+ // strncpy(vsh->master.IP,name,name_len);
   vsh->master.port=port;
   vsh->master.socket_to_client=clientsock;
   return 1;

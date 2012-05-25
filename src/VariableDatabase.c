@@ -48,10 +48,21 @@ struct VariableShare * Create_VariableDatabase(char * sharename,char * IP,unsign
   strncpy(vsh->ip,IP,RVS_MAX_SHARE_IP_CHARS);
   vsh->port=port;
 
+  vsh->global_state=0;
+  vsh->global_policy=0;
+
   vsh->share.auto_refresh_every_msec=RVS_VARIABLEDATABASE_THREAD_TIME;
   vsh->share.total_variables_memory=newsize;
   vsh->share.total_variables_shared=0;
+
   vsh->peers_active=0;
+
+  vsh->jobs_loaded=0;
+
+  vsh->job_thread=0;
+  vsh->refresh_thread=0;
+  vsh->client_thread=0;
+  vsh->server_thread=0;
 
   vsh->central_timer=0;
   vsh->byte_order=0;
@@ -120,6 +131,8 @@ int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int
 
     vsh->share.variables[spot_to_take].ptr=ptr;
     vsh->share.variables[spot_to_take].size_of_ptr=ptr_size;
+
+    vsh->share.variables[spot_to_take].flag_needs_refresh_from_sock=0;
 
     vsh->share.variables[spot_to_take].GUARD_BYTE = RVS_GUARD_VALUE ;
 
@@ -323,7 +336,7 @@ void *
 AutoRefreshVariable_Thread(void * ptr)
 {
   debug_say("AutoRefresh Thread started..\n");
-  struct VariableShare *vsh;
+  struct VariableShare *vsh=0;
   vsh = (struct VariableShare *) ptr;
 
    unsigned int total_variables_changed=0;
@@ -332,16 +345,9 @@ AutoRefreshVariable_Thread(void * ptr)
    {
        usleep(vsh->share.auto_refresh_every_msec);
 
-
-       if (vsh->global_state!=VSS_NORMAL)
+       if ( (vsh->pause_refresh_thread) || (vsh->global_state!=VSS_NORMAL) )
           {
-             usleep(1000);
-          }
-
-
-       if (vsh->share.auto_refresh_every_msec==0)
-          {  // This means that auto refresh is disabled so we sleep things out till it is re-enabled
-             usleep(10000);
+            // This means that auto refresh is disabled so we dont do anything until is re-enabled
           } else
           {
              variables_changed=SignalUpdatesForAllLocalVariablesThatNeedIt(vsh);
@@ -358,10 +364,21 @@ AutoRefreshVariable_Thread(void * ptr)
    return 0;
 }
 
+void AutoRefreshVariable_Thread_Pause(struct VariableShare * vsh)
+{
+  vsh->pause_refresh_thread=1;
+}
+
+void AutoRefreshVariable_Thread_Resume(struct VariableShare * vsh)
+{
+  vsh->pause_refresh_thread=0;
+}
+
 /* THREAD STARTER */
 int StartAutoRefreshVariable(struct VariableShare * vsh)
 {
   vsh->stop_refresh_thread=0;
+  vsh->pause_refresh_thread=0;
   int retres = pthread_create( &vsh->refresh_thread, NULL,  AutoRefreshVariable_Thread ,(void*) vsh);
   if (retres!=0) retres = 0; else
                  retres = 1;

@@ -58,7 +58,12 @@ int SendFileTo(struct VariableShare * vsh,int clientsock,unsigned int variable_i
 
 int GetPeerIdBySock(struct VariableShare * vsh,int clientsock);
 
+void RemoteVariableClient_Thread_Pause(struct VariableShare * vsh);
+void RemoteVariableClient_Thread_Resume(struct VariableShare * vsh);
 int StartRemoteVariableServer(struct VariableShare * vsh);
+
+void RemoteVariableServer_Thread_Pause(struct VariableShare * vsh);
+void RemoteVariableServer_Thread_Resume(struct VariableShare * vsh);
 int StartRemoteVariableConnection(struct VariableShare * vsh);
 
 #endif // NETWORKFRAMEWORK_H_INCLUDED

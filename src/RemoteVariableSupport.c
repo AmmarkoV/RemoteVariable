@@ -66,16 +66,11 @@ struct VariableShare * ConnectToRemote_VariableSharing(char * sharename,char * I
 
     struct VariableShare *  vsh = Create_VariableDatabase(sharename,IP,port,password,128);
     if ( vsh == 0 ) { fprintf(stderr,"Could not create Remote variable database ( Name : %s , IP %s:%u )",sharename,IP,port); return 0; }
-    if ( vsh->global_state == 0 )
-                            {
-                              vsh->global_state=VSS_WAITING_FOR_HANDSHAKE;
-                              vsh->global_policy=VSP_AUTOMATIC;
-                              vsh->this_address_space_is_master=0;
-                            } else
-                            {
-                              error("Variable Shared already initialized , stop it before starting it again as connect to remote!");
-                            }
 
+
+    vsh->global_state=VSS_WAITING_FOR_HANDSHAKE;
+    vsh->global_policy=VSP_AUTOMATIC;
+    vsh->this_address_space_is_master=0;
 
 
     StartRemoteVariableConnection(vsh);
@@ -187,17 +182,6 @@ int MakeSureVarReachedPeers_RemoteVariable(struct VariableShare * vsh,char * var
   return MakeSureVarReachedPeers(vsh,variable_name);
 }
 
-
-int RVS_EnableAutoRefresh(struct VariableShare * vsh)
-{
-   vsh->share.auto_refresh_every_msec=RVS_VARIABLEDATABASE_THREAD_TIME;
-}
-
-
-int RVS_DisableAutoRefresh(struct VariableShare * vsh)
-{
-   vsh->share.auto_refresh_every_msec=0;
-}
 
 
 /*

@@ -47,7 +47,11 @@ int SendRAWTo(int clientsock,char * message,unsigned int length)
 int RecvRAWFrom(int clientsock,char * message,unsigned int length)
 {
   fprintf(stderr,"Trying RecvRAWFrom\n");
+  memset (message,0,length);
+
   int retres=recv(clientsock,message,length, 0);
+
+
   fprintf(stderr,"Received `%s` from peer socket %d  \n",message,clientsock);
   return retres;
 }
@@ -336,7 +340,7 @@ RemoteVariableClient_Thread(void * ptr)
    while (vsh->stop_client_thread==0)
    {
        ProtocolServeResponse(vsh,peersock);
-       usleep(1000);
+       usleep(100);
    }
 
   RemPeerBySock(vsh,peersock);
@@ -348,22 +352,50 @@ RemoteVariableClient_Thread(void * ptr)
 // THREAD STARTERS
 // ________________________________________________________
 
-int
-StartRemoteVariableServer(struct VariableShare * vsh)
+
+void RemoteVariableClient_Thread_Pause(struct VariableShare * vsh)
 {
-  vsh->stop_server_thread=0;
-  int retres = pthread_create( &vsh->server_thread, NULL,  RemoteVariableServer_Thread ,(void*) vsh);
-  if (retres!=0) retres = 0; else
-                 retres = 1;
-  return retres;
+  vsh->pause_client_thread=1;
 }
+
+void RemoteVariableClient_Thread_Resume(struct VariableShare * vsh)
+{
+  vsh->pause_client_thread=0;
+}
+
+
 
 int
 StartRemoteVariableConnection(struct VariableShare * vsh)
 {
+   vsh->pause_client_thread=0;
    vsh->stop_client_thread=0;
    int retres = pthread_create( &vsh->client_thread, NULL,  RemoteVariableClient_Thread ,(void*) vsh);
    if (retres!=0) retres = 0; else
                   retres = 1;
    return retres;
+}
+
+
+
+void RemoteVariableServer_Thread_Pause(struct VariableShare * vsh)
+{
+  vsh->pause_server_thread=1;
+}
+
+void RemoteVariableServer_Thread_Resume(struct VariableShare * vsh)
+{
+  vsh->pause_server_thread=0;
+}
+
+
+int
+StartRemoteVariableServer(struct VariableShare * vsh)
+{
+  vsh->pause_server_thread=0;
+  vsh->stop_server_thread=0;
+  int retres = pthread_create( &vsh->server_thread, NULL,  RemoteVariableServer_Thread ,(void*) vsh);
+  if (retres!=0) retres = 0; else
+                 retres = 1;
+  return retres;
 }

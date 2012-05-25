@@ -31,9 +31,10 @@ int AddJob(struct VariableShare * vsh,unsigned int our_varid,unsigned int sockpe
  if (  vsh->jobs_loaded < RVS_MAX_JOBS_PENDING )
   { // NEEDS TO BE REWRITTEN TO KEEP A SORTED LIST!
     unsigned int where_to_add=vsh->jobs_loaded;
+    unsigned int peer_id = GetPeerIdBySock(vsh,sockpeer);
+
     vsh->job_list[where_to_add].our_var_id=our_varid;
     vsh->job_list[where_to_add].remote_peer_id=sockpeer;
-    unsigned int peer_id = GetPeerIdBySock(vsh,sockpeer);
     vsh->job_list[where_to_add].action=operation_type;
     vsh->job_list[where_to_add].time=vsh->central_timer;
 
@@ -58,9 +59,9 @@ int SwapJobs(struct VariableShare * vsh,int job_id1,int job_id2)
 {
  if ( (job_id1<vsh->jobs_loaded)&&(job_id2<vsh->jobs_loaded) )
   {
-    struct ShareJob temp=vsh->job_list[job_id1];
-    vsh->job_list[job_id1]=vsh->job_list[job_id2];
-    vsh->job_list[job_id2]=temp;
+    struct ShareJob temp = vsh->job_list[job_id1];
+    vsh->job_list[job_id1] = vsh->job_list[job_id2];
+    vsh->job_list[job_id2] = temp;
   } else
   {
     fprintf(stderr,"SwapJobs called for jobs %u and %u which are out of bounds ( %u ) \n",job_id1,job_id2,vsh->jobs_loaded);
@@ -146,7 +147,10 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
                        break;
       case READFROM :
                        fprintf(stderr,"Execution of Read from peer : %u of variable %s with var id %u \n",peer,variable_name,var_id);
-                       RVS_DisableAutoRefresh(vsh);
+                       AutoRefreshVariable_Thread_Pause(vsh);
+                       RemoteVariableClient_Thread_Pause(vsh);
+                       RemoteVariableServer_Thread_Pause(vsh);
+
 
                        if (RequestVariable_Handshake(vsh,var_id,peer_socket))
                         {
@@ -156,13 +160,17 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
                             fprintf(stderr,"Request of variable %u failed \n",var_id);
                         }
 
-                       RVS_EnableAutoRefresh(vsh);
+                       AutoRefreshVariable_Thread_Resume(vsh);
+                       RemoteVariableClient_Thread_Resume(vsh);
+                       RemoteVariableServer_Thread_Resume(vsh);
                        break;
 
 
       case SIGNALCHANGED :
                            fprintf(stderr,"Execution of Singal Changed to peer : %u of variable %s with var id %u \n",peer,variable_name,var_id);
-                           RVS_DisableAutoRefresh(vsh);
+                           AutoRefreshVariable_Thread_Pause(vsh);
+                           RemoteVariableClient_Thread_Pause(vsh);
+                           RemoteVariableServer_Thread_Pause(vsh);
 
                             if ( MasterSignalChange_Handshake(vsh,var_id,peer_socket) )
                              {
@@ -171,7 +179,10 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
                              {
                                 fprintf(stderr,"Could not signal change\n");
                              }
-                           RVS_EnableAutoRefresh(vsh);
+
+                           AutoRefreshVariable_Thread_Resume(vsh);
+                           RemoteVariableClient_Thread_Resume(vsh);
+                           RemoteVariableServer_Thread_Resume(vsh);
                            break;
       case SYNC :
                      fprintf(stderr,"Simulating Execution of Sync Operation : %u of variable %s with var id %u \n",peer,variable_name,var_id);
@@ -222,14 +233,21 @@ void *
 JobExecutioner_Thread(void * ptr)
 {
   debug_say("JobExecutioner Thread started..\n");
-  struct VariableShare *vsh;
+  struct VariableShare *vsh=0;
   vsh = (struct VariableShare *) ptr;
 
    unsigned int total_jobs_done=0;
    while ( vsh->stop_job_thread==0 )
    {
-     usleep(1000);
-     total_jobs_done+=ExecutePendingJobs(vsh);
+     usleep(10000);
+
+       if (vsh->pause_job_thread)
+        {
+           //Job Thread is paused!
+        }  else
+        {
+          total_jobs_done+=ExecutePendingJobs(vsh);
+        }
 
      ++vsh->central_timer;
    }
@@ -237,15 +255,25 @@ JobExecutioner_Thread(void * ptr)
    return 0;
 }
 
+
+void JobExecutioner_Thread_Pause(struct VariableShare * vsh)
+{
+  vsh->pause_job_thread=1;
+}
+
+void JobExecutioner_Thread_Resume(struct VariableShare * vsh)
+{
+  vsh->pause_job_thread=0;
+}
 /* THREAD STARTER */
 int StartJobExecutioner(struct VariableShare * vsh)
 {
+  vsh->pause_job_thread=0;
   vsh->stop_job_thread=0;
   int retres = pthread_create( &vsh->job_thread, NULL,  JobExecutioner_Thread ,(void*) vsh);
   if (retres!=0) retres = 0; else
                  retres = 1;
   return retres;
 }
-
 
 

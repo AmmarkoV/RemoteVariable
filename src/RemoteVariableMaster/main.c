@@ -71,7 +71,15 @@ int main()
     fprintf(stderr,"TEST STEP 5\n");
     SHARED_VAR=8;
 
-    MakeSureVarReachedPeers_RemoteVariable(vsh,"SHARED_VAR");
+    int i=0;
+    printf("Master now waiting for shutdown\n");
+    for (i=0; i<1000; i++)
+     {
+        printf(".");
+        usleep(10000);
+     }
+     printf("\nMaster done waiting\n");
+//    MakeSureVarReachedPeers_RemoteVariable(vsh,"SHARED_VAR");
 
     fprintf(stderr,"Master : Test is successfull!\n");
 

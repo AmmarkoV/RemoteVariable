@@ -41,5 +41,7 @@ int RefreshRemoteVariable_VariableDatabase(struct VariableShare * vsh,char * var
 
 int MakeSureVarReachedPeers(struct VariableShare *vsh,char * varname);
 
+void AutoRefreshVariable_Thread_Pause(struct VariableShare * vsh);
+void AutoRefreshVariable_Thread_Resume(struct VariableShare * vsh);
 int StartAutoRefreshVariable(struct VariableShare * vsh);
 #endif // VARIABLEDATABASE_H_INCLUDED
