@@ -32,9 +32,12 @@ int AddJob(struct VariableShare * vsh,unsigned int our_varid,unsigned int sockpe
   { // NEEDS TO BE REWRITTEN TO KEEP A SORTED LIST!
     unsigned int where_to_add=vsh->jobs_loaded;
     unsigned int peer_id = GetPeerIdBySock(vsh,sockpeer);
+    if (peer_id==0) { fprintf(stderr,"Could not find a peer for AddJob operation!\n"); return 0; }
+    --peer_id;
 
-    vsh->job_list[where_to_add].our_var_id=our_varid;
-    vsh->job_list[where_to_add].remote_peer_id=sockpeer;
+    vsh->job_list[where_to_add].local_var_id=our_varid;
+    vsh->job_list[where_to_add].remote_peer_socket=sockpeer;
+    vsh->job_list[where_to_add].remote_peer_id=peer_id;
     vsh->job_list[where_to_add].action=operation_type;
     vsh->job_list[where_to_add].time=vsh->central_timer;
 
@@ -132,9 +135,15 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
    if (job_id>=vsh->jobs_loaded) { error("Job Execute call on jobid out of bounds\n"); return 0; }
 
    unsigned int peer = vsh->job_list[job_id].remote_peer_id;
-   unsigned int var_id = vsh->job_list[job_id].our_var_id;
+   fprintf(stderr,"PeerLock on executed job for peer %u ",peer);
+
+   unsigned int var_id = vsh->job_list[job_id].local_var_id;
    char * variable_name = vsh->share.variables[var_id].ptr_name;
-   unsigned int peer_socket =  vsh->job_list[job_id].remote_peer_id;  //vsh->peer_list[peer].socket_to_client;
+   unsigned int peer_socket =  vsh->job_list[job_id].remote_peer_socket;
+
+   unsigned int * peer_lock =  & vsh->peer_list[peer].socket_locked;  //vsh->peer_list[peer].socket_to_client;
+   fprintf(stderr,"and peerlock %u \n",*peer_lock);
+
 
    switch ( vsh->job_list[job_id].action )
    {
@@ -152,7 +161,7 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
                        RemoteVariableServer_Thread_Pause(vsh);
 
 
-                       if (RequestVariable_Handshake(vsh,var_id,peer_socket))
+                       if (RequestVariable_Handshake(vsh,var_id,peer_socket,peer_lock))
                         {
                             DoneWithJob(vsh,job_id);
                         }  else
@@ -172,7 +181,7 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
                            RemoteVariableClient_Thread_Pause(vsh);
                            RemoteVariableServer_Thread_Pause(vsh);
 
-                            if ( MasterSignalChange_Handshake(vsh,var_id,peer_socket) )
+                            if ( MasterSignalChange_Handshake(vsh,var_id,peer_socket,peer_lock) )
                              {
                                 DoneWithJob(vsh,job_id);
                              } else

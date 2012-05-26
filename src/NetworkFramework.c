@@ -119,6 +119,35 @@ int SendFileTo(struct VariableShare * vsh,int clientsock,unsigned int variable_i
   return 0;
 }
 
+
+int WaitForSocketLockToClear(int peersock,unsigned int * peerlock)
+{
+  if (peerlock==0) { fprintf(stderr,"WaitForSocketLock skipped by null pointer \n"); return 0; }
+  while (*peerlock)
+   {
+     usleep(100);
+   }
+
+  return 1;
+}
+
+int LockSocket(int peersock,unsigned int * peerlock)
+{
+  if (peerlock==0) { fprintf(stderr,"LockSocket skipped by null pointer \n"); return 0; }
+  if (*peerlock!=0) {
+                      fprintf(stderr,"LockSocket found locked variable ! , waiting for it to clear out\n");
+                      WaitForSocketLockToClear(peersock,peerlock);
+                    }
+  *peerlock=1;
+  return 1;
+}
+
+int UnlockSocket(int peersock,unsigned int * peerlock)
+{
+  if (peerlock==0) { fprintf(stderr,"UnlockSocket skipped by null pointer \n"); return 0; }
+  *peerlock=0;
+  return 1;
+}
 // ________________________________________________________
 // HANDLE CLIENT
 
@@ -148,7 +177,13 @@ int HandleClientLoop(struct VariableShare * vsh,int clientsock,struct sockaddr_i
    char peek_request[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
    int data_received = 0;
 
-   AddPeer(vsh,inet_ntoa(client.sin_addr),0,clientsock);
+   unsigned int peer_id=AddPeer(vsh,inet_ntoa(client.sin_addr),0,clientsock);
+   if ( peer_id == 0 ) { error("Failed to add peer to list while @ RemoteVariableClient_Thread "); }
+   --peer_id; // Step down one value !
+
+   fprintf(stderr,"Getting peerlock for Server HandleClientLoop using %u peer id , initial value is %u ",peer_id,vsh->peer_list[peer_id].socket_locked);
+   unsigned int * peerlock =  &vsh->peer_list[peer_id].socket_locked;
+
 
    while (client_online)
     {
@@ -162,7 +197,7 @@ int HandleClientLoop(struct VariableShare * vsh,int clientsock,struct sockaddr_i
        if (data_received > 0)
        {
         fprintf(stderr,"Waiting For Client input\n");
-        if(ProtocolServeResponse(vsh,clientsock))
+        if(ProtocolServeResponse(vsh,clientsock,peerlock))
           {
             fprintf(stderr,"Handled Client successfully\n");
           } else
@@ -320,13 +355,16 @@ RemoteVariableClient_Thread(void * ptr)
       return 0;
     }
 
-
+   int peer_id = 0;
    int peersock =  vsh->master.socket_to_client;
    //First thing to do negotiate with peer about the list , passwords etc
    if (Connect_Handshake(vsh,peersock))
      {
        fprintf(stderr,"Successfull connection handshake , socket to master = %d \n",peersock);
-       AddPeer(vsh,vsh->ip,vsh->port,peersock); // peersock doesnt seem to be the right value to pass :S or it gets overflowed
+       peer_id = AddPeer(vsh,vsh->ip,vsh->port,peersock); // peersock doesnt seem to be the right value to pass :S or it gets overflowed
+       if ( peer_id == 0 ) { error("Failed to add peer to list while @ RemoteVariableClient_Thread "); }
+       --peer_id; // Step down one value !
+
        vsh->global_state=VSS_NORMAL;
      } else
      {
@@ -336,10 +374,12 @@ RemoteVariableClient_Thread(void * ptr)
      }
 
    // ClearAllJobs(vsh); // <- This has to be added later to enforce sync issues .. we are now synced to master so clear all local jobs
+   fprintf(stderr,"Getting peerlock for Client thread using %u peer id , initial value is %u ",peer_id,vsh->peer_list[peer_id].socket_locked);
+   unsigned int * peerlock =  &vsh->peer_list[peer_id].socket_locked;
 
    while (vsh->stop_client_thread==0)
    {
-       ProtocolServeResponse(vsh,peersock);
+       ProtocolServeResponse(vsh,peersock,peerlock);
        usleep(100);
    }
 

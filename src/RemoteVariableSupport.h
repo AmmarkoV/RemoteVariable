@@ -88,7 +88,7 @@ struct SharePeer
     unsigned int port;
 
     int socket_to_client;
-    int socket_locked;
+    unsigned int socket_locked;
 
     unsigned int ping;
     unsigned int last_transaction;
@@ -101,7 +101,8 @@ struct ShareJob
 {
      unsigned char status;
 
-     unsigned int our_var_id;
+     unsigned int local_var_id;
+     unsigned int remote_peer_socket;
      unsigned int remote_peer_id;
 
      char action; // 0 no action , 1 = write to , 2 = read from , 3 = check if it is the same on the other end

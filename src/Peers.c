@@ -26,7 +26,7 @@ int AddPeer(struct VariableShare * vsh,char * name,unsigned int port , int clien
        vsh->peer_list[pos].socket_to_client = clientsock;
        vsh->peer_list[pos].socket_locked=0;
        ++vsh->peers_active;
-       return 1;
+       return pos+1;
    }
   return 0;
 }
@@ -67,7 +67,7 @@ int GetPeerIdBySock(struct VariableShare * vsh,int clientsock)
    {
       if (vsh->peer_list[i].socket_to_client == clientsock )
        {
-           return i;
+           return 1+i;
        }
       ++i;
    }
