@@ -82,6 +82,8 @@ int Destroy_VariableDatabase(struct VariableShare * vsh)
      vsh->peer_list[i].socket_to_client=0;
    }
 
+   if (vsh->this_address_space_is_master) { close(vsh->master.socket_to_client); vsh->master.socket_to_client=0; }
+
   //TODO CLOSE SOCKETS ETC PROPERLY
     vsh->pause_job_thread=0;
     vsh->stop_job_thread=1;
@@ -130,7 +132,7 @@ unsigned long GetVariableHash(struct VariableShare * vsh,unsigned int var_id)
 
 int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int permissions,void * ptr,unsigned int ptr_size)
 {
- if ( VariableShareOk(vsh) == 0 ) return 0;
+ if ( VariableShareOk(vsh) == 0 ) { fprintf(stderr,"Error could not add %s var to database \n"); return 0; }
 
  unsigned int spot_to_take=vsh->share.total_variables_memory+1;
  if (vsh->share.total_variables_memory > vsh-> share.total_variables_shared )
@@ -156,9 +158,9 @@ int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int
 
     vsh->share.variables[spot_to_take].flag_needs_refresh_from_sock=0;
 
-    vsh->share.variables[spot_to_take].GUARD_BYTE = RVS_GUARD_VALUE ;
-
     vsh->share.variables[spot_to_take].hash=GetVariableHash(vsh,spot_to_take);
+
+    vsh->share.variables[spot_to_take].GUARD_BYTE = RVS_GUARD_VALUE ;
 
     ++vsh->share.total_variables_shared;
   }
@@ -269,7 +271,7 @@ int IfLocalVariableChanged_SignalUpdateToJoblist(struct VariableShare * vsh,unsi
   unsigned long newhash=GetVariableHash(vsh,var_id);
   if (newhash!=vsh->share.variables[var_id].hash )
     {
-      debug_say("Variable Changed !");
+      fprintf(stderr,"Variable Changed Hash %u to %u !\n",newhash,vsh->share.variables[var_id].hash );
       Job_SingalLocalVariableChanged(vsh,var_id); // <- This call creates a job to signal the change..!
       /*We keep the new hash as the current hash :)*/
       vsh->share.variables[var_id].hash=newhash;
@@ -283,7 +285,7 @@ int SignalUpdatesForAllLocalVariablesThatNeedIt(struct VariableShare * vsh)
 {
  if ( vsh->share.total_variables_shared == 0 ) { return -1; /* NO VARIABLES TO SHARE OR UPDATE!*/}
  int retres=0;
- int i=0;
+ unsigned int i=0;
  //fprintf(stderr,"Refreshing %u variables!\n",vsh->share.total_variables_shared);
  for ( i=0; i<vsh->share.total_variables_shared; i++)
   {

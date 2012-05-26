@@ -124,11 +124,14 @@ int SendFileTo(struct VariableShare * vsh,int clientsock,unsigned int variable_i
 int WaitForSocketLockToClear(int peersock,unsigned int * peerlock)
 {
   if (peerlock==0) { fprintf(stderr,"WaitForSocketLock skipped by null pointer \n"); return 0; }
+  unsigned int waitloops=0;
   while (*peerlock)
    {
      usleep(100);
+     ++waitloops;
    }
 
+  if (waitloops) { fprintf(stderr,"WaitForSocketLockToClear waited for %u loops\n",waitloops); }
   return 1;
 }
 
