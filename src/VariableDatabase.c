@@ -57,6 +57,13 @@ struct VariableShare * Create_VariableDatabase(char * sharename,char * IP,unsign
 
   vsh->peers_active=0;
 
+/*
+  unsigned int i=0;
+  for (i=0; i<RVS_MAX_JOBS_PENDING; i++)
+   {
+      vsh->jobs_list[i]
+   }*/
+
   vsh->jobs_loaded=0;
 
   vsh->job_thread=0;
@@ -146,8 +153,10 @@ int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int
 
   if (spot_to_take < vsh->share.total_variables_memory)
   {
-    if ( strlen(var_name)>=128 ) { error("Buffer Overflow attempt , we are safe"); return 0; }
-    strcpy(vsh->share.variables[spot_to_take].ptr_name,var_name);
+
+    unsigned int var_length = strlen(var_name);
+    if ( var_length>=32 ) { fprintf(stderr,"Var %s is too big trimming it \n"); var_length=32; }
+    strncpy(vsh->share.variables[spot_to_take].ptr_name,var_name,var_length);
 
 
     vsh->share.variables[spot_to_take].ptr=ptr;
@@ -163,7 +172,7 @@ int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int
 
     vsh->share.variables[spot_to_take].GUARD_BYTE = RVS_GUARD_VALUE ;
 
-    ++vsh->share.total_variables_shared;
+    vsh->share.total_variables_shared+=1;
   }
 
  return 1;
@@ -250,6 +259,11 @@ int RefreshRemoteVariable_VariableDatabase(struct VariableShare * vsh,char * var
    return 0;
 }
 */
+int VariableIdExists(struct VariableShare * vsh,unsigned int var_id)
+{
+  if (vsh->share.total_variables_shared>=var_id) { return 0; }
+  return 1;
+}
 
 int MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,char * variable_name,int clientsock)
 {
@@ -262,13 +276,14 @@ int MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,char 
     {
       --var_id; // FindVariableDatabase returns +1 results ( to signal failure with 0 )
       fprintf(stderr,"Variable %s has been marked , as \"needs refresh\" \n",variable_name);
-      vsh->share.variables[var_id].flag_needs_refresh_from_sock=clientsock;
+      vsh->share.variables[var_id].flag_needs_refresh_from_sock = clientsock;
     }
    return 0;
 }
 
 int IfLocalVariableChanged_SignalUpdateToJoblist(struct VariableShare * vsh,unsigned int var_id)
 {
+  if (!VariableIdExists(vsh,var_id)) { fprintf(stderr,"Variable addressed ( %u ) by IfLocalVariableChanged_SignalUpdateToJoblist does not exist \n",var_id); return 0; }
   unsigned long newhash=GetVariableHash(vsh,var_id);
   if (newhash!=vsh->share.variables[var_id].hash )
     {
