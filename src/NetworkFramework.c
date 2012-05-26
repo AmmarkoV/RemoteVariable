@@ -23,6 +23,7 @@
 #include "VariableDatabase.h"
 #include "NetworkFramework.h"
 #include "JobTables.h"
+#include "Peers.h"
 #include "helper.h"
 #include "ProtocolThreads.h"
 #include "RemoteVariableSupport.h"
@@ -95,11 +96,11 @@ int SendVariableTo(struct VariableShare * vsh,int clientsock,unsigned int variab
 
   fprintf(stderr,"Sending GeneralPacket\n");
   int data_sent= send(clientsock, (char*) & data, sizeof (data), 0); // SEND START FRAME!
-  if ( data_sent != sizeof (data) ) { fprintf(stderr,"Incorrect starting frame transmission ( %u instead of %u )\n",data_sent , sizeof (data) ); return 0; }
+  if ( data_sent != sizeof (data) ) { fprintf(stderr,"Incorrect starting frame transmission ( %d instead of %u )\n",data_sent , sizeof (data) ); return 0; }
 
   fprintf(stderr,"Sending Payload\n");
   data_sent= send(clientsock,vsh->share.variables[variable_id].ptr,data.data_size , 0); // SEND VARIABLE!
-  if ( data_sent != data.data_size ) { fprintf(stderr,"Incorrect payload transmission ( %u instead of %u )\n",data_sent , data.data_size ); return 0; }
+  if ( data_sent != data.data_size ) { fprintf(stderr,"Incorrect payload transmission ( %d instead of %u )\n",data_sent , data.data_size ); return 0; }
 
 
   fprintf(stderr,"SendVariableTo , Great Success :) \n");

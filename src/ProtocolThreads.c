@@ -188,7 +188,7 @@ int RequestVariable_Handshake(struct VariableShare * vsh,unsigned int var_id,int
   int opres=SendRAWTo(peersock,message,strlen(message)+1); // +1 to send the null termination accross
   if (opres!=strlen(message)+1)
     {
-      fprintf(stderr,"Error @RequestVariable_Handshake got response %d instead of %u",opres,strlen(message)+1);
+      fprintf(stderr,"Error @RequestVariable_Handshake got response %d instead of %u",opres,(unsigned int ) strlen(message)+1);
       UnlockSocket(peersock,peerlock);
       return 0;
     }
@@ -355,7 +355,7 @@ int ProtocolServeResponse(struct VariableShare * vsh ,int peersock,unsigned int 
           return AcceptRequestVariable_Handshake(vsh,peersock,peerlock);
       } else
       {
-        fprintf(stderr,"Incoming message from background data processed of length %u received and ignored \n");
+        fprintf(stderr,"Incoming message from background data processed of length %u received and ignored \n",(unsigned int) strlen(peek_request));
       }
    }
    return 0;

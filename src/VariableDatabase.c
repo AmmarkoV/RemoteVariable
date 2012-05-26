@@ -75,11 +75,33 @@ int Destroy_VariableDatabase(struct VariableShare * vsh)
   if (vsh==0) { debug_say("Memory for share , already deallocated!"); return 1; }
   if ( vsh->share.variables == 0 ) { debug_say("Memory for shared variables , already deallocated!"); return 1; }
 
-  //TODO CLOSE SOCKETS ETC PROPERLY
+  int i=0;
+  for (i=0; i<vsh->peers_active; i++)
+   {
+     close(vsh->peer_list[i].socket_to_client);
+     vsh->peer_list[i].socket_to_client=0;
+   }
 
+  //TODO CLOSE SOCKETS ETC PROPERLY
+    vsh->pause_job_thread=0;
+    vsh->stop_job_thread=1;
+
+    vsh->pause_refresh_thread=0;
+    vsh->stop_refresh_thread=1;
+
+    vsh->pause_client_thread=0;
+    vsh->stop_client_thread=1;
+
+    vsh->pause_server_thread=0;
+    vsh->stop_server_thread=1;
+
+  vsh->share.total_variables_memory=0;
+  vsh->share.total_variables_shared=0;
 
   free(vsh->share.variables);
   free(vsh);
+
+  usleep(10000);
 
   return 1;
 }

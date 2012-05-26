@@ -23,6 +23,7 @@
 #include "RemoteVariableSupport.h"
 #include "ProtocolThreads.h"
 #include "NetworkFramework.h"
+#include "VariableDatabase.h"
 #include "helper.h"
 
 
