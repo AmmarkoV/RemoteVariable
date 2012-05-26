@@ -261,7 +261,7 @@ int RefreshRemoteVariable_VariableDatabase(struct VariableShare * vsh,char * var
 */
 int VariableIdExists(struct VariableShare * vsh,unsigned int var_id)
 {
-  if (vsh->share.total_variables_shared>=var_id) { return 0; }
+  if (vsh->share.total_variables_shared<=var_id) { return 0; }
   return 1;
 }
 

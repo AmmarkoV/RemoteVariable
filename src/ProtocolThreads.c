@@ -244,9 +244,9 @@ int AcceptRequestVariable_Handshake(struct VariableShare * vsh,int peersock,unsi
       UnlockSocket(peersock,peerlock);
       return 0;
    }
-  if (opres!=strlen(message))
+  if (opres!=strlen(message)+1)
    {
-      fprintf(stderr,"RecRAWFrom received %u bytes , string received is now %u bytes long \n",opres,(unsigned int) strlen(message) );
+      fprintf(stderr,"RecRAWFrom received %u bytes , string received is now %u bytes long \n",opres,(unsigned int) strlen(message)+1 );
       return 0;
    }
 
