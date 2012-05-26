@@ -148,17 +148,18 @@ int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int
   {
     if ( strlen(var_name)>=128 ) { error("Buffer Overflow attempt , we are safe"); return 0; }
     strcpy(vsh->share.variables[spot_to_take].ptr_name,var_name);
-    if ( strlen(var_name) > 31 ) { error("Buffer Overflow attempt originating from us ? "); return 0; }
+
+
+    vsh->share.variables[spot_to_take].ptr=ptr;
+    vsh->share.variables[spot_to_take].size_of_ptr=ptr_size;
+    vsh->share.variables[spot_to_take].hash=GetVariableHash(vsh,spot_to_take);
 
     vsh->share.variables[spot_to_take].last_write_inc=0;
     vsh->share.variables[spot_to_take].permissions=permissions;
 
-    vsh->share.variables[spot_to_take].ptr=ptr;
-    vsh->share.variables[spot_to_take].size_of_ptr=ptr_size;
 
     vsh->share.variables[spot_to_take].flag_needs_refresh_from_sock=0;
 
-    vsh->share.variables[spot_to_take].hash=GetVariableHash(vsh,spot_to_take);
 
     vsh->share.variables[spot_to_take].GUARD_BYTE = RVS_GUARD_VALUE ;
 
@@ -271,10 +272,9 @@ int IfLocalVariableChanged_SignalUpdateToJoblist(struct VariableShare * vsh,unsi
   unsigned long newhash=GetVariableHash(vsh,var_id);
   if (newhash!=vsh->share.variables[var_id].hash )
     {
-      fprintf(stderr,"Variable Changed Hash %u to %u !\n",newhash,vsh->share.variables[var_id].hash );
+      fprintf(stderr,"Variable Changed Hash for variable %u , values %u to %u !\n",var_id,newhash,vsh->share.variables[var_id].hash );
+      vsh->share.variables[var_id].hash=newhash; /*We keep the new hash as the current hash :)*/
       Job_SingalLocalVariableChanged(vsh,var_id); // <- This call creates a job to signal the change..!
-      /*We keep the new hash as the current hash :)*/
-      vsh->share.variables[var_id].hash=newhash;
 
       return 1;
     }

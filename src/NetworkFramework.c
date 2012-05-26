@@ -52,14 +52,13 @@ int RecvRAWFrom(int clientsock,char * message,unsigned int length)
 
   int retres=recv(clientsock,message,length, 0);
 
-
   fprintf(stderr,"Received `%s` from peer socket %d  \n",message,clientsock);
   return retres;
 }
 
 int RecvVariableFrom(struct VariableShare * vsh,int clientsock,unsigned int variable_id)
 {
- struct NetworkRequestGeneralPacket data={0};
+ struct NetworkRequestGeneralPacket data;
  data.RequestType = READFROM ; // This should remain readfrom after receiving the general packet..!
  data.data_size = vsh->share.variables[variable_id].size_of_ptr;
 
@@ -89,8 +88,7 @@ int RecvVariableFrom(struct VariableShare * vsh,int clientsock,unsigned int vari
 
 int SendVariableTo(struct VariableShare * vsh,int clientsock,unsigned int variable_id)
 {
-  struct NetworkRequestGeneralPacket data={0};
-
+  struct NetworkRequestGeneralPacket data;
   data.RequestType=WRITEVAR;
   data.data_size = vsh->share.variables[variable_id].size_of_ptr;
 
@@ -127,11 +125,11 @@ int WaitForSocketLockToClear(int peersock,unsigned int * peerlock)
   unsigned int waitloops=0;
   while (*peerlock)
    {
-     usleep(100);
+     usleep(1000);
      ++waitloops;
    }
 
-  if (waitloops) { fprintf(stderr,"WaitForSocketLockToClear waited for %u loops\n",waitloops); }
+  if (waitloops) { fprintf(stderr,"WaitForSocketLockToClear waited for %u ms ( loops )\n",waitloops); }
   return 1;
 }
 
@@ -178,7 +176,9 @@ int HandleClientLoop(struct VariableShare * vsh,int clientsock,struct sockaddr_i
    unsigned int client_online=1;
 
 
-   char peek_request[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
+   char peek_request[RVS_MAX_RAW_HANDSHAKE_MESSAGE];
+   memset (peek_request,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+
    int data_received = 0;
 
    unsigned int peer_id=AddPeer(vsh,inet_ntoa(client.sin_addr),0,clientsock);

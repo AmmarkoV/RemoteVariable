@@ -68,7 +68,9 @@ int Connect_Handshake(struct VariableShare * vsh,int peersock /*unsigned int *pe
 {
   fprintf(stderr,"Awaiting challenge\n");
 
-  char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
+  char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE];
+  memset (message,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+
   RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
   fprintf(stderr,"Received %s challenge\n",message);
 
@@ -110,7 +112,9 @@ int Connect_Handshake(struct VariableShare * vsh,int peersock /*unsigned int *pe
 int Accept_Handshake(struct VariableShare * vsh,int peersock /*unsigned int *peerlock These operations dont need the peerlock mechanism since they are the only ones happening on init*/)
 {
 
-  char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
+  char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE];
+  memset (message,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+
   // 1ST MESSAGE SENT
   strcpy(message,"HELLO\0");
   SendRAWTo(peersock,message,strlen(message)+1); //+1 for sending null termination accross
@@ -182,7 +186,9 @@ int RequestVariable_Handshake(struct VariableShare * vsh,unsigned int var_id,int
   LockSocket(peersock,peerlock);
 
 
-  char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
+  char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE];
+  memset (message,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+
   // 1ST MESSAGE SENT
   sprintf(message,"GET=%s\0",vsh->share.variables[var_id].ptr_name);
   int opres=SendRAWTo(peersock,message,strlen(message)+1); // +1 to send the null termination accross
@@ -209,7 +215,6 @@ int RequestVariable_Handshake(struct VariableShare * vsh,unsigned int var_id,int
   fprintf(stderr,"RequestVariable_Handshake exiting\n");
 
   UnlockSocket(peersock,peerlock);
-
   return opres;
 }
 
@@ -218,8 +223,10 @@ int AcceptRequestVariable_Handshake(struct VariableShare * vsh,int peersock,unsi
   WaitForSocketLockToClear(peersock,peerlock);
   LockSocket(peersock,peerlock);
 
-  char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
-  int opres=RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+  char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE];
+  memset (message,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+
+  int opres=RecvRAWFrom(peersock,message,4);
 
   fprintf(stderr,"Received %s request for variable\n",message);
   if (strncmp(message,"GET=",4)!=0)
@@ -228,14 +235,22 @@ int AcceptRequestVariable_Handshake(struct VariableShare * vsh,int peersock,unsi
      UnlockSocket(peersock,peerlock);
      return 0;
    }
+
+  message[0]=0; message[1]=0; message[2]=0; message[3]=0;
+  opres=RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
   if ( strlen(message) <= 4 )
    {
       error("Error at accepting request for variable handshake , very small share name ");
       UnlockSocket(peersock,peerlock);
       return 0;
    }
+  if (opres!=strlen(message))
+   {
+      fprintf(stderr,"RecRAWFrom received %u bytes , string received is now %u bytes long \n",opres,(unsigned int) strlen(message) );
+      return 0;
+   }
 
-  memmove (message,message+4,strlen(message)-3);
+ // memmove (message,message+4,strlen(message)-3);
 
   fprintf(stderr,"Peer Signaled that it wants a variable %s changed \n",message);
 
@@ -276,7 +291,9 @@ int MasterSignalChange_Handshake(struct VariableShare * vsh,unsigned int var_cha
   WaitForSocketLockToClear(peersock,peerlock);
   LockSocket(peersock,peerlock);
 
-  char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
+  char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE];
+  memset (message,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+
   // 1ST MESSAGE SENT
   sprintf(message,"SIG=%s\0",vsh->share.variables[var_changed].ptr_name);
   SendRAWTo(peersock,message,strlen(message)+1);
@@ -299,7 +316,9 @@ int MasterAcceptChange_Handshake(struct VariableShare * vsh,int peersock,unsigne
   WaitForSocketLockToClear(peersock,peerlock);
   LockSocket(peersock,peerlock);
 
-  char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
+  char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE];
+  memset (message,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+
   RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
   fprintf(stderr,"Received %s signal\n",message);
   if (strncmp(message,"SIG=",4)!=0)
@@ -335,12 +354,14 @@ int MasterAcceptChange_Handshake(struct VariableShare * vsh,int peersock,unsigne
 
 int ProtocolServeResponse(struct VariableShare * vsh ,int peersock,unsigned int *peerlock)
 {
-  WaitForSocketLockToClear(peersock,peerlock);
-  LockSocket(peersock,peerlock);
+  //WaitForSocketLockToClear(peersock,peerlock);
+  //LockSocket(peersock,peerlock);
 
-   char peek_request[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
+   char peek_request[RVS_MAX_RAW_HANDSHAKE_MESSAGE];
+   memset (peek_request,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+
    int data_received = recv(peersock, (char*) peek_request,RVS_MAX_RAW_HANDSHAKE_MESSAGE, MSG_PEEK);
-   UnlockSocket(peersock,peerlock);
+   //UnlockSocket(peersock,peerlock);
 
    if (data_received>0)
    {
@@ -355,7 +376,7 @@ int ProtocolServeResponse(struct VariableShare * vsh ,int peersock,unsigned int 
           return AcceptRequestVariable_Handshake(vsh,peersock,peerlock);
       } else
       {
-        fprintf(stderr,"Incoming message from background data processed of length %u received and ignored \n",(unsigned int) strlen(peek_request));
+        fprintf(stderr,"Incoming message from background data processed of length %u received and ignored ( str = %s )\n",(unsigned int) strlen(peek_request),peek_request);
       }
    }
    return 0;
