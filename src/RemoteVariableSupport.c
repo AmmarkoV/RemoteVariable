@@ -100,7 +100,18 @@ int Stop_VariableSharing(struct VariableShare * vsh)
 int PeersActive_VariableShare(struct VariableShare * vsh)
 {
   if (vsh==0) { return 0; }
-  return vsh->peers_active;
+
+  unsigned int count_peers_active = 0;
+  if (vsh->total_peers > 0)
+    {
+        unsigned int i=0;
+        for (i=0; i<vsh->total_peers; i++)
+         {
+           if ( vsh->peer_list[i].peer_state==VSS_NORMAL ) { ++count_peers_active; }
+         }
+    }
+
+  return count_peers_active;
 }
 
 

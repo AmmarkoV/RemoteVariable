@@ -25,7 +25,7 @@
 #include "helper.h"
 
 #include "VariableDatabase.h"
-#include "NetworkFramework.h"
+#include "NetworkFrameworkLowLevel.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>

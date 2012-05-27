@@ -118,10 +118,10 @@ int Job_UpdateRemoteVariable(struct VariableShare * vsh,unsigned int our_varid,u
 int Job_SingalLocalVariableChanged(struct VariableShare * vsh,unsigned int our_varid)
 {
   unsigned int sent_to=0;
-  fprintf(stderr,"Job_SingalLocalVariableChanged broadcasting to all peers ( %u ) \n",vsh->peers_active);
-  if (vsh->peers_active==0) { fprintf(stderr,"No peers to signal to..\n"); return 0; }
+  fprintf(stderr,"Job_SingalLocalVariableChanged broadcasting to all peers ( %u ) \n",vsh->total_peers);
+  if (vsh->total_peers==0) { fprintf(stderr,"No peers to signal to..\n"); return 0; }
    unsigned int i=0;
-   for (i=0; i< vsh->peers_active; i++)
+   for (i=0; i< vsh->total_peers; i++)
     {
       fprintf(stderr,"Job_SingalLocalVariableChanged broadcasting to peer number %u \n",i);
       fprintf(stderr,"Is this correct ? \n");

@@ -52,6 +52,10 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="NetworkFramework.h" />
+		<Unit filename="NetworkFrameworkLowLevel.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="NetworkFrameworkLowLevel.h" />
 		<Unit filename="Peers.c">
 			<Option compilerVar="CC" />
 		</Unit>

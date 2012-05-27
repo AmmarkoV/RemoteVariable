@@ -55,7 +55,7 @@ struct VariableShare * Create_VariableDatabase(char * sharename,char * IP,unsign
   vsh->share.total_variables_memory=newsize;
   vsh->share.total_variables_shared=0;
 
-  vsh->peers_active=0;
+  vsh->total_peers=0;
 
 /*
   unsigned int i=0;
@@ -84,7 +84,7 @@ int Destroy_VariableDatabase(struct VariableShare * vsh)
   if ( vsh->share.variables == 0 ) { debug_say("Memory for shared variables , already deallocated!"); return 1; }
 
   int i=0;
-  for (i=0; i<vsh->peers_active; i++)
+  for (i=0; i<vsh->total_peers; i++)
    {
      close(vsh->peer_list[i].socket_to_client);
      vsh->peer_list[i].socket_to_client=0;
@@ -140,7 +140,7 @@ unsigned long GetVariableHash(struct VariableShare * vsh,unsigned int var_id)
 
 int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int permissions,void * ptr,unsigned int ptr_size)
 {
- if ( VariableShareOk(vsh) == 0 ) { fprintf(stderr,"Error could not add %s var to database \n"); return 0; }
+ if ( VariableShareOk(vsh) == 0 ) { fprintf(stderr,"Error could not add %s var to database \n",var_name); return 0; }
 
  unsigned int spot_to_take=vsh->share.total_variables_memory+1;
  if (vsh->share.total_variables_memory > vsh-> share.total_variables_shared )

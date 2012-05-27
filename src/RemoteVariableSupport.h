@@ -93,6 +93,8 @@ struct SharePeer
     unsigned int ping;
     unsigned int last_transaction;
 
+    unsigned int peer_state; /* enum VariableShareStates */
+
     pthread_t peer_thread;
     unsigned int pause_peer_thread;
     unsigned int stop_peer_thread;
@@ -156,7 +158,7 @@ struct VariableShare
 
     struct SharePeer master;
     struct SharePeer peer_list[RVS_MAX_PEERS];
-    unsigned int peers_active;
+    unsigned int total_peers;
 
 
     pthread_t job_thread;
@@ -189,6 +191,7 @@ struct PeerServerContext
    struct VariableShare * vsh;
    unsigned int peer_id;
    int peersock;
+   unsigned int keep_var_on_stack;
 };
 
 
