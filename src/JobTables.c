@@ -153,7 +153,8 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
                        DoneWithJob(vsh,job_id);
                        break;
       case WRITETO  :
-                       fprintf(stderr,"Simulating Execution of Write to peer : %u of variable %s with var id %u \n",peer,variable_name,var_id); DoneWithJob(vsh,job_id);
+                       fprintf(stderr,"Simulating Execution of Write to peer : %u of variable %s with var id %u \n",peer,variable_name,var_id);
+                       DoneWithJob(vsh,job_id);
                        break;
       case READFROM :
                        fprintf(stderr,"Execution of Read from peer : %u of variable %s with var id %u \n",peer,variable_name,var_id);
@@ -200,6 +201,7 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
                     break;
       default :
         fprintf(stderr,"Unhandled job type\n");
+        DoneWithJob(vsh,job_id);
         return 0;
       break;
    };
@@ -239,17 +241,31 @@ int ExecutePendingJobs(struct VariableShare *vsh)
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 void *
 JobExecutioner_Thread(void * ptr)
 {
   debug_say("JobExecutioner Thread started..\n");
+
   struct VariableShare *vsh=0;
   vsh = (struct VariableShare *) ptr;
 
    unsigned int total_jobs_done=0;
    while ( vsh->stop_job_thread==0 )
    {
-     usleep(10000);
+     usleep(1000);
 
        if (vsh->pause_job_thread)
         {
@@ -258,6 +274,7 @@ JobExecutioner_Thread(void * ptr)
         {
           total_jobs_done+=ExecutePendingJobs(vsh);
         }
+
 
      ++vsh->central_timer;
    }
@@ -278,6 +295,9 @@ void JobExecutioner_Thread_Resume(struct VariableShare * vsh)
 /* THREAD STARTER */
 int StartJobExecutioner(struct VariableShare * vsh)
 {
+  debug_say("JobExecutioner is depreceated , wont start it :P..\n");
+  return 0;
+
   vsh->pause_job_thread=0;
   vsh->stop_job_thread=0;
   int retres = pthread_create( &vsh->job_thread, NULL,  JobExecutioner_Thread ,(void*) vsh);

@@ -70,4 +70,5 @@ void RemoteVariableServer_Thread_Pause(struct VariableShare * vsh);
 void RemoteVariableServer_Thread_Resume(struct VariableShare * vsh);
 int StartRemoteVariableConnection(struct VariableShare * vsh);
 
+
 #endif // NETWORKFRAMEWORK_H_INCLUDED

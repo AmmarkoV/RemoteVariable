@@ -93,6 +93,9 @@ struct SharePeer
     unsigned int ping;
     unsigned int last_transaction;
 
+    pthread_t peer_thread;
+    unsigned int pause_peer_thread;
+    unsigned int stop_peer_thread;
 
     struct ShareList share;
 };
@@ -149,6 +152,7 @@ struct VariableShare
 
     struct ShareJob job_list[RVS_MAX_JOBS_PENDING];
     unsigned int jobs_loaded;
+    unsigned int total_jobs_done;
 
     struct SharePeer master;
     struct SharePeer peer_list[RVS_MAX_PEERS];
@@ -179,6 +183,13 @@ struct VariableShare
 
 };
 
+
+struct PeerServerContext
+{
+   struct VariableShare * vsh;
+   unsigned int peer_id;
+   int peersock;
+};
 
 
 struct VariableShare * Start_VariableSharing(char * sharename,char * bindaddress,unsigned int port,char * password);

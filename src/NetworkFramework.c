@@ -150,72 +150,111 @@ int UnlockSocket(int peersock,unsigned int * peerlock)
   *peerlock=0;
   return 1;
 }
-// ________________________________________________________
-// HANDLE CLIENT
 
 
 
 
-int HandleClientLoop(struct VariableShare * vsh,int clientsock,struct sockaddr_in client,unsigned int clientlen)
+/*
+--------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------
+                /\  /\  /\   /\
+                ||  ||  ||   ||                   LOW level socket operations
+
+--------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------
+
+
+
+--------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------
+
+                ||  ||  ||   ||                   SERVER Framework
+                \/  \/  \/   \/
+--------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------
+
+*/
+
+
+
+int UnifiedNetworkAndJobHandling(struct VariableShare * vsh,int peersock , unsigned int * peerlock)
 {
-   fprintf(stderr,"Client connected: %s\n", inet_ntoa(client.sin_addr));
+
+   if(ProtocolServeResponse(vsh,peersock,peerlock))  { fprintf(stderr,"Handled Client successfully\n"); } else
+                                                        { fprintf(stderr,"Error while handling client\n"); return 0; }
+
+   /* TEMPORARY INSTEAD OF JOB EXECUTIONER */
+   if (!vsh->pause_job_thread)
+   {
+     vsh->total_jobs_done+=ExecutePendingJobs(vsh);
+   }
+   /* TEMPORARY INSTEAD OF JOB EXECUTIONER */
+
+  return 1;
+}
+
+
+
+void *
+PeerServer_Thread(void * ptr)
+{
+
+  struct PeerServerContext * thread_context=0;
+  struct VariableShare * vsh = (struct PeerServerContext *) thread_context->vsh;
+  unsigned int peer_id = (struct PeerServerContext *) thread_context->peer_id;
+  int peersock = (struct PeerServerContext *) thread_context->peersock;
 
    //First thing to do negotiate with peer about the list , passwords etc
-   if (Accept_Handshake(vsh,clientsock))
+   if (Accept_Handshake(vsh,peersock))
      {
        debug_say("Successfully accepted connection handshake\n");
        vsh->global_state=VSS_NORMAL;
      } else
      {
        fprintf(stderr,"Could not accept handshake for RemoteVariable Share , ignoring client\n");
-       close(clientsock);
+       close(peersock);
        return 0;
      }
 
+   fprintf(stderr,"Getting peerlock for Server HandleClientLoop using %u peer id , initial value is %u ",peer_id,vsh->peer_list[peer_id].socket_locked);
+   unsigned int * peerlock =  &vsh->peer_list[peer_id].socket_locked;
+   unsigned int total_jobs_done=0;
 
-   unsigned int client_online=1;
+   while (UnifiedNetworkAndJobHandling(vsh,peersock,peerlock))
+    {
+        usleep(100);
+    }
 
+    RemPeerBySock(vsh,peersock);
+    return 0;
+}
 
-   char peek_request[RVS_MAX_RAW_HANDSHAKE_MESSAGE];
-   memset (peek_request,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
-
-   int data_received = 0;
-
+int GenerateNewClientLoop(struct VariableShare * vsh,int clientsock,struct sockaddr_in client,unsigned int clientlen)
+{
+   fprintf(stderr,"Client connected: %s\n", inet_ntoa(client.sin_addr));
    unsigned int peer_id=AddPeer(vsh,inet_ntoa(client.sin_addr),0,clientsock);
    if ( peer_id == 0 ) { error("Failed to add peer to list while @ RemoteVariableClient_Thread "); }
    --peer_id; // Step down one value !
 
-   fprintf(stderr,"Getting peerlock for Server HandleClientLoop using %u peer id , initial value is %u ",peer_id,vsh->peer_list[peer_id].socket_locked);
-   unsigned int * peerlock =  &vsh->peer_list[peer_id].socket_locked;
+
+    vsh->peer_list[peer_id].peer_thread=0;
+    vsh->peer_list[peer_id].pause_peer_thread=0;
+    vsh->peer_list[peer_id].stop_peer_thread=0;
 
 
-   while (client_online)
-    {
-       data_received = recv(clientsock,peek_request,RVS_MAX_RAW_HANDSHAKE_MESSAGE, MSG_PEEK);
+  vsh->pause_server_thread=0;
+  vsh->stop_server_thread=0;
 
-       if (data_received < 0)
-       {
-        //We have a disconnect
-        error("Error RecvFrom while peeking , dropping session");
-       }  else
-       if (data_received > 0)
-       {
-        fprintf(stderr,"Waiting For Client input\n");
-        if(ProtocolServeResponse(vsh,clientsock,peerlock))
-          {
-            fprintf(stderr,"Handled Client successfully\n");
-          } else
-          {
-           fprintf(stderr,"Error while handling client\n");
-           client_online=0;
-          }
-        usleep(5000);
-       }
-    }
+  struct PeerServerContext pass_to_thread;
+  pass_to_thread.vsh=vsh;
+  pass_to_thread.peer_id = peer_id;
+  pass_to_thread.peersock = clientsock;
 
-    RemPeerBySock(vsh,clientsock);
+  int retres = pthread_create(&vsh->peer_list[peer_id].peer_thread,0,PeerServer_Thread,(void*) &pass_to_thread);
+  if (retres!=0) retres = 0; else
+                 retres = 1;
 
-    return 1;
+  return 1;
 }
 
 void *
@@ -223,8 +262,7 @@ RemoteVariableServer_Thread(void * ptr)
 {
   if ( debug_msg() ) printf("Remote Variable TCP Server thread started..\n");
 
-  struct VariableShare *vsh;
-  vsh = (struct VariableShare *) ptr;
+  struct VariableShare * vsh = (struct VariableShare *) ptr;
 
 
   int serversock,clientsock;
@@ -254,10 +292,11 @@ RemoteVariableServer_Thread(void * ptr)
     if ( (clientsock = accept(serversock,(struct sockaddr *) &client, &clientlen)) < 0) { error("Failed to accept client connection"); }
       else
       {
-          fprintf(stderr,"Accepted new client \n");
-           if (!HandleClientLoop(vsh,clientsock,client,clientlen))
+           fprintf(stderr,"Accepted new client \n");
+           if (!GenerateNewClientLoop(vsh,clientsock,client,clientlen))
             {
                 fprintf(stderr,"Client failed, while handling him\n");
+                close(clientsock);
             }
       }
  }
@@ -365,6 +404,7 @@ RemoteVariableClient_Thread(void * ptr)
    if (Connect_Handshake(vsh,peersock))
      {
        fprintf(stderr,"Successfull connection handshake , socket to master = %d \n",peersock);
+
        peer_id = AddPeer(vsh,vsh->ip,vsh->port,peersock); // peersock doesnt seem to be the right value to pass :S or it gets overflowed
        if ( peer_id == 0 ) { error("Failed to add peer to list while @ RemoteVariableClient_Thread "); }
        --peer_id; // Step down one value !
@@ -380,11 +420,12 @@ RemoteVariableClient_Thread(void * ptr)
    // ClearAllJobs(vsh); // <- This has to be added later to enforce sync issues .. we are now synced to master so clear all local jobs
    fprintf(stderr,"Getting peerlock for Client thread using %u peer id , initial value is %u ",peer_id,vsh->peer_list[peer_id].socket_locked);
    unsigned int * peerlock =  &vsh->peer_list[peer_id].socket_locked;
+   unsigned int total_jobs_done=0;
 
    while (vsh->stop_client_thread==0)
    {
-       ProtocolServeResponse(vsh,peersock,peerlock);
-       usleep(100);
+      UnifiedNetworkAndJobHandling(vsh,peersock,peerlock);
+      usleep(100);
    }
 
   RemPeerBySock(vsh,peersock);
@@ -392,10 +433,28 @@ RemoteVariableClient_Thread(void * ptr)
   return 0;
 }
 
-// ________________________________________________________
-// THREAD STARTERS
-// ________________________________________________________
 
+
+/*
+--------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------
+                /\  /\  /\   /\
+                ||  ||  ||   ||                   Client Framework
+
+--------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------
+
+
+
+--------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------
+
+                ||  ||  ||   ||                   Thread Starters
+                \/  \/  \/   \/
+--------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------
+
+*/
 
 void RemoteVariableClient_Thread_Pause(struct VariableShare * vsh)
 {

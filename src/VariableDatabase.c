@@ -65,6 +65,7 @@ struct VariableShare * Create_VariableDatabase(char * sharename,char * IP,unsign
    }*/
 
   vsh->jobs_loaded=0;
+  vsh->total_jobs_done=0;
 
   vsh->job_thread=0;
   vsh->refresh_thread=0;
