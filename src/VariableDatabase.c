@@ -299,7 +299,7 @@ int IfLocalVariableChanged_SignalUpdateToJoblist(struct VariableShare * vsh,unsi
 
 int SignalUpdatesForAllLocalVariablesThatNeedIt(struct VariableShare * vsh)
 {
- if ( vsh->share.total_variables_shared == 0 ) { return -1; /* NO VARIABLES TO SHARE OR UPDATE!*/}
+ if ( vsh->share.total_variables_shared == 0 ) { return 0; /* NO VARIABLES TO SHARE OR UPDATE!*/}
  int retres=0;
  unsigned int i=0;
  //fprintf(stderr,"Refreshing %u variables!\n",vsh->share.total_variables_shared);
@@ -308,8 +308,7 @@ int SignalUpdatesForAllLocalVariablesThatNeedIt(struct VariableShare * vsh)
      if ( IfLocalVariableChanged_SignalUpdateToJoblist(vsh,i) ) ++retres;
   }
 
- if ( retres>0 ) return retres;
- return 0;
+  return retres;
 }
 
 
