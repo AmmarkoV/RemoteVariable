@@ -375,7 +375,7 @@ int MakeSureVarReachedPeers(struct VariableShare *vsh,char * varname)
 void *
 AutoRefreshVariable_Thread(void * ptr)
 {
-  debug_say("AutoRefresh Thread started..\n");
+  debug_say("AutoRefresh Thread: AutoRefresh Thread started..\n");
   struct VariableShare *vsh=0;
   vsh = (struct VariableShare *) ptr;
 
@@ -396,10 +396,10 @@ AutoRefreshVariable_Thread(void * ptr)
              variables_refreshed=RefreshAllVariablesThatNeedIt(vsh);
 
              if ( (variables_changed==0 ) && ( variables_refreshed == 0) ) { fprintf(stderr,"."); } else
-                                                                           { fprintf(stderr,"%u variables changed and %u variables refreshed\n",variables_changed,variables_refreshed); }
+                                                                           { fprintf(stderr,"AutoRefresh Thread: %u variables changed and %u variables refreshed\n",variables_changed,variables_refreshed); }
           }
    }
-   fprintf(stderr,"%u total variables changed detected by autorefresh thread\n",total_variables_changed);
+   fprintf(stderr,"AutoRefresh Thread: %u total variables changed detected by autorefresh thread\n",total_variables_changed);
 
    return 0;
 }

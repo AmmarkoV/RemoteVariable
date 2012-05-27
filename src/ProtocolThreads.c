@@ -378,8 +378,13 @@ int ProtocolServeResponse(struct VariableShare * vsh ,int peersock,unsigned int 
       {
         fprintf(stderr,"Incoming message from background data processed of length %u received and ignored ( str = %s )\n",(unsigned int) strlen(peek_request),peek_request);
       }
-   }
-   return 0;
+   } else
+   if (data_received<0)
+    {
+      fprintf(stderr,"ProtocolServeResponse encountered an error while peeking on recv\n");
+      return 0;
+    }
+   return 1;
 }
 
 

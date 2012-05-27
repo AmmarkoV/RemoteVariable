@@ -9,7 +9,7 @@
 int wait_for_var_to_become_x(int * var , unsigned int timeout , unsigned int x)
 {
   unsigned int time_waited=0;
-  while ( (*var!= x )&&(time_waited<timeout) ) { usleep(100000); ++time_waited; }
+  while ( (*var!= x )&&(time_waited<timeout) ) { usleep(1000); ++time_waited; }
   if (*var==x) {   return 1;}
 
   return 0;

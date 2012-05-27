@@ -101,6 +101,7 @@ int SendFileTo(struct VariableShare * vsh,int clientsock,unsigned int variable_i
 
 int WaitForSocketLockToClear(int peersock,unsigned int * peerlock)
 {
+  return 1;
   if (peerlock==0) { fprintf(stderr,"WaitForSocketLock skipped by null pointer \n"); return 0; }
   unsigned int waitloops=0;
   while (*peerlock)
@@ -115,6 +116,7 @@ int WaitForSocketLockToClear(int peersock,unsigned int * peerlock)
 
 int LockSocket(int peersock,unsigned int * peerlock)
 {
+  return 1;
   if (peerlock==0) { fprintf(stderr,"LockSocket skipped by null pointer \n"); return 0; }
   if (*peerlock!=0) {
                       fprintf(stderr,"LockSocket found locked variable ! , waiting for it to clear out\n");
@@ -126,6 +128,7 @@ int LockSocket(int peersock,unsigned int * peerlock)
 
 int UnlockSocket(int peersock,unsigned int * peerlock)
 {
+  return 1;
   if (peerlock==0) { fprintf(stderr,"UnlockSocket skipped by null pointer \n"); return 0; }
   *peerlock=0;
   return 1;

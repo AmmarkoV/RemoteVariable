@@ -210,13 +210,13 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
    return 1;
 }
 
-int ExecutePendingJobsForClient(struct VariableShare *vsh,unsigned int client_id)
+int ExecutePendingJobsForPeerID(struct VariableShare *vsh,unsigned int peer_id)
 {
    unsigned int successfull_jobs=0;
    unsigned int i=0;
    while (i<vsh->jobs_loaded)
     {
-      if (client_id==vsh->job_list[i].remote_peer_id)
+      if (peer_id==vsh->job_list[i].remote_peer_id)
       {
        if (ExecuteJob(vsh,i)) { ++successfull_jobs; } else
                               { fprintf(stderr,"Job %u on Share %s failed \n",i,vsh->sharename); }

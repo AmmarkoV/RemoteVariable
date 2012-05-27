@@ -32,6 +32,7 @@ int Job_UpdateLocalVariable(struct VariableShare * vsh,unsigned int our_varid,un
 int Job_UpdateRemoteVariable(struct VariableShare * vsh,unsigned int our_varid,unsigned int peer_varid);
 int Job_SingalLocalVariableChanged(struct VariableShare * vsh,unsigned int our_varid);
 
+int ExecutePendingJobsForPeerID(struct VariableShare *vsh,unsigned int peer_id);
 int ExecutePendingJobs(struct VariableShare *vsh);
 
 
