@@ -53,9 +53,13 @@ int AddJob(struct VariableShare * vsh,unsigned int our_varid,unsigned int sockpe
     fprintf(stderr," @ %u\n",vsh->central_timer);
 
     ++vsh->jobs_loaded;
+    fprintf(stderr,"Total jobs are now %u\n",vsh->jobs_loaded);
+
     return 1;
   } else
-   fprintf(stderr,"Job queue is full discarding new request!!\n");
+  {
+     fprintf(stderr,"Job queue is full discarding new request!!\n");
+  }
  return 0;
 }
 
@@ -233,6 +237,8 @@ int ExecutePendingJobsForPeerID(struct VariableShare *vsh,unsigned int peer_id)
 int ExecutePendingJobs(struct VariableShare *vsh)
 {
    if (!vsh->jobs_loaded)  { /*Nothing to do*/ return 0; }
+   fprintf(stderr,"ExecutePendingJobs  \n");
+
    unsigned int successfull_jobs=0;
    unsigned int i=0;
    while (i<vsh->jobs_loaded)

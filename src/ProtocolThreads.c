@@ -33,6 +33,8 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <sys/uio.h>
+#include <errno.h>
+#include <fcntl.h>
 /*
 
     HERE IS THE SPACE WHERE THE SERVER THREAD AND CLIENT THREAD OF EACH VARIABLE SHARE WILL
@@ -360,7 +362,14 @@ int ProtocolServeResponse(struct VariableShare * vsh ,int peersock,unsigned int 
    char peek_request[RVS_MAX_RAW_HANDSHAKE_MESSAGE];
    memset (peek_request,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
 
-   int data_received = recv(peersock, (char*) peek_request,RVS_MAX_RAW_HANDSHAKE_MESSAGE, MSG_PEEK);
+  int rest_perms;
+  rest_perms=fcntl(peersock,F_GETFL,0);
+  fcntl(peersock,F_SETFL,rest_perms | O_NONBLOCK);
+
+   int data_received = recv(peersock, (char*) peek_request,RVS_MAX_RAW_HANDSHAKE_MESSAGE, MSG_DONTWAIT |MSG_PEEK); //MSG_DONTWAIT |
+
+
+  fcntl(peersock,F_SETFL,rest_perms);
    //UnlockSocket(peersock,peerlock);
 
    if (data_received>0)
@@ -381,7 +390,47 @@ int ProtocolServeResponse(struct VariableShare * vsh ,int peersock,unsigned int 
    } else
    if (data_received<0)
     {
-      fprintf(stderr,"ProtocolServeResponse encountered an error while peeking on recv\n");
+      data_received = errno;
+
+      if (data_received == EWOULDBLOCK)
+        {
+          //This actually isnt an error!
+          //If no messages are available at the socket and O_NONBLOCK is set on the socket's file descriptor, recv() shall fail and set errno to [EAGAIN] or [EWOULDBLOCK].
+          return 1;
+        }
+
+
+      error("ProtocolServeResponse encountered an error while peeking on recv\n");
+      fprintf(stderr," Error received is  :");
+
+      switch (data_received)
+      {
+        // case EAGAIN :
+         case EWOULDBLOCK :
+               fprintf(stderr,"The socket is marked nonblocking and the receive operation would block, or a receive timeout had been set and the timeout expired before data was received.\n");
+               break;
+         case EBADF :
+               fprintf(stderr,"The argument sockfd is an invalid descriptor.\n");
+               break;
+         case ECONNREFUSED :
+               fprintf(stderr,"A remote host refused to allow the network connection (typically because it is not running the requested service).\n"); break;
+         case EFAULT :
+               fprintf(stderr,"The receive buffer pointer(s) point outside the process's address space. \n"); break;
+         case EINTR :
+               fprintf(stderr,"The receive was interrupted by delivery of a signal before any data were available; see signal(7).\n"); break;
+         case EINVAL :
+               fprintf(stderr,"Invalid argument passed.\n");  break;
+         case ENOMEM :
+               fprintf(stderr,"Could not allocate memory for recvmsg().\n"); break;
+         case ENOTCONN :
+               fprintf(stderr,"The socket is associated with a connection-oriented protocol and has not been connected (see connect(2) and accept(2)).\n"); break;
+         case ENOTSOCK :
+               fprintf(stderr,"The argument sockfd does not refer to a socket.\n"); break;
+         default :
+             fprintf(stderr," ERROR CODE %d \n",data_received);
+             break;
+      };
+
       return 0;
     }
    return 1;
