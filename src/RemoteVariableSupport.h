@@ -54,19 +54,21 @@ struct ShareListItem
 
     char ptr_name[32];
 
+    unsigned char GUARD_BYTE1;
+
     unsigned int last_write_inc;
     unsigned int permissions;
 
+    unsigned long hash;
 
     int flag_needs_refresh_from_sock;
     // TODO : NOTE THAT THIS SHOULD ACTUALLY BE AN ARRAY AS LONG AS THE POSSIBLE PEERS
 
-    unsigned long hash;
 
     unsigned int size_of_ptr;
     void * ptr;
 
-    unsigned char GUARD_BYTE;
+    unsigned char GUARD_BYTE2;
 };
 
 

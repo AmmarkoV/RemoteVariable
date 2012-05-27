@@ -149,14 +149,14 @@ int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int
   } else
   {
     // NO FREE SPACE RESIZE CODE HERE !
-    if ( Resize_VariableDatabase(vsh,vsh->share.total_variables_memory+128) == 0 ) return 0;
+    if ( Resize_VariableDatabase(vsh,vsh->share.total_variables_memory+128) == 0 ) { return 0; }
   }
 
   if (spot_to_take < vsh->share.total_variables_memory)
   {
 
     unsigned int var_length = strlen(var_name);
-    if ( var_length>=32 ) { fprintf(stderr,"Var %s is too big trimming it \n"); var_length=32; }
+    if ( var_length>=32 ) { fprintf(stderr,"Var %s is too big , trimming it \n",var_name); var_length=32; }
     strncpy(vsh->share.variables[spot_to_take].ptr_name,var_name,var_length);
 
 
@@ -171,7 +171,8 @@ int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int
     vsh->share.variables[spot_to_take].flag_needs_refresh_from_sock=0;
 
 
-    vsh->share.variables[spot_to_take].GUARD_BYTE = RVS_GUARD_VALUE ;
+    vsh->share.variables[spot_to_take].GUARD_BYTE1 = RVS_GUARD_VALUE ;
+    vsh->share.variables[spot_to_take].GUARD_BYTE2 = RVS_GUARD_VALUE ;
 
     vsh->share.total_variables_shared+=1;
   }
@@ -288,7 +289,7 @@ int IfLocalVariableChanged_SignalUpdateToJoblist(struct VariableShare * vsh,unsi
   unsigned long newhash=GetVariableHash(vsh,var_id);
   if (newhash!=vsh->share.variables[var_id].hash )
     {
-      fprintf(stderr,"Variable Changed Hash for variable %u , values %u to %u !\n",var_id,newhash,vsh->share.variables[var_id].hash );
+      fprintf(stderr,"Variable Changed Hash for variable %u , values %u to %u !\n",var_id,(unsigned int) newhash,(unsigned int) vsh->share.variables[var_id].hash );
       vsh->share.variables[var_id].hash=newhash; /*We keep the new hash as the current hash :)*/
       Job_SingalLocalVariableChanged(vsh,var_id); // <- This call creates a job to signal the change..!
 
@@ -305,7 +306,7 @@ int SignalUpdatesForAllLocalVariablesThatNeedIt(struct VariableShare * vsh)
  //fprintf(stderr,"Refreshing %u variables!\n",vsh->share.total_variables_shared);
  for ( i=0; i<vsh->share.total_variables_shared; i++)
   {
-     if ( IfLocalVariableChanged_SignalUpdateToJoblist(vsh,i) ) ++retres;
+     if ( IfLocalVariableChanged_SignalUpdateToJoblist(vsh,i) ) { ++retres; }
   }
 
   return retres;

@@ -52,11 +52,12 @@ int RecvVariableFrom(struct VariableShare * vsh,int clientsock,unsigned int vari
  //TODO BEEF UP SECURITY HERE :P
  fprintf(stderr,"Receiving Payload ( var was %d ",vsh->share.variables[variable_id].ptr);
  data_recv= recv(clientsock,vsh->share.variables[variable_id].ptr,data.data_size, 0); // GET VAR PAYLOAD!
-
-
  fprintf(stderr,"now %d  )\n",vsh->share.variables[variable_id].ptr);
+
+
  if ( data_recv != data.data_size ) { fprintf(stderr,"Incorrect payload received ( %u instead of %u )\n",data_recv , vsh->share.variables[variable_id].size_of_ptr ); return 0; }
- if ( vsh->share.variables[variable_id].GUARD_BYTE != RVS_GUARD_VALUE ) {  error("Buffer overflow attack @ RecvVariableFrom detected\n"); vsh->global_state=VSS_SECURITY_ALERT; return 0; }
+ if ( vsh->share.variables[variable_id].GUARD_BYTE1 != RVS_GUARD_VALUE ) {  error("Buffer overflow attack @ RecvVariableFrom detected\n"); vsh->global_state=VSS_SECURITY_ALERT; return 0; }
+ if ( vsh->share.variables[variable_id].GUARD_BYTE2 != RVS_GUARD_VALUE ) {  error("Buffer overflow attack @ RecvVariableFrom detected\n"); vsh->global_state=VSS_SECURITY_ALERT; return 0; }
 
  // TODO CHECK OPERATIONS ETC HERE!
  fprintf(stderr,"Updating hash value  \n");
@@ -74,7 +75,7 @@ int SendVariableTo(struct VariableShare * vsh,int clientsock,unsigned int variab
 
   fprintf(stderr,"Sending GeneralPacket\n");
   int data_sent= send(clientsock, (char*) & data, sizeof (data), 0); // SEND START FRAME!
-  if ( data_sent != sizeof (data) ) { fprintf(stderr,"Incorrect starting frame transmission ( %d instead of %u )\n",data_sent , sizeof (data) ); return 0; }
+  if ( data_sent != sizeof (data) ) { fprintf(stderr,"Incorrect starting frame transmission ( %d instead of %u )\n",data_sent , (unsigned int) sizeof (data) ); return 0; }
 
   fprintf(stderr,"Sending Payload\n");
   data_sent= send(clientsock,vsh->share.variables[variable_id].ptr,data.data_size , 0); // SEND VARIABLE!
