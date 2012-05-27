@@ -198,25 +198,28 @@ int UnifiedNetworkAndJobHandling(struct VariableShare * vsh,int peersock , unsig
 void *
 PeerServer_Thread(void * ptr)
 {
-
-  struct PeerServerContext * thread_context=0;
+  fprintf(stderr,"Peer Thread : New Peer thread just spawned , trying to find its context ");
+  struct PeerServerContext * thread_context=(struct PeerServerContext *) ptr;
   struct VariableShare * vsh = (struct PeerServerContext *) thread_context->vsh;
   unsigned int peer_id = (struct PeerServerContext *) thread_context->peer_id;
   int peersock = (struct PeerServerContext *) thread_context->peersock;
+  fprintf(stderr," done\n");
+
+  fprintf(stderr,"Peer Thread : New Peer thread : peer_id=%u , socket=%d \n",peer_id,peersock);
 
    //First thing to do negotiate with peer about the list , passwords etc
    if (Accept_Handshake(vsh,peersock))
      {
-       debug_say("Successfully accepted connection handshake\n");
+       debug_say("Peer Thread : Successfully accepted connection handshake\n");
        vsh->global_state=VSS_NORMAL;
      } else
      {
-       fprintf(stderr,"Could not accept handshake for RemoteVariable Share , ignoring client\n");
+       fprintf(stderr,"Peer Thread : Could not accept handshake for RemoteVariable Share , ignoring client\n");
        close(peersock);
        return 0;
      }
 
-   fprintf(stderr,"Getting peerlock for Server HandleClientLoop using %u peer id , initial value is %u ",peer_id,vsh->peer_list[peer_id].socket_locked);
+   fprintf(stderr,"Peer Thread : Getting peerlock for Server HandleClientLoop using %u peer id , initial value is %u ",peer_id,vsh->peer_list[peer_id].socket_locked);
    unsigned int * peerlock =  &vsh->peer_list[peer_id].socket_locked;
    unsigned int total_jobs_done=0;
 
@@ -231,9 +234,9 @@ PeerServer_Thread(void * ptr)
 
 int GenerateNewClientLoop(struct VariableShare * vsh,int clientsock,struct sockaddr_in client,unsigned int clientlen)
 {
-   fprintf(stderr,"Client connected: %s\n", inet_ntoa(client.sin_addr));
+   fprintf(stderr,"Server Thread : Client connected: %s\n", inet_ntoa(client.sin_addr));
    unsigned int peer_id=AddPeer(vsh,inet_ntoa(client.sin_addr),0,clientsock);
-   if ( peer_id == 0 ) { error("Failed to add peer to list while @ RemoteVariableClient_Thread "); }
+   if ( peer_id == 0 ) { error("Server Thread : Failed to add peer to list while @ RemoteVariableClient_Thread "); }
    --peer_id; // Step down one value !
 
 
@@ -250,17 +253,20 @@ int GenerateNewClientLoop(struct VariableShare * vsh,int clientsock,struct socka
   pass_to_thread.peer_id = peer_id;
   pass_to_thread.peersock = clientsock;
 
+  fprintf(stderr,"Server Thread : Server is ready to spawn a new dedicated thread for the client .. ");
   int retres = pthread_create(&vsh->peer_list[peer_id].peer_thread,0,PeerServer_Thread,(void*) &pass_to_thread);
+  fprintf(stderr,"done\n");
+
   if (retres!=0) retres = 0; else
                  retres = 1;
 
-  return 1;
+  return retres;
 }
 
 void *
 RemoteVariableServer_Thread(void * ptr)
 {
-  if ( debug_msg() ) printf("Remote Variable TCP Server thread started..\n");
+  if ( debug_msg() ) printf("Server Thread : Remote Variable TCP Server thread started..\n");
 
   struct VariableShare * vsh = (struct VariableShare *) ptr;
 
@@ -271,7 +277,7 @@ RemoteVariableServer_Thread(void * ptr)
   struct sockaddr_in client;
 
   serversock = socket(AF_INET, SOCK_STREAM, 0);
-    if ( serversock < 0 ) { error("Opening socket"); return 0; }
+    if ( serversock < 0 ) { error("Server Thread : Opening socket"); return 0; }
 
 
   bzero(&client,clientlen);
@@ -281,21 +287,21 @@ RemoteVariableServer_Thread(void * ptr)
   server.sin_addr.s_addr = INADDR_ANY;
   server.sin_port = htons(vsh->port);
 
-  if ( bind(serversock,(struct sockaddr *) &server,serverlen) < 0 ) { error("binding master port for RemoteVariables!"); return 0; }
-  if (listen(serversock,10) < 0)  { error("Failed to listen on server socket"); return 0; }
+  if ( bind(serversock,(struct sockaddr *) &server,serverlen) < 0 ) { error("Server Thread : Error binding master port for RemoteVariables!"); return 0; }
+  if (listen(serversock,10) < 0)  { error("Server Thread : Failed to listen on server socket"); return 0; }
 
 
   while (vsh->stop_server_thread==0)
   {
-    debug_say("Waiting for a client");
+    debug_say("Server Thread : Waiting for a new client");
     /* Wait for client connection */
-    if ( (clientsock = accept(serversock,(struct sockaddr *) &client, &clientlen)) < 0) { error("Failed to accept client connection"); }
+    if ( (clientsock = accept(serversock,(struct sockaddr *) &client, &clientlen)) < 0) { error("Server Thread : Failed to accept client connection"); }
       else
       {
-           fprintf(stderr,"Accepted new client \n");
+           fprintf(stderr,"Server Thread : Accepted new client \n");
            if (!GenerateNewClientLoop(vsh,clientsock,client,clientlen))
             {
-                fprintf(stderr,"Client failed, while handling him\n");
+                fprintf(stderr,"Server Thread : Client failed, while handling him\n");
                 close(clientsock);
             }
       }
