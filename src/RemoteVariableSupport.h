@@ -29,7 +29,7 @@ extern "C" {
 #include <unistd.h>
 
 #define RVS_GUARD_VALUE 123
-#define RVS_VARIABLEDATABASE_THREAD_TIME 100
+#define RVS_VARIABLEDATABASE_THREAD_TIME 1000
 
 #define RVS_MAX_PEERS 100
 #define RVS_MAX_JOBS_PENDING 100
@@ -201,7 +201,7 @@ struct VariableShare * Start_VariableSharing(char * sharename,char * bindaddress
 struct VariableShare * ConnectToRemote_VariableSharing(char * sharename,char * IP,unsigned int port,char * password);
 int Stop_VariableSharing(struct VariableShare * vsh);
 int PeersActive_VariableShare(struct VariableShare * vsh);
-int Add_VariableToSharingList(struct VariableShare * vsh,char * variable_name,unsigned int permissions,void * ptr,unsigned int ptr_size);
+int Add_VariableToSharingList(struct VariableShare * vsh,char * variable_name,unsigned int permissions,volatile void * ptr,unsigned int ptr_size);
 int Delete_VariableFromSharingList(struct VariableShare * vsh,char * variable_name);
 int Refresh_LocalVariable(struct VariableShare * vsh,char * variable_name);
 int Refresh_RemoteVariable(struct VariableShare * vsh,char * variable_name);

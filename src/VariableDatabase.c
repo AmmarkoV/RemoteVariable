@@ -133,14 +133,18 @@ unsigned long GetVariableHash(struct VariableShare * vsh,unsigned int var_id)
                                                                            /*fprintf(stderr,"GetVariableHash for var %u returning %u\n",var_id,stacklong);*/
                                                                             return stacklong;
                                                                          }
-  debug_say("Todo ADD code that produces hash on variables that do not fit unsigned long!\n");
+  debug_say("TODO: ADD code that produces hash on variables that do not fit unsigned long!\n");
   /*hash(unsigned char *str);*/
   return 0;
 }
 
-int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int permissions,void * ptr,unsigned int ptr_size)
+int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int permissions,volatile void * ptr,unsigned int ptr_size)
 {
  if ( VariableShareOk(vsh) == 0 ) { fprintf(stderr,"Error could not add %s var to database \n",var_name); return 0; }
+
+
+ unsigned int * ptr_val = (unsigned int * ) ptr;
+ fprintf(stderr,"AddVariable_Database , var_name = %s , ptr = %u , ptr_size = %u \n",var_name,*ptr_val,ptr_size);
 
  unsigned int spot_to_take=vsh->share.total_variables_memory+1;
  if (vsh->share.total_variables_memory > vsh-> share.total_variables_shared )
@@ -287,6 +291,7 @@ int IfLocalVariableChanged_SignalUpdateToJoblist(struct VariableShare * vsh,unsi
 {
   if (!VariableIdExists(vsh,var_id)) { fprintf(stderr,"Variable addressed ( %u ) by IfLocalVariableChanged_SignalUpdateToJoblist does not exist \n",var_id); return 0; }
   unsigned long newhash=GetVariableHash(vsh,var_id);
+
   if (newhash!=vsh->share.variables[var_id].hash )
     {
       fprintf(stderr,"Variable Changed Hash for variable %u , values %u to %u !\n",var_id,(unsigned int) newhash,(unsigned int) vsh->share.variables[var_id].hash );

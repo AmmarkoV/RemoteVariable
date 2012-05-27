@@ -87,7 +87,7 @@ int Connect_Handshake(struct VariableShare * vsh,int peersock /*unsigned int *pe
 
 
   // FOURTH MESSAGE SENT
-  sprintf(message,"GET=%s\0",vsh->sharename);
+  sprintf(message,"CON=%s\0",vsh->sharename);
   SendRAWTo(peersock,message,strlen(message)+1);
 
 
@@ -131,7 +131,7 @@ int Accept_Handshake(struct VariableShare * vsh,int peersock /*unsigned int *pee
 
 
   RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
-  if (strncmp(message,"GET=",4)!=0) { error("Error at accept handshaking : 2"); return 0;}
+  if (strncmp(message,"CON=",4)!=0) { error("Error at accept handshaking : 2"); return 0;}
   if ( strlen(message) <= 4 ) { error("Error at accepting handshake , very small share name "); return 0; }
   memmove (message,message+4,strlen(message)-3);
 

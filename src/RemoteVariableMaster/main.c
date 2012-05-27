@@ -5,7 +5,7 @@
 
 
 
-int wait_for_var_to_become_x(int * var , unsigned int timeout , unsigned int x)
+int wait_for_var_to_become_x(volatile int * var , unsigned int timeout , unsigned int x)
 {
   unsigned int time_waited=0;
   while ( (*var!= x )&&(time_waited<timeout) ) { usleep(1000);  ++time_waited; }
@@ -28,7 +28,7 @@ int main()
 
 
     // We start up with a Variable with the value 666 , we expect the client program to alter it to 1 after it successfully connects
-    int SHARED_VAR=0;
+    static volatile int SHARED_VAR=0;
     if ( Add_VariableToSharingList(vsh,"SHARED_VAR",7,&SHARED_VAR,sizeof(SHARED_VAR)) == 0 )
      {
       fprintf(stderr,"Master : Error Adding Shared Variable\n");

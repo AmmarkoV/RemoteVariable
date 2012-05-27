@@ -122,7 +122,7 @@ int PeersActive_VariableShare(struct VariableShare * vsh)
    Adds a new variable to the Variable Share with chosen permissions
    If the Variable Share policy is set to automatically synchronize this variable it will start doing it after it is added with this command
 */
-int Add_VariableToSharingList(struct VariableShare * vsh,char * variable_name,unsigned int permissions,void * ptr,unsigned int ptr_size)
+int Add_VariableToSharingList(struct VariableShare * vsh,char * variable_name,unsigned int permissions,volatile void * ptr,unsigned int ptr_size)
 {
     return AddVariable_Database(vsh,variable_name,permissions,ptr,ptr_size);
 }

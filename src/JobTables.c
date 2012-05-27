@@ -136,7 +136,7 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
    if (job_id>=vsh->jobs_loaded) { error("Job Execute call on jobid out of bounds\n"); return 0; }
 
    unsigned int peer = vsh->job_list[job_id].remote_peer_id;
-   fprintf(stderr,"PeerLock on executed job for peer %u ",peer);
+   fprintf(stderr,"ExecuteJob job for peer %u ",peer);
 
    unsigned int var_id = vsh->job_list[job_id].local_var_id;
    char * variable_name = vsh->share.variables[var_id].ptr_name;
@@ -212,6 +212,9 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
 
 int ExecutePendingJobsForPeerID(struct VariableShare *vsh,unsigned int peer_id)
 {
+   if (!vsh->jobs_loaded)  { /*Nothing to do*/ return 0; }
+   fprintf(stderr,"ExecutePendingJobsForPeerID , id = %u \n",peer_id);
+
    unsigned int successfull_jobs=0;
    unsigned int i=0;
    while (i<vsh->jobs_loaded)
@@ -229,6 +232,7 @@ int ExecutePendingJobsForPeerID(struct VariableShare *vsh,unsigned int peer_id)
 
 int ExecutePendingJobs(struct VariableShare *vsh)
 {
+   if (!vsh->jobs_loaded)  { /*Nothing to do*/ return 0; }
    unsigned int successfull_jobs=0;
    unsigned int i=0;
    while (i<vsh->jobs_loaded)

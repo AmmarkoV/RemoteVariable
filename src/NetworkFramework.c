@@ -90,7 +90,7 @@ PeerServer_Thread(void * ptr)
   thread_context->keep_var_on_stack=0;
   fprintf(stderr,"Peer Thread : New Peer thread : peer_id=%u",peer_id);
   fprintf(stderr," socket=%d",peersock);
-  fprintf(stderr," peer_id=%u\n",*peerlock);
+  fprintf(stderr," peerlock=%u\n",*peerlock);
 
 
   fprintf(stderr,"Peer Thread : Getting peerlock for Server HandleClientLoop using %u peer id , initial value is %u ",peer_id,vsh->peer_list[peer_id].socket_locked);
