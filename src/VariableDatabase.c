@@ -385,7 +385,7 @@ AutoRefreshVariable_Thread(void * ptr)
    {
        usleep(vsh->share.auto_refresh_every_msec);
 
-       if ( (vsh->pause_refresh_thread) || (vsh->global_state!=VSS_NORMAL) )
+       if (vsh->pause_refresh_thread)
           {
             // This means that auto refresh is disabled so we dont do anything until is re-enabled
           } else
@@ -419,8 +419,8 @@ int StartAutoRefreshVariable(struct VariableShare * vsh)
 {
   vsh->stop_refresh_thread=0;
   vsh->pause_refresh_thread=0;
-  int retres = pthread_create( &vsh->refresh_thread, NULL,  AutoRefreshVariable_Thread ,(void*) vsh);
-  if (retres!=0) retres = 0; else
-                 retres = 1;
+  int retres = pthread_create( &vsh->refresh_thread, 0,  AutoRefreshVariable_Thread ,(void*) vsh);
+
+  if (retres!=0) retres = 0; else retres = 1;
   return retres;
 }
