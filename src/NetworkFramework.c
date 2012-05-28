@@ -267,7 +267,7 @@ int RemoteVariable_InitiateConnection(struct VariableShare * vsh)
 void *
 RemoteVariableClient_Thread(void * ptr)
 {
-  debug_say("Client Thread : Remote Variable TCP Server thread started..\n");
+  debug_say("Client Thread : Remote Variable TCP Client thread started..\n");
   struct VariableShare *vsh=0;
   vsh = (struct VariableShare *) ptr;
   if (vsh==0) { fprintf(stderr,"Client Thread : Virtual Share Parameter is damaged \n"); return 0; }

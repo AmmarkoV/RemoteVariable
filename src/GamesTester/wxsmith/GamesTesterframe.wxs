@@ -14,8 +14,9 @@
 			<label>Send</label>
 			<pos>752,480</pos>
 			<size>104,27</size>
+			<handler function="OnSendButtonClick" entry="EVT_BUTTON" />
 		</object>
-		<object class="wxTextCtrl" name="ID_TEXTCTRL2" variable="TextCtrl1" member="yes">
+		<object class="wxTextCtrl" name="ID_TEXTCTRL2" variable="ChatTextCtrl" member="yes">
 			<pos>600,18</pos>
 			<size>256,424</size>
 			<style>wxTE_MULTILINE</style>
@@ -24,6 +25,12 @@
 			<label>Game area :P</label>
 			<pos>16,8</pos>
 			<size>568,496</size>
+		</object>
+		<object class="wxButton" name="ID_BUTTON2" variable="NudgeButton" member="yes">
+			<label>Nudge</label>
+			<pos>600,488</pos>
+			<size>56,19</size>
+			<handler function="OnNudgeButtonClick" entry="EVT_BUTTON" />
 		</object>
 		<object class="wxMenuBar" variable="MenuBar1" member="no">
 			<object class="wxMenu" variable="Menu1" member="no">
@@ -49,6 +56,10 @@
 			<fields>1</fields>
 			<widths>-1</widths>
 			<styles>wxSB_NORMAL</styles>
+		</object>
+		<object class="wxTimer" name="ID_TIMER1" variable="ClockTimer" member="yes">
+			<interval>100</interval>
+			<handler function="OnClockTimerTrigger" entry="EVT_TIMER" />
 		</object>
 	</object>
 </wxsmith>
