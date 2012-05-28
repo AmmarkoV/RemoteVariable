@@ -9,11 +9,16 @@
 
 #include "GamesTesterMain.h"
 #include <wx/msgdlg.h>
+#include "../RemoteVariableSupport.h"
+#include "Connection.h"
 
 //(*InternalHeaders(GamesTesterFrame)
 #include <wx/string.h>
 #include <wx/intl.h>
 //*)
+
+struct VariableShare * vsh = 0;
+
 
 //helper functions
 enum wxbuildinfoformat {
@@ -65,7 +70,7 @@ GamesTesterFrame::GamesTesterFrame(wxWindow* parent,wxWindowID id)
     wxMenu* Menu1;
     wxMenuBar* MenuBar1;
     wxMenu* Menu2;
-    
+
     Create(parent, id, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE, _T("id"));
     SetClientSize(wxSize(870,562));
     OurTextCtrl = new wxTextCtrl(this, ID_TEXTCTRL1, wxEmptyString, wxPoint(600,448), wxSize(256,24), 0, wxDefaultValidator, _T("ID_TEXTCTRL1"));
@@ -89,10 +94,34 @@ GamesTesterFrame::GamesTesterFrame(wxWindow* parent,wxWindowID id)
     StatusBar1->SetFieldsCount(1,__wxStatusBarWidths_1);
     StatusBar1->SetStatusStyles(1,__wxStatusBarStyles_1);
     SetStatusBar(StatusBar1);
-    
+
     Connect(idMenuQuit,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&GamesTesterFrame::OnQuit);
     Connect(idMenuAbout,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&GamesTesterFrame::OnAbout);
     //*)
+
+   Connection new_con_window(0);
+   char hostname[128]={0};
+   unsigned int port=1234;
+
+
+   strncpy(hostname, (const char*)new_con_window.Hostname.mb_str(wxConvUTF8),128);
+   port = new_con_window.Port;
+
+    while (vsh==0)
+    {
+
+     new_con_window.ShowModal();
+
+     if ( new_con_window.IsHost ) { vsh = Start_VariableSharing("GAMESHARE",hostname,port,"password"); } else
+                                    { vsh = ConnectToRemote_VariableSharing("GAMESHARE",hostname,port,"password"); }
+
+
+     if ( vsh == 0 )
+      {
+        wxMessageBox(wxT("Could not connect to peer"),wxT("Please try again"));
+      }
+    }
+
 }
 
 GamesTesterFrame::~GamesTesterFrame()

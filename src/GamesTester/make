@@ -1,4 +1,9 @@
 #!/bin/bash
-exit 0
-gcc main.c ../libRemoteVariableSupport.a -L.  -pthread -g -o bin/Debug/RemoteVariableTesterClient
+echo "Hand made make script for GameTester binary .."
+echo "Should provide bin/Release/GameTester " 
+echo "Compiling files.."
+g++ GamesTesterApp.cpp GamesTesterMain.cpp ../libRemoteVariableSupport.a `wx-config --libs` `wx-config --cxxflags` -L. -pthread -lpng -o bin/Release/GameTester
+
+
+echo "Done.."
 exit 0
