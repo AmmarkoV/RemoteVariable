@@ -34,6 +34,10 @@ cd RemoteVariableMaster
 ./make
 cd ..
 
+cd GamesTester
+./make
+cd ..
+
 cd ..
 
 cp src/libRemoteVariableSupport.a libRemoteVariableSupport.a

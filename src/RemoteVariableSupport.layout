@@ -17,7 +17,10 @@
 		<Cursor position="12246" topLine="0" />
 	</File>
 	<File name="NetworkFramework.h" open="1" top="0" tabpos="12">
-		<Cursor position="1968" topLine="19" />
+		<Cursor position="1884" topLine="11" />
+	</File>
+	<File name="NetworkFrameworkLowLevel.c" open="1" top="0" tabpos="20">
+		<Cursor position="3808" topLine="61" />
 	</File>
 	<File name="Peers.c" open="1" top="0" tabpos="16">
 		<Cursor position="858" topLine="0" />
@@ -28,23 +31,23 @@
 	<File name="PortableSocket.h" open="1" top="0" tabpos="13">
 		<Cursor position="0" topLine="0" />
 	</File>
-	<File name="ProtocolThreads.c" open="1" top="1" tabpos="2">
-		<Cursor position="6851" topLine="193" />
+	<File name="ProtocolThreads.c" open="1" top="0" tabpos="2">
+		<Cursor position="6851" topLine="362" />
 	</File>
 	<File name="ProtocolThreads.h" open="1" top="0" tabpos="14">
 		<Cursor position="1678" topLine="0" />
 	</File>
 	<File name="RemoteVariableSupport.c" open="1" top="0" tabpos="6">
-		<Cursor position="2837" topLine="139" />
+		<Cursor position="6354" topLine="150" />
 	</File>
 	<File name="RemoteVariableSupport.h" open="1" top="0" tabpos="9">
-		<Cursor position="1979" topLine="51" />
+		<Cursor position="5225" topLine="169" />
 	</File>
 	<File name="VariableDatabase.c" open="1" top="0" tabpos="7">
-		<Cursor position="8805" topLine="252" />
+		<Cursor position="3556" topLine="108" />
 	</File>
 	<File name="VariableDatabase.h" open="1" top="0" tabpos="10">
-		<Cursor position="2339" topLine="0" />
+		<Cursor position="2185" topLine="0" />
 	</File>
 	<File name="helper.c" open="1" top="0" tabpos="4">
 		<Cursor position="2244" topLine="27" />

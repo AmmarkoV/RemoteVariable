@@ -1,0 +1,4 @@
+#!/bin/bash
+exit 0
+gcc main.c ../libRemoteVariableSupport.a -L.  -pthread -g -o bin/Debug/RemoteVariableTesterClient
+exit 0
