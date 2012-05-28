@@ -296,6 +296,7 @@ int IfLocalVariableChanged_SignalUpdateToJoblist(struct VariableShare * vsh,unsi
     {
       fprintf(stderr,"Variable Changed Hash for variable %u , values %u to %u !\n",var_id,(unsigned int) newhash,(unsigned int) vsh->share.variables[var_id].hash );
       vsh->share.variables[var_id].hash=newhash; /*We keep the new hash as the current hash :)*/
+      vsh->share.variables[var_id].this_hash_transmission_count=0;
       Job_SingalLocalVariableChanged(vsh,var_id); // <- This call creates a job to signal the change..!
 
       return 1;
@@ -345,7 +346,7 @@ int RefreshAllVariablesThatNeedIt(struct VariableShare *vsh)
   return added_jobs;
 }
 
-int MakeSureVarReachedPeers(struct VariableShare *vsh,char * varname)
+int MakeSureVarReachedPeers(struct VariableShare *vsh,char * varname,unsigned int wait_time)
 {
   fprintf(stderr,"MakeSureVarReachedPeers waiting for var %s \n",varname);
 
@@ -353,20 +354,20 @@ int MakeSureVarReachedPeers(struct VariableShare *vsh,char * varname)
   if (!var_id) { fprintf(stderr,"MakeSureVarReachedPeers called for non existing variable ( %s ) \n",varname); return 0; }
   --var_id;
 
-  while ( vsh->share.auto_refresh_every_msec==0)
-   {
-     usleep(100);
-   }
 
   if ( SignalUpdatesForAllLocalVariablesThatNeedIt(vsh) ) // <- this will make any variables that have just changed be set as flag_needs_refres_from_sock
    {
        fprintf(stderr,"Found changed variables..!\n");
    }
 
-  unsigned int wait_time=10000;
   while (wait_time>0)
   {
-      if ( (vsh->share.variables[var_id].flag_needs_refresh_from_sock==0) && ( vsh->jobs_loaded ==0 )) { return 1; }
+
+      if ( (vsh->share.variables[var_id].this_hash_transmission_count == vsh->total_peers ) &&
+           (vsh->share.variables[var_id].flag_needs_refresh_from_sock==0) &&
+          ( vsh->jobs_loaded == 0 ))
+
+                          { return 1; }
 
       --wait_time;
       usleep (1000);

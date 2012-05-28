@@ -64,6 +64,7 @@ int main()
     if ( !wait_for_var_to_become_x(&SHARED_VAR,WAIT_TIME,8)) { fprintf(stderr,"Client : Failed the test ( last step )\n"); return 1; }
 
     fprintf(stderr,"TEST STEPS DONE \n");
+    printf("Client : Test is successfull!\n");
     fprintf(stderr,"Client : Test is successfull!\n");
 
      if ( Stop_VariableSharing(vsh) == 0 ) fprintf(stderr,"Client : Error Deleting share\n");

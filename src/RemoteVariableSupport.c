@@ -188,9 +188,9 @@ int IsUptodate_RemoteVariable(struct VariableShare * vsh,char * variable_name)
 }
 
 
-int MakeSureVarReachedPeers_RemoteVariable(struct VariableShare * vsh,char * variable_name)
+int MakeSureVarReachedPeers_RemoteVariable(struct VariableShare * vsh,char * variable_name,unsigned int wait_time_ms)
 {
-  return MakeSureVarReachedPeers(vsh,variable_name);
+  return MakeSureVarReachedPeers(vsh,variable_name,wait_time_ms);
 }
 
 

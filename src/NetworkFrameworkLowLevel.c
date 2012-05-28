@@ -84,8 +84,9 @@ int SendVariableTo(struct VariableShare * vsh,int clientsock,unsigned int variab
   data_sent= send(clientsock,vsh->share.variables[variable_id].ptr,data.data_size , 0); // SEND VARIABLE!
   if ( data_sent != data.data_size ) { fprintf(stderr,"Incorrect payload transmission ( %d instead of %u )\n",data_sent , data.data_size ); return 0; }
 
+  ++vsh->share.variables[variable_id].this_hash_transmission_count;
 
-  fprintf(stderr,"SendVariableTo , Great Success :) \n");
+  fprintf(stderr,"SendVariableTo , Great Success , the variable with this hash has been transmitted %u times :) \n",vsh->share.variables[variable_id].this_hash_transmission_count);
   return 1;
 }
 
