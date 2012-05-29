@@ -299,9 +299,16 @@ int MasterSignalChange_Handshake(struct VariableShare * vsh,unsigned int var_cha
   // 1ST MESSAGE SENT
   sprintf(message,"SIG=%s\0",vsh->share.variables[var_changed].ptr_name);
   unsigned int length_of_full_str = 4+ vsh->share.variables[var_changed].ptr_name_length + 1;
-  SendRAWTo(peersock,message,length_of_full_str);
+  int opres=SendRAWTo(peersock,message,length_of_full_str);
 
-  RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+
+  opres=RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+  if (opres<0)
+   {
+     fprintf(stderr,"Error at RecvFrom @ MasterSignalChange_Handshake got error code %d\n",errno);
+     UnlockSocket(peersock,peerlock);
+     return 0;
+   } else
   if (strncmp(message,"OK",2)!=0)
    {
      error("Error at signal change handshaking : 1");
@@ -380,7 +387,8 @@ int ProtocolServeResponse(struct VariableShare * vsh ,int peersock,unsigned int 
           return AcceptRequestVariable_Handshake(vsh,peersock,peerlock);
       } else
       {
-        fprintf(stderr,"Incoming message from background data processed of length %u received and ignored ( str = `%s` )\n",(unsigned int) strlen(peek_request),peek_request);
+        fprintf(stderr,"Incoming message from background data processed of length %u received and ignored ( str = `%s` ) , flushing it down the drain\n",(unsigned int) strlen(peek_request),peek_request);
+        recv(peersock, (char*) peek_request,RVS_MAX_RAW_HANDSHAKE_MESSAGE,0);
         memset (peek_request,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
       }
    } else
