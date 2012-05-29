@@ -48,22 +48,51 @@ int RecvVariableFrom(struct VariableShare * vsh,int clientsock,unsigned int vari
  if (data_recv != sizeof (data) ) { fprintf(stderr,"Incorrect starting frame received ( %u instead of %u )\n",data_recv , sizeof (data) ); return 0; }
  if (data.data_size != vsh->share.variables[variable_id].size_of_ptr ) { fprintf(stderr,"Incorrect pointer size at frame received ( %u instead of %u )\n",data.data_size , vsh->share.variables[variable_id].size_of_ptr ); return 0; }
 
+ void * temp_recv_mem_to_avoid_race = (void *) malloc(data.data_size);
+ if (temp_recv_mem_to_avoid_race==0)
+  {
+     fprintf(stderr,"Could not make safe memory allocation\n");
+     //TODO BEEF UP SECURITY HERE :P
+     unsigned int * ptr_val = (unsigned int * ) vsh->share.variables[variable_id].ptr;
+     fprintf(stderr,"Receiving Payload ( var was %u ",*ptr_val);
+     data_recv= recv(clientsock,vsh->share.variables[variable_id].ptr,data.data_size, 0); // GET DirectPAYLOAD!
+     if ( data_recv != data.data_size ) { fprintf(stderr,"Incorrect payload received ( %u instead of %u )\n",data_recv , vsh->share.variables[variable_id].size_of_ptr ); return 0; }
+     ptr_val = (unsigned int * ) vsh->share.variables[variable_id].ptr;
+     fprintf(stderr,"now %u  )\n",*ptr_val);
 
- //TODO BEEF UP SECURITY HERE :P
- unsigned int * ptr_val = (unsigned int * ) vsh->share.variables[variable_id].ptr;
- fprintf(stderr,"Receiving Payload ( var was %u ",*ptr_val);
- data_recv= recv(clientsock,vsh->share.variables[variable_id].ptr,data.data_size, 0); // GET VAR PAYLOAD!
- fprintf(stderr,"now %u  )\n",*ptr_val);
+     fprintf(stderr,"Updating hash value for new payload ( %u ) , ",*ptr_val);
+     vsh->share.variables[variable_id].hash=GetVariableHashForVar(vsh,variable_id);
+     fprintf(stderr,"new hash value is %u\n",vsh->share.variables[variable_id].hash);
+
+   }   else
+   {
+     unsigned int * ptr_val = (unsigned int * ) vsh->share.variables[variable_id].ptr;
+     fprintf(stderr,"Receiving Payload ( var was %u ",*ptr_val);
+     data_recv= recv(clientsock,temp_recv_mem_to_avoid_race,data.data_size, 0); // GET VAR PAYLOAD! vsh->share.variables[variable_id].ptr
+     if ( data_recv != data.data_size ) { fprintf(stderr,"Incorrect payload received ( %u instead of %u )\n",data_recv , vsh->share.variables[variable_id].size_of_ptr ); return 0; }
+     ptr_val = (unsigned int * ) vsh->share.variables[variable_id].ptr;
+     fprintf(stderr,"now %u  )\n",*ptr_val);
+
+     fprintf(stderr,"Updating hash value for new payload ( %u ) , ",*ptr_val);
+     vsh->share.variables[variable_id].hash=GetVariableHash(vsh,temp_recv_mem_to_avoid_race,data.data_size);
+     memcpy(vsh->share.variables[variable_id].ptr,temp_recv_mem_to_avoid_race,data.data_size);
+     fprintf(stderr,"new hash value is %u\n",vsh->share.variables[variable_id].hash);
+
+     free(temp_recv_mem_to_avoid_race);
+   }
 
 
- if ( data_recv != data.data_size ) { fprintf(stderr,"Incorrect payload received ( %u instead of %u )\n",data_recv , vsh->share.variables[variable_id].size_of_ptr ); return 0; }
+
+
+
+
+
  if ( vsh->share.variables[variable_id].GUARD_BYTE1 != RVS_GUARD_VALUE ) {  error("Buffer overflow attack @ RecvVariableFrom detected\n"); vsh->global_state=VSS_SECURITY_ALERT; return 0; }
  if ( vsh->share.variables[variable_id].GUARD_BYTE2 != RVS_GUARD_VALUE ) {  error("Buffer overflow attack @ RecvVariableFrom detected\n"); vsh->global_state=VSS_SECURITY_ALERT; return 0; }
 
  // TODO CHECK OPERATIONS ETC HERE!
- fprintf(stderr,"Updating hash value , ");
- vsh->share.variables[variable_id].hash=GetVariableHash(vsh,variable_id);
- fprintf(stderr,"new hash value is %u\n",vsh->share.variables[variable_id].hash);
+
+
 
  fprintf(stderr,"RecvVariableFrom , Great Success :) \n");
   return 1;

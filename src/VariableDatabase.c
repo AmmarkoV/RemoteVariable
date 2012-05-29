@@ -124,11 +124,12 @@ int Resize_VariableDatabase(struct VariableShare * vsh , unsigned int newsize)
   return 0;
 }
 
-unsigned long GetVariableHash(struct VariableShare * vsh,unsigned int var_id)
+
+unsigned long GetVariableHash(struct VariableShare * vsh,void * ptr,unsigned int size_of_ptr)
 {
-  if (vsh->share.variables[var_id].size_of_ptr<sizeof(unsigned long)) {
+  if (size_of_ptr<sizeof(unsigned long)) {
                                                                            /*The whole variable fits inside the unsigned long so no hash is required*/
-                                                                            unsigned long * stacklongptr = vsh->share.variables[var_id].ptr;
+                                                                            unsigned long * stacklongptr = ptr;
                                                                             unsigned long stacklong = *stacklongptr;
                                                                            /*fprintf(stderr,"GetVariableHash for var %u returning %u\n",var_id,stacklong);*/
                                                                             return stacklong;
@@ -137,6 +138,14 @@ unsigned long GetVariableHash(struct VariableShare * vsh,unsigned int var_id)
   /*hash(unsigned char *str);*/
   return 0;
 }
+unsigned long GetVariableHashForVar(struct VariableShare * vsh,unsigned int var_id)
+{
+  return GetVariableHash(vsh,
+                          vsh->share.variables[var_id].ptr,
+                          vsh->share.variables[var_id].size_of_ptr);
+}
+
+
 
 int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int permissions,volatile void * ptr,unsigned int ptr_size)
 {
@@ -167,7 +176,7 @@ int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int
 
     vsh->share.variables[spot_to_take].ptr=ptr;
     vsh->share.variables[spot_to_take].size_of_ptr=ptr_size;
-    vsh->share.variables[spot_to_take].hash=GetVariableHash(vsh,spot_to_take);
+    vsh->share.variables[spot_to_take].hash=GetVariableHashForVar(vsh,spot_to_take);
 
     vsh->share.variables[spot_to_take].last_write_inc=0;
     vsh->share.variables[spot_to_take].permissions=permissions;
@@ -291,7 +300,7 @@ int MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,char 
 int IfLocalVariableChanged_SignalUpdateToJoblist(struct VariableShare * vsh,unsigned int var_id)
 {
   if (!VariableIdExists(vsh,var_id)) { fprintf(stderr,"Variable addressed ( %u ) by IfLocalVariableChanged_SignalUpdateToJoblist does not exist \n",var_id); return 0; }
-  unsigned long newhash=GetVariableHash(vsh,var_id);
+  unsigned long newhash=GetVariableHashForVar(vsh,var_id);
 
   if (newhash!=vsh->share.variables[var_id].hash )
     {
