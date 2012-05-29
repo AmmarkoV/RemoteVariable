@@ -298,7 +298,8 @@ int MasterSignalChange_Handshake(struct VariableShare * vsh,unsigned int var_cha
 
   // 1ST MESSAGE SENT
   sprintf(message,"SIG=%s\0",vsh->share.variables[var_changed].ptr_name);
-  SendRAWTo(peersock,message,strlen(message)+1);
+  unsigned int length_of_full_str = 4+ vsh->share.variables[var_changed].ptr_name_length + 1;
+  SendRAWTo(peersock,message,length_of_full_str);
 
   RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
   if (strncmp(message,"OK",2)!=0)

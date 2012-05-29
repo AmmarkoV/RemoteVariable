@@ -12,6 +12,8 @@
 #include "../RemoteVariableSupport.h"
 #include "Connection.h"
 
+#include <stdio.h>
+
 #include <wx/image.h>
 #include <wx/dc.h>
 #include <wx/dcclient.h>
@@ -29,9 +31,11 @@ struct VariableShare * vsh = 0;
 wxString OurName;
 wxString OpponentName;
 
-volatile unsigned int OurMove=0;
-volatile unsigned int OpponentMove=0;
+volatile unsigned int OurMove=666;
+volatile unsigned int OpponentMove=666;
 
+unsigned int game_state = 0;
+unsigned int new_game = 0;
 unsigned int turn = 0;
 
 char OurMessage[128]={0};
@@ -140,13 +144,15 @@ GamesTesterFrame::GamesTesterFrame(wxWindow* parent,wxWindowID id)
    unsigned int port=1234;
 
 
-   strncpy(hostname, (const char*)new_con_window.Hostname.mb_str(wxConvUTF8),128);
-   port = new_con_window.Port;
 
     while (vsh==0)
     {
 
      new_con_window.ShowModal();
+
+     strncpy(hostname, (const char*)new_con_window.Hostname.mb_str(wxConvUTF8),128);
+     fprintf(stderr,"Hostname client got was (%s or %s or %s) \n",hostname,new_con_window.Hostname_cstr,(const char*) new_con_window.Hostname.mb_str());
+     port = new_con_window.Port;
 
      if ( new_con_window.ExitActivated )
       {
@@ -160,16 +166,19 @@ GamesTesterFrame::GamesTesterFrame(wxWindow* parent,wxWindowID id)
      if ( new_con_window.IsHost )
       {
         // Host setup
+        turn=1;
         vsh = Start_VariableSharing("GAMESHARE",hostname,port,"password");
         Add_VariableToSharingList(vsh,"HOST_MOVE",7,&OurMove,sizeof(OurMove));
         Add_VariableToSharingList(vsh,"CLIENT_MOVE",7,&OpponentMove,sizeof(OpponentMove));
-
+        Add_VariableToSharingList(vsh,"GAME_STATE",7,&game_state,sizeof(game_state));
       } else
       {
         // Client setup
+        turn=2;
         vsh = ConnectToRemote_VariableSharing("GAMESHARE",hostname,port,"password");
         Add_VariableToSharingList(vsh,"HOST_MOVE",7,&OpponentMove,sizeof(OpponentMove));
         Add_VariableToSharingList(vsh,"CLIENT_MOVE",7,&OurMove,sizeof(OurMove));
+        Add_VariableToSharingList(vsh,"GAME_STATE",7,&game_state,sizeof(game_state));
       }
 
 
@@ -219,6 +228,54 @@ void GamesTesterFrame::OnSendButtonClick(wxCommandEvent& event)
    OurTextCtrl->SetValue(wxT(""));
 }
 
+
+
+unsigned int BoardXOfPieceXY(unsigned int x, unsigned int y)
+{
+  return 32+x*64;
+}
+
+unsigned int BoardYOfPieceXY(unsigned int x, unsigned int y)
+{
+  return 32+y*64;
+}
+
+
+inline int XYOverRect(int x , int y , int rectx1,int recty1,int rectx2,int recty2)
+{
+  if ( (x>=rectx1) && (x<=rectx2) )
+    {
+      if ( (y>=recty1) && (y<=recty2) )
+        {
+          return 1;
+        }
+    }
+  return 0;
+}
+
+
+int process_move(unsigned int spot_x , unsigned int player)
+{
+  if (spot_x>7) { } else
+  if (board[spot_x][0]!=0) { } else
+         {
+           unsigned int spot_y=7;
+           while (spot_y>0)
+            {
+              --spot_y;
+              if (board[spot_x][spot_y]==0)
+               {
+                   board[spot_x][spot_y]=player;
+                   return 1;
+               }
+            }
+           board[spot_x][0]=player;
+         }
+   return 0;
+}
+
+
+
 void GamesTesterFrame::OnClockTimerTrigger(wxTimerEvent& event)
 {
    if ( strlen(OpponentMessage)!=0 )
@@ -235,6 +292,36 @@ void GamesTesterFrame::OnClockTimerTrigger(wxTimerEvent& event)
 
        ChatTextCtrl->AppendText(FinalMessage);
     }
+
+
+   if (new_game)
+    {
+      for (int x=0; x<8; x++)
+       {
+         for (int y=0; y<8; y++)
+         {
+            board[x][y]=0;
+         }
+       }
+      turn = 1;
+      Refresh();
+    }
+
+
+    if (turn==2)
+    {
+        if ( OpponentMove!=666)
+         {
+               if ( process_move(OpponentMove,2) )
+                {
+                  OpponentMove=666;
+                  turn=1;
+                  Refresh();
+                }
+         }
+
+    }
+
 }
 
 void GamesTesterFrame::Nudge()
@@ -257,15 +344,6 @@ void GamesTesterFrame::OnNudgeButtonClick(wxCommandEvent& event)
     Nudge();
 }
 
-unsigned int BoardXOfPieceXY(unsigned int x, unsigned int y)
-{
-  return 32+x*64;
-}
-
-unsigned int BoardYOfPieceXY(unsigned int x, unsigned int y)
-{
-  return 32+y*64;
-}
 
 
 void DrawField(wxPaintDC * dc)
@@ -314,42 +392,36 @@ void GamesTesterFrame::OnPaint(wxPaintEvent& event)
 }
 
 
-inline int XYOverRect(int x , int y , int rectx1,int recty1,int rectx2,int recty2)
-{
-  if ( (x>=rectx1) && (x<=rectx2) )
-    {
-      if ( (y>=recty1) && (y<=recty2) )
-        {
-          return 1;
-        }
-    }
-  return 0;
-}
-
 
 void GamesTesterFrame::OnMotion(wxMouseEvent& event)
 {
+  if (turn==2) { return; } // Its other players turn
 
-  wxSleep(0.01);
   int x=event.GetX();
   int y=event.GetY();
 
 
-
-//      if ( XYOverRect(x,y,fd_rx1,fd_ry1,fd_rx2,fd_ry2)==1 )
-//       {
-//         //DrawPatchComp(0,x-fd_rx1,y-fd_ry1);
-//         //mouse_x=x;
-//         //mouse_y=y;
-//       }
-
-
-
-
-   if ( event.LeftIsDown()==1 )
+   if (( event.LeftIsDown()==1 ) && (OurMove==666) )
    {
+        unsigned int pos_x= ( event.GetX() - 32 ) / 64 ;
+        unsigned int pos_y= ( event.GetY() - 32 ) / 64;
 
+        if (pos_x>8)
+          {
+              fprintf(stderr,"X out of bounds %u for mouse pos %u,%u\n",pos_x,x,y);
+          } else
+         {
+              OurMove=pos_x;
+              if ( process_move(pos_x,1) )
+               {
+                 turn=2;
+                 Refresh();
+               }
+         }
    }
+
+   wxSleep(0.11);
+
 }
 
 

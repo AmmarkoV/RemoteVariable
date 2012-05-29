@@ -31,6 +31,7 @@ class Connection: public wxDialog
 		//*)
 
 		wxString Hostname;
+		char Hostname_cstr[128];
 		wxString Nickname;
 		long Port;
 		long IsHost;

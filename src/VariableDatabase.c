@@ -142,9 +142,8 @@ int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int
 {
  if ( VariableShareOk(vsh) == 0 ) { fprintf(stderr,"Error could not add %s var to database \n",var_name); return 0; }
 
-
  unsigned int * ptr_val = (unsigned int * ) ptr;
- fprintf(stderr,"AddVariable_Database , var_name = %s , ptr = %u , ptr_size = %u \n",var_name,*ptr_val,ptr_size);
+ fprintf(stderr,"AddVariable_Database , var_name = %s ( %u chars ) , ptr = %p , ptr_size = %u \n",var_name,strlen(var_name),*ptr_val,ptr_size);
 
  unsigned int spot_to_take=vsh->share.total_variables_memory+1;
  if (vsh->share.total_variables_memory > vsh-> share.total_variables_shared )
@@ -158,10 +157,12 @@ int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int
 
   if (spot_to_take < vsh->share.total_variables_memory)
   {
-
     unsigned int var_length = strlen(var_name);
+    vsh->share.variables[spot_to_take].ptr_name_length  = var_length;
     if ( var_length>=32 ) { fprintf(stderr,"Var %s is too big , trimming it \n",var_name); var_length=32; }
+    memset(vsh->share.variables[spot_to_take].ptr_name,0,32);
     strncpy(vsh->share.variables[spot_to_take].ptr_name,var_name,var_length);
+
 
 
     vsh->share.variables[spot_to_take].ptr=ptr;
@@ -401,7 +402,7 @@ AutoRefreshVariable_Thread(void * ptr)
 
              variables_refreshed=RefreshAllVariablesThatNeedIt(vsh);
 
-             if ( (variables_changed==0 ) && ( variables_refreshed == 0) ) { fprintf(stderr,"."); } else
+             if ( (variables_changed==0 ) && ( variables_refreshed == 0) ) { /*fprintf(stderr,".");*/ } else
                                                                            { fprintf(stderr,"AutoRefresh Thread: %u variables changed and %u variables refreshed\n",variables_changed,variables_refreshed); }
           }
    }

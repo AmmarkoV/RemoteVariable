@@ -220,7 +220,7 @@ int RemoteVariable_InitiateConnection(struct VariableShare * vsh)
 
   if ((he=gethostbyname(vsh->ip)) == 0)
   {
-    fprintf(stderr,"Error getting host by name %s \n",vsh->ip);
+    fprintf(stderr,"Error getting host (%s) by name  \n",vsh->ip);
     return 0;
    }
     else

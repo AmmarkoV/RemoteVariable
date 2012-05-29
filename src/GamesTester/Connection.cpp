@@ -34,7 +34,7 @@ Connection::Connection(wxWindow* parent,wxWindowID id,const wxPoint& pos,const w
 	SetClientSize(wxSize(299,201));
 	Move(wxDefaultPosition);
 	StaticText1 = new wxStaticText(this, ID_STATICTEXT1, _("Hostname :"), wxPoint(24,20), wxDefaultSize, 0, _T("ID_STATICTEXT1"));
-	HostnameTextCtrl = new wxTextCtrl(this, ID_TEXTCTRL1, _("ammar.gr"), wxPoint(112,16), wxSize(176,23), 0, wxDefaultValidator, _T("ID_TEXTCTRL1"));
+	HostnameTextCtrl = new wxTextCtrl(this, ID_TEXTCTRL1, _("127.0.0.1"), wxPoint(112,16), wxSize(176,23), 0, wxDefaultValidator, _T("ID_TEXTCTRL1"));
 	ConnectButton = new wxButton(this, ID_BUTTON1, _("Connect"), wxPoint(24,128), wxSize(264,27), 0, wxDefaultValidator, _T("ID_BUTTON1"));
 	ExitButton = new wxButton(this, ID_BUTTON2, _("Exit"), wxPoint(216,160), wxSize(69,27), 0, wxDefaultValidator, _T("ID_BUTTON2"));
 	StaticText2 = new wxStaticText(this, ID_STATICTEXT2, _("Port :"), wxPoint(24,56), wxDefaultSize, 0, _T("ID_STATICTEXT2"));
@@ -66,6 +66,8 @@ Connection::~Connection()
 void Connection::OnConnectButtonClick(wxCommandEvent& event)
 {
   Hostname=HostnameTextCtrl->GetValue();
+  strncpy(Hostname_cstr, (const char*)HostnameTextCtrl->GetValue().mb_str(wxConvUTF8),128);
+
   Nickname=NicknameTextCtrl->GetValue();
   wxString curval = PortTextCtrl->GetValue();
   curval.ToLong(&Port);
@@ -73,6 +75,7 @@ void Connection::OnConnectButtonClick(wxCommandEvent& event)
   if ( ConnectionTypeChoice->GetCurrentSelection()==0 ) { IsHost=0; } else
                                                           { IsHost=1; }
 
+  ExitActivated=0;
   Close();
 }
 

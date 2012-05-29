@@ -53,6 +53,7 @@ struct ShareListItem
 {
 
     char ptr_name[32];
+    unsigned int ptr_name_length;
 
     unsigned char GUARD_BYTE1;
 
