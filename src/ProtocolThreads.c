@@ -311,7 +311,7 @@ int MasterSignalChange_Handshake(struct VariableShare * vsh,unsigned int var_cha
    } else
   if (strncmp(message,"OK",2)!=0)
    {
-     error("Error at signal change handshaking : 1");
+     fprintf(stderr,"Error at signal change handshaking while waiting for OK - instead got `%s`\n",message);
      UnlockSocket(peersock,peerlock);
      return 0;
     }

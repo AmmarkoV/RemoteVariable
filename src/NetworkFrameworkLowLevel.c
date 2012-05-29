@@ -51,7 +51,7 @@ int RecvVariableFrom(struct VariableShare * vsh,int clientsock,unsigned int vari
  void * temp_recv_mem_to_avoid_race = (void *) malloc(data.data_size);
  if (temp_recv_mem_to_avoid_race==0)
   {
-     fprintf(stderr,"Could not make safe memory allocation\n");
+     fprintf(stderr,"Could not make safe memory allocation , this RecvVariableFrom call can be subject to race conditions\n");
      //TODO BEEF UP SECURITY HERE :P
      unsigned int * ptr_val = (unsigned int * ) vsh->share.variables[variable_id].ptr;
      fprintf(stderr,"Receiving Payload ( var was %u ",*ptr_val);
