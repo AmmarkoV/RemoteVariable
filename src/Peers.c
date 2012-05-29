@@ -20,8 +20,8 @@ int AddPeer(struct VariableShare * vsh,char * name,unsigned int port , int clien
    {
        unsigned int pos = vsh->total_peers;
 
-       strncpy(vsh->peer_list[pos].IP,"TODO",4);
-       //strncpy(vsh->peer_list[pos].IP,name,RVS_MAX_SHARE_IP_CHARS);
+       memset(vsh->peer_list[pos].IP,0,RVS_MAX_SHARE_IP_CHARS);
+       strncpy(vsh->peer_list[pos].IP,name,RVS_MAX_SHARE_IP_CHARS);
        vsh->peer_list[pos].port=port;
        vsh->peer_list[pos].socket_to_client = clientsock;
        vsh->peer_list[pos].socket_locked=0;

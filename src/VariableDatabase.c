@@ -143,7 +143,7 @@ int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int
  if ( VariableShareOk(vsh) == 0 ) { fprintf(stderr,"Error could not add %s var to database \n",var_name); return 0; }
 
  unsigned int * ptr_val = (unsigned int * ) ptr;
- fprintf(stderr,"AddVariable_Database , var_name = %s ( %u chars ) , ptr = %p , ptr_size = %u \n",var_name,strlen(var_name),*ptr_val,ptr_size);
+ fprintf(stderr,"AddVariable_Database , var_name = %s ( %u chars ) , ptr value = %p ptr addr = %p , ptr_size = %u \n",var_name,strlen(var_name),*ptr_val,ptr_val,ptr_size);
 
  unsigned int spot_to_take=vsh->share.total_variables_memory+1;
  if (vsh->share.total_variables_memory > vsh-> share.total_variables_shared )

@@ -34,9 +34,17 @@ wxString OpponentName;
 volatile unsigned int OurMove=666;
 volatile unsigned int OpponentMove=666;
 
+unsigned int OurScore=0;
+unsigned int OpponentScore=0;
+
 unsigned int game_state = 0;
 unsigned int new_game = 0;
 unsigned int turn = 0;
+
+unsigned int end_line_x1=666;
+unsigned int end_line_y1=666;
+unsigned int end_line_x2=666;
+unsigned int end_line_y2=666;
 
 char OurMessage[128]={0};
 char OpponentMessage[128]={0};
@@ -254,6 +262,43 @@ inline int XYOverRect(int x , int y , int rectx1,int recty1,int rectx2,int recty
 }
 
 
+void CheckEndGame()
+{
+   /*Horizontal checker*/
+   for (int y=0; y<8; y++)
+    {
+     for (int x=0; x<4; x++)
+      {
+         if ( (board[x][y]!=0)&&
+              (board[x+1][y]==board[x][y])&&
+              (board[x+2][y]==board[x][y])&&
+              (board[x+3][y]==board[x][y]) )
+               {
+                 end_line_x1=x; end_line_y1=y; end_line_x2=x+3; end_line_y2=y;
+                 fprintf(stderr,"Player %u wins , horizontal line from %u,%u to %u,%u\n",board[x][y],end_line_x1,end_line_y1,end_line_x2,end_line_y2);
+               }
+      }
+    }
+
+   /*Vertical checker*/
+   for (int y=0; y<4; y++)
+    {
+     for (int x=0; x<8; x++)
+      {
+         if ( (board[x][y]!=0)&&
+              (board[x][y+1]==board[x][y])&&
+              (board[x][y+2]==board[x][y])&&
+              (board[x][y+3]==board[x][y]) )
+               {
+                 end_line_x1=x; end_line_y1=y; end_line_x2=x; end_line_y2=y+3;
+                 fprintf(stderr,"Player %u wins , vertical line from %u,%u to %u,%u\n",board[x][y],end_line_x1,end_line_y1,end_line_x2,end_line_y2);
+               }
+      }
+    }
+
+}
+
+
 int process_move(unsigned int spot_x , unsigned int player)
 {
   if (spot_x>7) { } else
@@ -266,6 +311,7 @@ int process_move(unsigned int spot_x , unsigned int player)
               if (board[spot_x][spot_y]==0)
                {
                    board[spot_x][spot_y]=player;
+                   CheckEndGame();
                    return 1;
                }
             }
@@ -273,8 +319,6 @@ int process_move(unsigned int spot_x , unsigned int player)
          }
    return 0;
 }
-
-
 
 void GamesTesterFrame::OnClockTimerTrigger(wxTimerEvent& event)
 {
@@ -304,6 +348,10 @@ void GamesTesterFrame::OnClockTimerTrigger(wxTimerEvent& event)
          }
        }
       turn = 1;
+      end_line_x1=666;
+      end_line_y1=666;
+      end_line_x2=666;
+      end_line_y2=666;
       Refresh();
     }
 
@@ -321,6 +369,10 @@ void GamesTesterFrame::OnClockTimerTrigger(wxTimerEvent& event)
          }
 
     }
+
+
+
+
 
 }
 
@@ -364,8 +416,6 @@ void DrawField(wxPaintDC * dc)
 
 void DrawPieces(wxPaintDC * dc)
 {
-
-
   for ( int x=0; x<8; x++ )
     {
       for ( int y=0; y<7; y++ )
@@ -373,11 +423,9 @@ void DrawPieces(wxPaintDC * dc)
          if (board[x][y]==0) {   } else
          if (board[x][y]==1) {   dc->DrawBitmap(OpponentMark,BoardXOfPieceXY(x,y),BoardYOfPieceXY(x,y),true); } else
          if (board[x][y]==2) {   dc->DrawBitmap(OurMark     ,BoardXOfPieceXY(x,y),BoardYOfPieceXY(x,y),true);}
-
       }
     }
    //dc->DrawLine(558,32,558,486); // RIGHT
-
 }
 
 
@@ -389,6 +437,17 @@ void GamesTesterFrame::OnPaint(wxPaintEvent& event)
 
   DrawField(&dc);
   DrawPieces(&dc);
+
+  if ( (end_line_x1!=666) && (end_line_y1!=666) && (end_line_x2!=666) && (end_line_y2!=666) )
+   {
+        wxPen def_marker(wxColour(0,0,0),1,wxSOLID);
+        wxPen red_marker(wxColour(255,0,0),9,wxSOLID);
+        dc.SetPen(red_marker);
+        dc.SetBrush(*wxTRANSPARENT_BRUSH);
+        dc.DrawLine( BoardXOfPieceXY(end_line_x1,end_line_y1)+32,BoardYOfPieceXY(end_line_x1,end_line_y1)+32 ,
+                     BoardXOfPieceXY(end_line_x2,end_line_y2)+32,BoardYOfPieceXY(end_line_x2,end_line_y2)+32  );
+        dc.SetPen(def_marker);
+   }
 }
 
 
@@ -411,9 +470,9 @@ void GamesTesterFrame::OnMotion(wxMouseEvent& event)
               fprintf(stderr,"X out of bounds %u for mouse pos %u,%u\n",pos_x,x,y);
           } else
          {
-              OurMove=pos_x;
               if ( process_move(pos_x,1) )
                {
+                 OurMove=pos_x;
                  turn=2;
                  Refresh();
                }

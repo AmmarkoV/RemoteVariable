@@ -238,7 +238,7 @@ int AcceptRequestVariable_Handshake(struct VariableShare * vsh,int peersock,unsi
      return 0;
    }
 
-  message[0]=0; message[1]=0; message[2]=0; message[3]=0;
+  message[0]=0; message[1]=0; message[2]=0; message[3]=0; message[4]=0;
   opres=RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
   if ( strlen(message) <= 4 )
    {
@@ -322,7 +322,7 @@ int MasterAcceptChange_Handshake(struct VariableShare * vsh,int peersock,unsigne
   char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE];
   memset (message,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
 
-  RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+  RecvRAWFrom(peersock,message,4);
   fprintf(stderr,"Received %s signal\n",message);
   if (strncmp(message,"SIG=",4)!=0)
   {
@@ -330,13 +330,7 @@ int MasterAcceptChange_Handshake(struct VariableShare * vsh,int peersock,unsigne
     UnlockSocket(peersock,peerlock);
     return 0;
   }
-  if ( strlen(message) <= 4 )
-  {
-    error("Error at accepting change  handshake , very small share name ");
-    UnlockSocket(peersock,peerlock);
-    return 0;
-  }
-  memmove (message,message+4,strlen(message)-3);
+  RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
 
   MarkVariableAsNeedsRefresh_VariableDatabase(vsh,message,peersock);
 
@@ -361,12 +355,12 @@ int ProtocolServeResponse(struct VariableShare * vsh ,int peersock,unsigned int 
   //LockSocket(peersock,peerlock);
 
    char peek_request[RVS_MAX_RAW_HANDSHAKE_MESSAGE];
-   memset (peek_request,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
 
   int rest_perms;
   rest_perms=fcntl(peersock,F_GETFL,0);
   fcntl(peersock,F_SETFL,rest_perms | O_NONBLOCK);
 
+   memset (peek_request,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
    int data_received = recv(peersock, (char*) peek_request,RVS_MAX_RAW_HANDSHAKE_MESSAGE, MSG_DONTWAIT |MSG_PEEK); //MSG_DONTWAIT |
 
 
@@ -386,7 +380,8 @@ int ProtocolServeResponse(struct VariableShare * vsh ,int peersock,unsigned int 
           return AcceptRequestVariable_Handshake(vsh,peersock,peerlock);
       } else
       {
-        fprintf(stderr,"Incoming message from background data processed of length %u received and ignored ( str = %s )\n",(unsigned int) strlen(peek_request),peek_request);
+        fprintf(stderr,"Incoming message from background data processed of length %u received and ignored ( str = `%s` )\n",(unsigned int) strlen(peek_request),peek_request);
+        memset (peek_request,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
       }
    } else
    if (data_received<0)
