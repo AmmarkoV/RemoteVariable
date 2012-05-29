@@ -287,12 +287,12 @@ int MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,char 
    if ( var_id == 0 )
     {
       fprintf(stderr,"Variable %s not found , cannot be refreshed to local\n",variable_name);
-      return 0;
     } else
     {
       --var_id; // FindVariableDatabase returns +1 results ( to signal failure with 0 )
       fprintf(stderr,"Variable %s has been marked , as \"needs refresh\" \n",variable_name);
       vsh->share.variables[var_id].flag_needs_refresh_from_sock = clientsock;
+      return 1;
     }
    return 0;
 }

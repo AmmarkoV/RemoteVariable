@@ -35,32 +35,6 @@
 #include <sys/uio.h>
 #include <errno.h>
 #include <fcntl.h>
-/*
-
-    HERE IS THE SPACE WHERE THE SERVER THREAD AND CLIENT THREAD OF EACH VARIABLE SHARE WILL
-    BE WRITTEN
-
-
-*/
-
-
-/*
-   The server thread of each Variable Share should wait for network connections and when the network connection is present , it should
-   analyze the message received , and according to the state respond with a correct response
-
-*/
-
-
-/*
-   The client thread should do 3 things!
-
-   #1 Check the state of the variables shared from our share ( master variables ) and for each one that needs refreshing in a peer share
-   add a job that describes the operation
-
-   #2 Keep a TCP connection to the master remote variable in case our node is a clone , and if the connection is broken , re-establish it
-
-   #3 Carry out the jobs mentioned above
-*/
 
 char RVS_PROTOCOL_VERSION='A';
 
@@ -84,10 +58,12 @@ int Connect_Handshake(struct VariableShare * vsh,int peersock /*unsigned int *pe
 
   //THIS MESSAGE RECEIVES THE VERSION OF THE PEER
   memset (message,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
-  RecvRAWFrom(peersock,message,9,MSG_WAITALL);
+  RecvRAWFrom(peersock,message,8,MSG_WAITALL);
   if (strncmp(message,"VERSION=",8)!=0) { error("Error at connect handshaking : Did not receive version string "); return 0;}
-  if ((unsigned int ) message[8]!= RVS_PROTOCOL_VERSION) { error("Error at connect handshaking : Incorrect version for peer"); return 0;}
 
+  char remote_version=0;
+  RecvRAWFrom(peersock,&remote_version,1,MSG_WAITALL);
+  if (remote_version!= RVS_PROTOCOL_VERSION) { fprintf(stderr,"Error at connect handshaking : Incorrect version for peer ( got %c we have %c ) ",remote_version,RVS_PROTOCOL_VERSION); return 0;}
 
   // FOURTH MESSAGE SENT
   memset (message,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
@@ -113,15 +89,19 @@ int Accept_Handshake(struct VariableShare * vsh,int peersock /*unsigned int *pee
   SendRAWTo(peersock,"HELLO",5);
 
   //THIS MESSAGE RECEIVES THE VERSION OF THE PEER
-  RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE,0);
-  if (strncmp(message,"VERSION=",8)!=0) { error("Error at accept handshaking , no version string "); return 0;}
-  if ((unsigned int ) message[8]!= RVS_PROTOCOL_VERSION) { error("Error at accept handshaking : Incorrect version for peer"); return 0;}
+  memset (message,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+  RecvRAWFrom(peersock,message,8,MSG_WAITALL);
+  if (strncmp(message,"VERSION=",8)!=0) { error("Error at accept handshaking : Did not receive version string "); return 0;}
+
+  char remote_version=0;
+  RecvRAWFrom(peersock,&remote_version,1,MSG_WAITALL);
+  if (remote_version!= RVS_PROTOCOL_VERSION) { fprintf(stderr,"Error at accept handshaking : Incorrect version for peer ( got %c we have %c ) ",remote_version,RVS_PROTOCOL_VERSION); return 0;}
 
   // THIRD MESSAGE SENT
   SendRAWTo(peersock,"VERSION=",8);
   SendRAWTo(peersock,&RVS_PROTOCOL_VERSION,1);
 
-
+  message[0]=0; message[1]=0; message[2]=0; message[3]=0; message[4]=0; message[5]=0;
   RecvRAWFrom(peersock,message,4,MSG_WAITALL);
   if (strncmp(message,"CON=",4)!=0) { error("Error at accept handshaking : 2"); return 0;}
 
@@ -184,7 +164,7 @@ int RequestVariable_Handshake(struct VariableShare * vsh,unsigned int var_id,int
       return 0;
     }
 
-
+  message[0]=0; message[1]=0; message[2]=0;
   opres=RecvRAWFrom(peersock,message,2,MSG_WAITALL);
   if (strncmp(message,"OK",2)!=0)
     {
@@ -256,7 +236,7 @@ int MasterSignalChange_Handshake(struct VariableShare * vsh,unsigned int var_cha
   WaitForSocketLockToClear(peersock,peerlock);
   LockSocket(peersock,peerlock);
 
-  char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE];
+  char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
 
   // 1ST MESSAGE SENT
   int opres=SendRAWTo(peersock,"SIG=",4);
@@ -302,10 +282,17 @@ int MasterAcceptChange_Handshake(struct VariableShare * vsh,int peersock,unsigne
 
   memset (message,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
   RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE,0);
-  MarkVariableAsNeedsRefresh_VariableDatabase(vsh,message,peersock);
+  if ( MarkVariableAsNeedsRefresh_VariableDatabase(vsh,message,peersock) )
+   {
+     fprintf(stderr,"Peer Signaled that variable %s changed \n",message);
+     SendRAWTo(peersock,"OK",2);
+   } else
+   {
+     fprintf(stderr,"Error Peer Signaled that a variable that does not exist (%s) changed \n",message);
+     SendRAWTo(peersock,"NO",2);
+   }
 
-  fprintf(stderr,"Peer Signaled that variable %s changed \n",message);
-  SendRAWTo(peersock,"OK",2);
+
 
   UnlockSocket(peersock,peerlock);
   return 1;
