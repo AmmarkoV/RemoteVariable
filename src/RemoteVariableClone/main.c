@@ -43,30 +43,26 @@ int main()
     if ( !wait_for_var_to_become_x(&SHARED_VAR,WAIT_TIME,666)) { fprintf(stderr,"Client : Failed the test PRE1\n"); return 1; }
 
 
-    fprintf(stderr,"TEST STEP 1\n");
     SHARED_VAR=1;
-    printf("Client : Now we have changed the variable to 1 , will wait until it becomes 2\n");
-    if ( !wait_for_var_to_become_x(&SHARED_VAR,WAIT_TIME,2)) { fprintf(stderr,"Client : Failed the test STEP 1\n"); return 1; }
+    printf("Client : Starting Self Test waiting for value 2 from peer !\n");
+    int i=2;
+    for (i=2; i<=100; i+=2)
+    {
+     if (!wait_for_var_to_become_x(&SHARED_VAR,WAIT_TIME,i)) { fprintf(stderr,"Client : Failed the test STEP%u , waiting for %u\n",i,i); return 1; }
 
-    fprintf(stderr,"TEST STEP 2\n");
-    SHARED_VAR=3;
-    printf("Client : Now we have changed the variable to 3 , will wait until it becomes 4\n");
-    if ( !wait_for_var_to_become_x(&SHARED_VAR,WAIT_TIME,4)) { fprintf(stderr,"Client : Failed the test STEP 2\n"); return 1; }
+     fprintf(stderr,"TEST STEP %u\n",i+1);
+     SHARED_VAR=i+1;
+     printf("Client : Now we have changed the variable to %u , will wait until it becomes %u\n",i+1,i+2);
+    }
 
-    fprintf(stderr,"TEST STEP 3\n");
-    SHARED_VAR=5;
-    printf("Client : Now we have changed the variable to 5 , will wait until it becomes 6\n");
-    if ( !wait_for_var_to_become_x(&SHARED_VAR,WAIT_TIME,6)) { fprintf(stderr,"Client : Failed the test STEP 3\n"); return 1; }
-
-    fprintf(stderr,"TEST STEP 4\n");
-    SHARED_VAR=7;
-    printf("Client : Now we have changed the variable to 7 , will wait until it becomes 8\n");
-    if ( !wait_for_var_to_become_x(&SHARED_VAR,WAIT_TIME,8)) { fprintf(stderr,"Client : Failed the test ( last step )\n"); return 1; }
 
     fprintf(stderr,"TEST STEPS DONE \n");
     printf("Client : Test is successfull!\n");
     fprintf(stderr,"Client : Test is successfull!\n");
 
-     if ( Stop_VariableSharing(vsh) == 0 ) fprintf(stderr,"Client : Error Deleting share\n");
+    fprintf(stderr,"Client : Cleaning VariableShare context!\n");
+    if ( Stop_VariableSharing(vsh) == 0 ) fprintf(stderr,"Client : Error Deleting share\n");
+    fprintf(stderr,"Client : Complete Halt!\n");
+
     return 0;
 }

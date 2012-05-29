@@ -53,8 +53,6 @@ int RecvVariableFrom(struct VariableShare * vsh,int clientsock,unsigned int vari
  unsigned int * ptr_val = (unsigned int * ) vsh->share.variables[variable_id].ptr;
  fprintf(stderr,"Receiving Payload ( var was %u ",*ptr_val);
  data_recv= recv(clientsock,vsh->share.variables[variable_id].ptr,data.data_size, 0); // GET VAR PAYLOAD!
-
- ptr_val = (unsigned int * ) vsh->share.variables[variable_id].ptr;
  fprintf(stderr,"now %u  )\n",*ptr_val);
 
 
@@ -63,8 +61,9 @@ int RecvVariableFrom(struct VariableShare * vsh,int clientsock,unsigned int vari
  if ( vsh->share.variables[variable_id].GUARD_BYTE2 != RVS_GUARD_VALUE ) {  error("Buffer overflow attack @ RecvVariableFrom detected\n"); vsh->global_state=VSS_SECURITY_ALERT; return 0; }
 
  // TODO CHECK OPERATIONS ETC HERE!
- fprintf(stderr,"Updating hash value  \n");
+ fprintf(stderr,"Updating hash value , ");
  vsh->share.variables[variable_id].hash=GetVariableHash(vsh,variable_id);
+ fprintf(stderr,"new hash value is %u\n",vsh->share.variables[variable_id].hash);
 
  fprintf(stderr,"RecvVariableFrom , Great Success :) \n");
   return 1;
@@ -72,7 +71,8 @@ int RecvVariableFrom(struct VariableShare * vsh,int clientsock,unsigned int vari
 
 int SendVariableTo(struct VariableShare * vsh,int clientsock,unsigned int variable_id)
 {
-  struct NetworkRequestGeneralPacket data;
+  fprintf(stderr,"SendVariableTo socket %d , var_id %u \n",clientsock,variable_id);
+  struct NetworkRequestGeneralPacket data={0};
   data.RequestType=WRITEVAR;
   data.data_size = vsh->share.variables[variable_id].size_of_ptr;
 

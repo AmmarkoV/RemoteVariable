@@ -49,38 +49,18 @@ int main()
 
 
 
-
     printf("Master : Starting Self Test waiting for value 1 from peer !\n");
-    if (!wait_for_var_to_become_x(&SHARED_VAR,WAIT_TIME,1)) { fprintf(stderr,"Master : Failed the test STEP1\n"); return 1; }
+    int i=1;
+    for (i=1; i<100; i+=2)
+    {
+     if (!wait_for_var_to_become_x(&SHARED_VAR,WAIT_TIME,i)) { fprintf(stderr,"Master : Failed the test STEP%u , waiting for %u\n",i,i); return 1; }
 
-    fprintf(stderr,"TEST STEP 2\n");
-    SHARED_VAR=2;
-    printf("Master : Now we have changed the variable to 2 , will wait until it becomes 3\n");
-    if (!wait_for_var_to_become_x(&SHARED_VAR,WAIT_TIME,3)) { fprintf(stderr,"Master : Failed the test STEP2\n"); return 1; }
+     fprintf(stderr,"TEST STEP %u\n",i+1);
+     SHARED_VAR=i+1;
+     printf("Master : Now we have changed the variable to %u , will wait until it becomes %u\n",i+1,i+2);
+    }
 
-    fprintf(stderr,"TEST STEP 3\n");
-    SHARED_VAR=4;
-    printf("Master : Now we have changed the variable to 4 , will wait until it becomes 5\n");
-    if (!wait_for_var_to_become_x(&SHARED_VAR,WAIT_TIME,5)) { fprintf(stderr,"Master : Failed the test STEP3\n"); return 1; }
 
-    fprintf(stderr,"TEST STEP 4\n");
-    SHARED_VAR=6;
-    printf("Master : Now we have changed the variable to 6 , will wait until it becomes 7\n");
-    if (!wait_for_var_to_become_x(&SHARED_VAR,WAIT_TIME,7)) { fprintf(stderr,"Master : Failed the test STEP4\n"); return 1; }
-
-    fprintf(stderr,"TEST STEP 5\n");
-    SHARED_VAR=8;
-
-/*
-    int i=0;
-    printf("Master now waiting for shutdown\n");
-    for (i=0; i<100; i++)
-     {
-        printf(".");
-        usleep(1000);
-     }
-     printf("\nMaster done waiting\n");
-     */
     MakeSureVarReachedPeers_RemoteVariable(vsh,"SHARED_VAR",5000);
     usleep(1000);
 
@@ -88,11 +68,15 @@ int main()
     fprintf(stderr,"Master : Test is successfull!\n");
 
     fprintf(stderr,"Master : Closing things down \n");
+
+    fprintf(stderr,"Master : Cleaning VariableShare context!\n");
     if (!Stop_VariableSharing(vsh))
      {
          fprintf(stderr,"Master : Error Stopping Variable share\n");
          return 1;
      }
+    fprintf(stderr,"Master : Complete Halt!\n");
+
 
     return 0;
 }

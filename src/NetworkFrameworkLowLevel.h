@@ -3,6 +3,13 @@
 
 
 
+struct NetworkRequestGeneralPacket
+{
+  char RequestType;
+  unsigned int data_size;
+};
+
+
 int SendRAWTo(int clientsock,char * message,unsigned int length);
 int RecvRAWFrom(int clientsock,char * message,unsigned int length);
 

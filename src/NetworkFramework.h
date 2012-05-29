@@ -40,13 +40,6 @@ enum RequestTypeEnum
 };
 
 
-struct NetworkRequestGeneralPacket
-{
-  char RequestType;
-  unsigned int data_size;
-};
-
-
 int GetPeerIdBySock(struct VariableShare * vsh,int clientsock);
 
 void RemoteVariableClient_Thread_Pause(struct VariableShare * vsh);
