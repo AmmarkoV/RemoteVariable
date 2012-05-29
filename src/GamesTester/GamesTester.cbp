@@ -31,16 +31,20 @@
 			</Target>
 		</Build>
 		<Compiler>
-			<Add option="`wx-config --cflags`" />
 			<Add option="-Wall" />
+			<Add option="`wx-config --cflags`" />
 		</Compiler>
 		<Linker>
 			<Add option="`wx-config --libs`" />
+			<Add library="../../libRemoteVariableSupport.a" />
 		</Linker>
+		<Unit filename="Connection.cpp" />
+		<Unit filename="Connection.h" />
 		<Unit filename="GamesTesterApp.cpp" />
 		<Unit filename="GamesTesterApp.h" />
 		<Unit filename="GamesTesterMain.cpp" />
 		<Unit filename="GamesTesterMain.h" />
+		<Unit filename="wxsmith/Connection.wxs" />
 		<Unit filename="wxsmith/GamesTesterframe.wxs" />
 		<Extensions>
 			<envvars />
@@ -49,6 +53,7 @@
 				<gui name="wxWidgets" src="GamesTesterApp.cpp" main="GamesTesterFrame" init_handlers="necessary" language="CPP" />
 				<resources>
 					<wxFrame wxs="wxsmith/GamesTesterframe.wxs" src="GamesTesterMain.cpp" hdr="GamesTesterMain.h" name="GamesTesterFrame" language="CPP" />
+					<wxDialog wxs="wxsmith/Connection.wxs" src="Connection.cpp" hdr="Connection.h" name="Connection" language="CPP" />
 				</resources>
 			</wxsmith>
 			<lib_finder disable_auto="1" />

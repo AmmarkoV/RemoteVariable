@@ -5,6 +5,8 @@
 #include <wx/intl.h>
 //*)
 
+#include <wx/utils.h>
+
 //(*IdInit(Connection)
 const long Connection::ID_STATICTEXT1 = wxNewId();
 const long Connection::ID_TEXTCTRL1 = wxNewId();
@@ -17,6 +19,8 @@ const long Connection::ID_CHOICE1 = wxNewId();
 const long Connection::ID_STATICTEXT3 = wxNewId();
 const long Connection::ID_TEXTCTRL3 = wxNewId();
 //*)
+
+
 
 BEGIN_EVENT_TABLE(Connection,wxDialog)
 	//(*EventTable(Connection)
@@ -45,6 +49,11 @@ Connection::Connection(wxWindow* parent,wxWindowID id,const wxPoint& pos,const w
 	Connect(ID_BUTTON1,wxEVT_COMMAND_BUTTON_CLICKED,(wxObjectEventFunction)&Connection::OnConnectButtonClick);
 	Connect(ID_BUTTON2,wxEVT_COMMAND_BUTTON_CLICKED,(wxObjectEventFunction)&Connection::OnExitButtonClick);
 	//*)
+
+
+    NicknameTextCtrl->SetValue(wxGetUserId());
+
+	ExitActivated=0;
 }
 
 Connection::~Connection()
@@ -69,5 +78,6 @@ void Connection::OnConnectButtonClick(wxCommandEvent& event)
 
 void Connection::OnExitButtonClick(wxCommandEvent& event)
 {
+  ExitActivated=1;
   Close();
 }

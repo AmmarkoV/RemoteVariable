@@ -10,6 +10,8 @@
 #ifndef GAMESTESTERMAIN_H
 #define GAMESTESTERMAIN_H
 
+#include <wx/richtext/richtextctrl.h>
+
 //(*Headers(GamesTesterFrame)
 #include <wx/button.h>
 #include <wx/menu.h>
@@ -40,6 +42,7 @@ class GamesTesterFrame: public wxFrame
         //*)
 
         void OnPaint(wxPaintEvent& event);
+        void OnMotion(wxMouseEvent& event);
 
         //(*Identifiers(GamesTesterFrame)
         static const long ID_TEXTCTRL1;
@@ -57,11 +60,11 @@ class GamesTesterFrame: public wxFrame
 
 
         //(*Declarations(GamesTesterFrame)
+        wxRichTextCtrl* ChatTextCtrl;
         wxStatusBar* StatusBar1;
         wxTimer ClockTimer;
         wxButton* NudgeButton;
         wxStaticText* StaticText1;
-        wxTextCtrl* ChatTextCtrl;
         wxTextCtrl* OurTextCtrl;
         wxStaticBox* StaticBox1;
         wxButton* SendButton;

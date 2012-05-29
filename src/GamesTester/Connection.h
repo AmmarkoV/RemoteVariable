@@ -34,7 +34,7 @@ class Connection: public wxDialog
 		wxString Nickname;
 		long Port;
 		long IsHost;
-
+        long ExitActivated;
 
 	protected:
 

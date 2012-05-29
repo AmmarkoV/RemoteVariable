@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <wxsmith>
 	<object class="wxFrame" name="GamesTesterFrame">
+		<title>Games Tester App For RemoteVariables</title>
 		<size>870,562</size>
 		<object class="wxTextCtrl" name="ID_TEXTCTRL1" variable="OurTextCtrl" member="yes">
 			<pos>600,448</pos>
 			<size>256,24</size>
+			<style>wxTE_PROCESS_ENTER</style>
 		</object>
 		<object class="wxStaticText" name="ID_STATICTEXT1" variable="StaticText1" member="yes">
 			<label>Label</label>
@@ -16,13 +18,13 @@
 			<size>104,27</size>
 			<handler function="OnSendButtonClick" entry="EVT_BUTTON" />
 		</object>
-		<object class="wxTextCtrl" name="ID_TEXTCTRL2" variable="ChatTextCtrl" member="yes">
+		<object class="wxTextCtrl" name="ID_TEXTCTRL2" subclass="wxRichTextCtrl" variable="ChatTextCtrl" member="yes">
 			<pos>600,18</pos>
 			<size>256,424</size>
 			<style>wxTE_MULTILINE</style>
 		</object>
 		<object class="wxStaticBox" name="ID_STATICBOX1" variable="StaticBox1" member="yes">
-			<label>Game area :P</label>
+			<label>Game area</label>
 			<pos>16,8</pos>
 			<size>568,496</size>
 		</object>
