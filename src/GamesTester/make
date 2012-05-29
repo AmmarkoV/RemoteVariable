@@ -2,7 +2,7 @@
 echo "Hand made make script for GameTester binary .."
 echo "Should provide bin/Release/GameTester " 
 echo "Compiling files.."
-g++ GamesTesterApp.cpp GamesTesterMain.cpp Connection.cpp ../libRemoteVariableSupport.a `wx-config --libs` `wx-config --cxxflags` -L. -pthread -lpng -o bin/Release/GameTester
+g++ GamesTesterApp.cpp GamesTesterMain.cpp Connection.cpp ../libRemoteVariableSupport.a `wx-config --libs` `wx-config --cxxflags` -L. -pthread -lpng -o bin/Release/GamesTester
 
 
 echo "Done.."
