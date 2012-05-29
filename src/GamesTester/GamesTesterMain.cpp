@@ -204,6 +204,34 @@ GamesTesterFrame::~GamesTesterFrame()
     //*)
 }
 
+
+char FileExists(char * filename)
+{
+ FILE *fp = fopen(filename,"r");
+ if( fp ) { /* exists */
+            fclose(fp);
+            return 1;
+          }
+          else
+          { /* doesnt exist */ }
+ return 0;
+}
+
+
+int PlaySound(char * sndname)
+{
+
+  char command_s[1024]={0};
+  sprintf(command_s,"src/GamesTester/sounds/%s.wav",sndname);
+  if (!FileExists(command_s)) { return 1; }
+
+
+  sprintf(command_s,"aplay src/GamesTester/sounds/%s.wav&",sndname);
+  fprintf(stderr," %s \n ",command_s);
+  int i=system((const char * ) command_s);
+  return i;
+}
+
 void GamesTesterFrame::OnQuit(wxCommandEvent& event)
 {
     Stop_VariableSharing(vsh);
@@ -276,6 +304,7 @@ void CheckEndGame()
                {
                  end_line_x1=x; end_line_y1=y; end_line_x2=x+3; end_line_y2=y;
                  fprintf(stderr,"Player %u wins , horizontal line from %u,%u to %u,%u\n",board[x][y],end_line_x1,end_line_y1,end_line_x2,end_line_y2);
+                 PlaySound("gong");
                }
       }
     }
@@ -292,6 +321,7 @@ void CheckEndGame()
                {
                  end_line_x1=x; end_line_y1=y; end_line_x2=x; end_line_y2=y+3;
                  fprintf(stderr,"Player %u wins , vertical line from %u,%u to %u,%u\n",board[x][y],end_line_x1,end_line_y1,end_line_x2,end_line_y2);
+                 PlaySound("gong");
                }
       }
     }
@@ -311,12 +341,15 @@ int process_move(unsigned int spot_x , unsigned int player)
               if (board[spot_x][spot_y]==0)
                {
                    board[spot_x][spot_y]=player;
+                   PlaySound("put");
                    CheckEndGame();
                    return 1;
                }
             }
            board[spot_x][0]=player;
          }
+
+   PlaySound("wrong");
    return 0;
 }
 
