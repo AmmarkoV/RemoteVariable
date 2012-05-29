@@ -25,12 +25,12 @@ int SendRAWTo(int clientsock,char * message,unsigned int length)
   return send(clientsock,message,length, 0);
 }
 
-int RecvRAWFrom(int clientsock,char * message,unsigned int length)
+int RecvRAWFrom(int clientsock,char * message,unsigned int length,int flags)
 {
   fprintf(stderr,"Trying RecvRAWFrom\n");
   memset (message,0,length);
 
-  int retres=recv(clientsock,message,length, 0);
+  int retres=recv(clientsock,message,length,flags);
 
   fprintf(stderr,"Received `%s` from peer socket %d  \n",message,clientsock);
   return retres;

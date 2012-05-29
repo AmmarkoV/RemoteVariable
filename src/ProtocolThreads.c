@@ -73,27 +73,31 @@ int Connect_Handshake(struct VariableShare * vsh,int peersock /*unsigned int *pe
   char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE];
   memset (message,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
 
-  RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+  RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE,0);
   fprintf(stderr,"Received %s challenge\n",message);
 
   if (strcmp(message,"HELLO")!=0) { error("Error at connect handshaking : 1 "); return 0; }
 
   // 2ND MESSAGE SENT
-  sprintf(message,"VERSION=%c\0",RVS_PROTOCOL_VERSION);
+  memset (message,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+  sprintf(message,"VERSION=%c",RVS_PROTOCOL_VERSION);
   SendRAWTo(peersock,message,strlen(message)+1);
 
+
   //THIS MESSAGE RECEIVES THE VERSION OF THE PEER
-  RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+  memset (message,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+  RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE,0);
   if (strncmp(message,"VERSION=",8)!=0) { error("Error at connect handshaking : 2"); return 0;}
   if ((unsigned int ) message[8]!= RVS_PROTOCOL_VERSION) { error("Error at connect handshaking : Incorrect version for peer"); return 0;}
 
 
   // FOURTH MESSAGE SENT
-  sprintf(message,"CON=%s\0",vsh->sharename);
+  memset (message,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+  sprintf(message,"CON=%s",vsh->sharename);
   SendRAWTo(peersock,message,strlen(message)+1);
 
-
-  RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+  memset (message,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+  RecvRAWFrom(peersock,message,2,MSG_WAITALL);
   if ( strncmp(message,"NO",2) == 0 )
     {
           fprintf(stderr,"Peer declined access to share %s\n",vsh->sharename);
@@ -118,24 +122,26 @@ int Accept_Handshake(struct VariableShare * vsh,int peersock /*unsigned int *pee
   memset (message,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
 
   // 1ST MESSAGE SENT
-  strcpy(message,"HELLO\0");
+  strcpy(message,"HELLO");
   SendRAWTo(peersock,message,strlen(message)+1); //+1 for sending null termination accross
 
 
   //THIS MESSAGE RECEIVES THE VERSION OF THE PEER
-  RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+  RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE,0);
   if (strncmp(message,"VERSION=",8)!=0) { error("Error at accept handshaking : 1"); return 0;}
   if ((unsigned int ) message[8]!= RVS_PROTOCOL_VERSION) { error("Error at accept handshaking : Incorrect version for peer"); return 0;}
 
   // THIRD MESSAGE SENT
-  sprintf(message,"VERSION=%c\0",RVS_PROTOCOL_VERSION);
+  sprintf(message,"VERSION=%c",RVS_PROTOCOL_VERSION);
   SendRAWTo(peersock,message,strlen(message)+1); //+1 for sending null termination accross
 
 
-  RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+  RecvRAWFrom(peersock,message,4,MSG_WAITALL);
   if (strncmp(message,"CON=",4)!=0) { error("Error at accept handshaking : 2"); return 0;}
+
+  RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE,0);
   if ( strlen(message) <= 4 ) { error("Error at accepting handshake , very small share name "); return 0; }
-  memmove (message,message+4,strlen(message)-3);
+
 
   fprintf(stderr,"Peer Wants Access to %s\n",message);
 
@@ -144,13 +150,13 @@ int Accept_Handshake(struct VariableShare * vsh,int peersock /*unsigned int *pee
      error(" Peer asked for the wrong share ..");
      fprintf(stderr,"Requested share = `%s` , our share = `%s` \n",message,vsh->sharename);
 
-     strcpy(message,"NO\0");
-     SendRAWTo(peersock,message,3); //+1 for sending null termination accross
+     strcpy(message,"NO");
+     SendRAWTo(peersock,message,2); //+1 for sending null termination accross
      return 0;
    }
 
-  strcpy(message,"OK\0");
-  SendRAWTo(peersock,message,3);  //+1 for sending null termination accross
+  strcpy(message,"OK");
+  SendRAWTo(peersock,message,2);  //+1 for sending null termination accross
 
   return 1;
 }
@@ -202,7 +208,7 @@ int RequestVariable_Handshake(struct VariableShare * vsh,unsigned int var_id,int
     }
 
 
-  opres=RecvRAWFrom(peersock,message,3);
+  opres=RecvRAWFrom(peersock,message,3,MSG_WAITALL);
   if (strncmp(message,"OK",2)!=0)
     {
       error("Error at RequestVariable_Handshake handshaking : 1");
@@ -228,7 +234,7 @@ int AcceptRequestVariable_Handshake(struct VariableShare * vsh,int peersock,unsi
   char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE];
   memset (message,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
 
-  int opres=RecvRAWFrom(peersock,message,4);
+  int opres=RecvRAWFrom(peersock,message,4,MSG_WAITALL);
 
   fprintf(stderr,"Received %s request for variable\n",message);
   if (strncmp(message,"GET=",4)!=0)
@@ -239,7 +245,7 @@ int AcceptRequestVariable_Handshake(struct VariableShare * vsh,int peersock,unsi
    }
 
   message[0]=0; message[1]=0; message[2]=0; message[3]=0; message[4]=0;
-  opres=RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+  opres=RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE,0);
   if ( strlen(message) <= 4 )
    {
       error("Error at accepting request for variable handshake , very small share name ");
@@ -302,7 +308,7 @@ int MasterSignalChange_Handshake(struct VariableShare * vsh,unsigned int var_cha
   int opres=SendRAWTo(peersock,message,length_of_full_str);
 
 
-  opres=RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+  opres=RecvRAWFrom(peersock,message,3,MSG_WAITALL);
   if (opres<0)
    {
      fprintf(stderr,"Error at RecvFrom @ MasterSignalChange_Handshake got error code %d\n",errno);
@@ -329,7 +335,7 @@ int MasterAcceptChange_Handshake(struct VariableShare * vsh,int peersock,unsigne
   char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE];
   memset (message,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
 
-  RecvRAWFrom(peersock,message,4);
+  RecvRAWFrom(peersock,message,4,MSG_WAITALL);
   fprintf(stderr,"Received %s signal\n",message);
   if (strncmp(message,"SIG=",4)!=0)
   {
@@ -337,7 +343,7 @@ int MasterAcceptChange_Handshake(struct VariableShare * vsh,int peersock,unsigne
     UnlockSocket(peersock,peerlock);
     return 0;
   }
-  RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+  RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE,0);
 
   MarkVariableAsNeedsRefresh_VariableDatabase(vsh,message,peersock);
 
