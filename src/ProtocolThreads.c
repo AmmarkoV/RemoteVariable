@@ -179,11 +179,9 @@ int RequestVariable_Handshake(struct VariableShare * vsh,unsigned int peer_id,un
   WaitForSocketLockToClear(peersock,peerlock);
   LockSocket(peersock,peerlock);
 
-
   struct timeval dur_time , end_time , start_time;
-  char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE];
+  char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
   memset (message,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
-
 
 
   TimerStart(&start_time);// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> PING TIMER FUNCTION

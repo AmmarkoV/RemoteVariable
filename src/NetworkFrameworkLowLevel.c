@@ -23,7 +23,9 @@
 int SendRAWTo(int clientsock,char * message,unsigned int length)
 {
   fprintf(stderr,"Trying to send `%s` to peer socket %d \n",message,clientsock);
-  return send(clientsock,message,length, 0);
+  int opres=send(clientsock,message,length, 0);
+  if ( opres < 0 ) { fprintf(stderr,"Error %u while SendRAWTo \n",errno); return opres; }
+  return opres;
 }
 
 int RecvRAWFrom(int clientsock,char * message,unsigned int length,int flags)
@@ -31,10 +33,11 @@ int RecvRAWFrom(int clientsock,char * message,unsigned int length,int flags)
   fprintf(stderr,"Trying RecvRAWFrom\n");
   memset (message,0,length);
 
-  int retres=recv(clientsock,message,length,flags);
+  int opres=recv(clientsock,message,length,flags);
+  if ( opres < 0 ) { fprintf(stderr,"Error %u while RecvRAWFrom \n",errno); return opres; }
 
-  fprintf(stderr,"Received `%s` from peer socket %d  \n",message,clientsock);
-  return retres;
+  fprintf(stderr,"Received `%s` , %u bytes from peer socket %d  \n",message,opres,clientsock);
+  return opres;
 }
 
 

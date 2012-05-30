@@ -37,7 +37,7 @@ volatile unsigned int OpponentMove=666;
 unsigned int OurScore=0;
 unsigned int OpponentScore=0;
 
-unsigned int game_state = 0;
+volatile unsigned int game_state = 0;
 unsigned int new_game = 0;
 unsigned int turn = 0;
 
@@ -180,9 +180,12 @@ GamesTesterFrame::GamesTesterFrame(wxWindow* parent,wxWindowID id)
         Add_VariableToSharingList(vsh,"CLIENT_MOVE",7,&OpponentMove,sizeof(OpponentMove));
         Add_VariableToSharingList(vsh,"GAME_STATE",7,&game_state,sizeof(game_state));
 
+        fprintf(stderr,"Waiting for client ");
+        while (PeersActive_VariableShare(vsh)==0) {  wxSleep(1); fprintf(stderr,"*");  }
+
         fprintf(stderr,"Waiting for initialization ");
         game_state=1;
-        while (game_state!=2) { wxSleep(0.01); fprintf(stderr,"."); }
+        while (game_state!=2) { wxSleep(1); fprintf(stderr,"."); }
         fprintf(stderr,"\nLets go!\n");
 
       } else
@@ -194,8 +197,7 @@ GamesTesterFrame::GamesTesterFrame(wxWindow* parent,wxWindowID id)
         Add_VariableToSharingList(vsh,"CLIENT_MOVE",7,&OurMove,sizeof(OurMove));
         Add_VariableToSharingList(vsh,"GAME_STATE",7,&game_state,sizeof(game_state));
 
-        fprintf(stderr,"Waiting for initialization ");
-        while (game_state!=1) { wxSleep(0.01); fprintf(stderr,"."); }
+        while (game_state!=1) { wxSleep(1); fprintf(stderr,"."); }
         fprintf(stderr,"\nLets go!\n");
         game_state=2;
 

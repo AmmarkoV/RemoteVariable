@@ -1,5 +1,5 @@
 #!/bin/bash
- 
+killall GamesTester
 killall RemoteVariableSupportTester
 killall RemoteVariableS
 
