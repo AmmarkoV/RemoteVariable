@@ -252,7 +252,33 @@ int ExecutePendingJobs(struct VariableShare *vsh)
 
 
 
+int ExecutePendingJobsForPeerIDOneShot(struct VariableShare *vsh,unsigned int peer_id)
+{
+   /*This only does one job at a time and solves a bug yet unadressed after SIG= when we have a GET request pending but we start another request at the same time*/
+   if (!vsh->jobs_loaded)  { /*Nothing to do*/ return 0; }
+   fprintf(stderr,"ExecutePendingJobsForPeerID , id = %u \n",peer_id);
 
+   unsigned int successfull_jobs=0;
+   unsigned int i=0;
+   while (i<vsh->jobs_loaded)
+    {
+
+     if (!MakeSureSocketHasNoIncomingMessages(vsh->job_list[i].remote_peer_socket,& vsh->peer_list[peer_id].socket_locked))
+     {
+         fprintf(stderr,"Deferring job due to incoming input\n");
+         return 0;
+     }
+
+      if (peer_id==vsh->job_list[i].remote_peer_id)
+      {
+       if (ExecuteJob(vsh,i)) { ++successfull_jobs; return 1;} else
+                              { fprintf(stderr,"Job %u on Share %s failed \n",i,vsh->sharename); return 0; }
+
+      }
+       ++i;
+    }
+  return successfull_jobs;
+}
 
 
 

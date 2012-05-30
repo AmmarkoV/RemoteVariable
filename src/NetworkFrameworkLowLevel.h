@@ -26,5 +26,6 @@ int WaitForSocketLockToClear(int peersock,unsigned int * peerlock);
 int LockSocket(int peersock,unsigned int * peerlock);
 int UnlockSocket(int peersock,unsigned int * peerlock);
 
+int MakeSureSocketHasNoIncomingMessages(int peersock,unsigned int * peerlock);
 
 #endif // NETWORKFRAMEWORKLOWLEVEL_H_INCLUDED

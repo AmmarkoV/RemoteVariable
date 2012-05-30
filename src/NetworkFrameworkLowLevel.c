@@ -19,6 +19,8 @@
 #include <netdb.h>
 #include <sys/uio.h>
 #include <errno.h>
+#include <fcntl.h>
+
 
 int SendRAWTo(int clientsock,char * message,unsigned int length)
 {
@@ -98,13 +100,13 @@ int RecvStringFrom(int clientsock,char * message,unsigned int length)
 
 int RecvVariableFrom(struct VariableShare * vsh,int clientsock,unsigned int variable_id)
 {
- struct NetworkRequestGeneralPacket data;
+ struct NetworkRequestGeneralPacket data={0};
  data.RequestType = READFROM ; // This should remain readfrom after receiving the general packet..!
  data.data_size = vsh->share.variables[variable_id].size_of_ptr;
 
 
  fprintf(stderr,"Receiving GeneralPacket\n");
- int data_recv= recv(clientsock, (char*) & data, sizeof (data), 0); // SEND START FRAME!
+ int data_recv= recv(clientsock, (char*) & data, sizeof (data), MSG_WAITALL); // SEND START FRAME!
  if (data_recv != sizeof (data) ) { fprintf(stderr,"Incorrect starting frame received ( %u instead of %u )\n",data_recv , sizeof (data) ); return 0; }
  if (data.data_size != vsh->share.variables[variable_id].size_of_ptr ) { fprintf(stderr,"Incorrect pointer size at frame received ( %u instead of %u )\n",data.data_size , vsh->share.variables[variable_id].size_of_ptr ); return 0; }
 
@@ -115,7 +117,7 @@ int RecvVariableFrom(struct VariableShare * vsh,int clientsock,unsigned int vari
      //TODO BEEF UP SECURITY HERE :P
      unsigned int * ptr_val = (unsigned int * ) vsh->share.variables[variable_id].ptr;
      fprintf(stderr,"Receiving Payload ( var was %u ",*ptr_val);
-     data_recv= recv(clientsock,vsh->share.variables[variable_id].ptr,data.data_size, 0); // GET DirectPAYLOAD!
+     data_recv= recv(clientsock,vsh->share.variables[variable_id].ptr,data.data_size, MSG_WAITALL); // GET DirectPAYLOAD!
      if ( data_recv != data.data_size ) { fprintf(stderr,"Incorrect payload received ( %u instead of %u )\n",data_recv , vsh->share.variables[variable_id].size_of_ptr ); return 0; }
      ptr_val = (unsigned int * ) vsh->share.variables[variable_id].ptr;
      fprintf(stderr,"now %u  )\n",*ptr_val);
@@ -123,12 +125,11 @@ int RecvVariableFrom(struct VariableShare * vsh,int clientsock,unsigned int vari
      fprintf(stderr,"Updating hash value for new payload ( %u ) , ",*ptr_val);
      vsh->share.variables[variable_id].hash=GetVariableHashForVar(vsh,variable_id);
      fprintf(stderr,"new hash value is %u\n",vsh->share.variables[variable_id].hash);
-
    }   else
    {
      unsigned int * ptr_val = (unsigned int * ) vsh->share.variables[variable_id].ptr;
      fprintf(stderr,"Receiving Payload ( var was %u ",*ptr_val);
-     data_recv= recv(clientsock,temp_recv_mem_to_avoid_race,data.data_size, 0); // GET VAR PAYLOAD! vsh->share.variables[variable_id].ptr
+     data_recv= recv(clientsock,temp_recv_mem_to_avoid_race,data.data_size, MSG_WAITALL); // GET VAR PAYLOAD! vsh->share.variables[variable_id].ptr
      if ( data_recv != data.data_size ) { fprintf(stderr,"Incorrect payload received ( %u instead of %u )\n",data_recv , vsh->share.variables[variable_id].size_of_ptr ); return 0; }
      ptr_val = (unsigned int * ) vsh->share.variables[variable_id].ptr;
      fprintf(stderr,"now %u  )\n",*ptr_val);
@@ -167,15 +168,17 @@ int SendVariableTo(struct VariableShare * vsh,int clientsock,unsigned int variab
 
   fprintf(stderr,"Sending GeneralPacket\n");
   int data_sent= send(clientsock, (char*) & data, sizeof (data), 0); // SEND START FRAME!
+  if ( data_sent < 0 ) { fprintf(stderr,"Error (%u) sending variable header \n",errno); return 0; } else
   if ( data_sent != sizeof (data) ) { fprintf(stderr,"Incorrect starting frame transmission ( %d instead of %u )\n",data_sent , (unsigned int) sizeof (data) ); return 0; }
 
   fprintf(stderr,"Sending Payload\n");
   data_sent= send(clientsock,vsh->share.variables[variable_id].ptr,data.data_size , 0); // SEND VARIABLE!
+  if ( data_sent < 0 ) { fprintf(stderr,"Error (%u) sending variable body \n",errno); return 0; } else
   if ( data_sent != data.data_size ) { fprintf(stderr,"Incorrect payload transmission ( %d instead of %u )\n",data_sent , data.data_size ); return 0; }
 
   ++vsh->share.variables[variable_id].this_hash_transmission_count;
 
-  fprintf(stderr,"SendVariableTo , Great Success , the variable with this hash has been transmitted %u times :) \n",vsh->share.variables[variable_id].this_hash_transmission_count);
+  fprintf(stderr,"SendVariableTo success , the variable with this hash has been transmitted %u times :) \n",vsh->share.variables[variable_id].this_hash_transmission_count);
   return 1;
 }
 
@@ -223,4 +226,32 @@ int UnlockSocket(int peersock,unsigned int * peerlock)
   if (peerlock==0) { fprintf(stderr,"UnlockSocket skipped by null pointer \n"); return 0; }
   *peerlock=0;
   return 1;
+}
+
+
+int MakeSureSocketHasNoIncomingMessages(int peersock,unsigned int * peerlock)
+{
+  WaitForSocketLockToClear(peersock,peerlock);
+  LockSocket(peersock,peerlock);
+  // --------------- LOCK PROTECTED OPERATION  ---------------------
+  char peek_request[RVS_MAX_RAW_HANDSHAKE_MESSAGE];
+  int rest_perms = fcntl(peersock,F_GETFL,0);
+  fcntl(peersock,F_SETFL,rest_perms | O_NONBLOCK);
+
+   memset (peek_request,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
+   int data_received = recv(peersock, (char*) peek_request,RVS_MAX_RAW_HANDSHAKE_MESSAGE, MSG_DONTWAIT |MSG_PEEK); //MSG_DONTWAIT |
+
+   fcntl(peersock,F_SETFL,rest_perms);
+  // --------------- LOCK PROTECTED OPERATION  ---------------------
+   UnlockSocket(peersock,peerlock);
+   if (data_received<0)
+     {
+       fprintf(stderr,"MakeSureSocketHasNoIncomingMessages encountered socket error %u \n",errno);
+       return 0;
+     }if (data_received>0)
+     {
+       fprintf(stderr,"MakeSureSocketHasNoIncomingMessages encountered message of length %u ( str = `%s` )\n",(unsigned int) strlen(peek_request),peek_request);
+       return 0;
+     }
+   return 1;
 }

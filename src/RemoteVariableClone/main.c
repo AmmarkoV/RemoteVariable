@@ -4,6 +4,7 @@
 #include "../RemoteVariableSupport.h"
 
 
+#include <time.h>
 
 
 int wait_for_var_to_become_x(volatile int * var , unsigned int timeout , unsigned int x)
@@ -29,12 +30,19 @@ int main()
         return 1;
       }
 
+    srand(time(0));
 
 
+    static volatile int DUMMY_VAR=0;
     static volatile int SHARED_VAR=0;
     if ( ! Add_VariableToSharingList(vsh,"SHARED_VAR",7,&SHARED_VAR,sizeof(SHARED_VAR)) )
       {
-        fprintf(stderr,"Client : Error Adding Shared Variable , cannot continue\n");
+        fprintf(stderr,"Client : Error Adding SHARED_VAR Shared Variable , cannot continue\n");
+        return 1;
+      }
+   if ( ! Add_VariableToSharingList(vsh,"DUMMY_VAR",7,&DUMMY_VAR,sizeof(DUMMY_VAR)) )
+      {
+        fprintf(stderr,"Client : Error Adding DUMMY_VAR Shared Variable , cannot continue\n");
         return 1;
       }
 
@@ -49,6 +57,8 @@ int main()
     for (i=2; i<=100; i+=2)
     {
      if (!wait_for_var_to_become_x(&SHARED_VAR,WAIT_TIME,i)) { fprintf(stderr,"Client : Failed the test STEP%u , waiting for %u\n",i,i); return 1; }
+
+     DUMMY_VAR=rand()%10000;
 
      fprintf(stderr,"TEST STEP %u\n",i+1);
      SHARED_VAR=i+1;

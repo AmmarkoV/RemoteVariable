@@ -39,8 +39,9 @@
 
 char RVS_PROTOCOL_VERSION='A';
 
-
-
+/*
+     ----------------------------------- TIMERS CODE -----------------------------------
+*/
 long timeval_diff ( struct timeval *difference, struct timeval *end_time, struct timeval *start_time )
 {
    struct timeval temp_diff;
@@ -67,18 +68,24 @@ long TimerEnd(struct timeval *start_time,struct timeval *end_time,struct timeval
   gettimeofday(end_time,0x0);
   return timeval_diff(duration_time,end_time,start_time);
 }
+/*
+     ----------------------------------- TIMERS CODE -----------------------------------
+*/
+
+
+
+
+
 
 int Connect_Handshake(struct VariableShare * vsh,int peersock /*unsigned int *peerlock These operations dont need the peerlock mechanism since they are the only ones happening on init*/)
 {
-  fprintf(stderr,"Awaiting challenge\n");
+  fprintf(stderr,"Connect_Handshake , Awaiting challenge\n");
 
-  char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE];
+  char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
   memset (message,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
 
   RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE,0);
-  fprintf(stderr,"Received %s challenge\n",message);
-
-  if (strcmp(message,"HELLO")!=0) { error("Error at connect handshaking : 1 "); return 0; }
+  if (strcmp(message,"HELLO")!=0) { error("Error at connect handshaking : Did not receive HELLO "); return 0; }
 
   // 2ND MESSAGE SENT
   SendRAWTo(peersock,"VERSION=",8);
@@ -110,8 +117,7 @@ int Connect_Handshake(struct VariableShare * vsh,int peersock /*unsigned int *pe
 
 int Accept_Handshake(struct VariableShare * vsh,int peersock /*unsigned int *peerlock These operations dont need the peerlock mechanism since they are the only ones happening on init*/)
 {
-
-  char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE];
+  char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
   memset (message,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
 
   // 1ST MESSAGE SENT
@@ -184,7 +190,7 @@ int RequestVariable_Handshake(struct VariableShare * vsh,unsigned int peer_id,un
   memset (message,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
 
 
-  TimerStart(&start_time);// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> PING TIMER FUNCTION
+  TimerStart(&start_time);// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> PING TIMER FUNCTION
   // 1ST MESSAGE SENT
   int opres=SendRAWTo(peersock,"GET=",4);
 

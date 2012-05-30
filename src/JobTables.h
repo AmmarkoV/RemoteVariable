@@ -34,7 +34,7 @@ int Job_SingalLocalVariableChanged(struct VariableShare * vsh,unsigned int our_v
 
 int ExecutePendingJobsForPeerID(struct VariableShare *vsh,unsigned int peer_id);
 int ExecutePendingJobs(struct VariableShare *vsh);
-
+int ExecutePendingJobsForPeerIDOneShot(struct VariableShare *vsh,unsigned int peer_id);
 
 void * JobExecutioner_Thread(void * ptr);
 void JobExecutioner_Thread_Pause(struct VariableShare * vsh);
