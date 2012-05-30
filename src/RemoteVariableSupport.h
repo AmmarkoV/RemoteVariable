@@ -49,6 +49,33 @@ enum jobactions
 };
 
 
+struct PacketHeader
+{
+   unsigned char IncrementalValue;
+   unsigned char OperationType;
+   unsigned int  payload_size;
+};
+
+struct MessageTableItem
+{
+   unsigned char remove;
+   unsigned char incoming;
+   unsigned char sent;
+   struct PacketHeader header;
+   void * payload;
+};
+
+
+struct MessageTable
+{
+    unsigned int locked;
+    struct MessageTableItem * table;
+    unsigned int message_queue_total_length;
+    unsigned int message_queue_current_length;
+};
+
+
+
 struct ShareListItem
 {
 
@@ -104,9 +131,7 @@ struct SharePeer
     unsigned int pause_peer_thread;
     unsigned int stop_peer_thread;
 
-    struct MessageTableItem * message_queue;
-    unsigned int message_queue_total_length;
-    unsigned int message_queue_current_length;
+    struct MessageTable message_queue;
 
     struct ShareList share;
 };

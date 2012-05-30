@@ -1,22 +1,10 @@
 #ifndef MESSAGETABLES_H_INCLUDED
 #define MESSAGETABLES_H_INCLUDED
 
-struct PacketHeader
-{
-   unsigned char IncrementalValue;
-   unsigned char OperationType;
-   unsigned int  PayloadSize;
-};
+int AllocateMessageQueue(struct MessageTable *  mt,unsigned int total_messages);
+int FreeMessageQueue(struct MessageTable * mt);
 
-struct MessageTableItem
-{
-   struct PacketHeader * header;
-   unsigned char incoming;
-   void * payload;
-};
-
-struct MessageTableItem * AllocateMessageQueue(unsigned int total_messages);
-int FreeMessageQueue(struct MessageTableItem * queue);
-
+int AddToMessageTable(struct MessageTable * queue,unsigned int incoming,struct PacketHeader * header,void * payload);
+int RemFromMessageTable(struct MessageTable * queue,unsigned int mt_id);
 
 #endif // MESSAGETABLES_H_INCLUDED
