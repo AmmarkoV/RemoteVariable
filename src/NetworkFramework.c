@@ -58,7 +58,7 @@ void * PeerServer_Thread(void * ptr);
 
 int UnifiedNetworkAndJobHandling(struct VariableShare * vsh,unsigned int peer_id,int peersock , unsigned int * peerlock)
 {
-   if(!ProtocolServeResponse(vsh,peersock,0))  { fprintf(stderr,"Error with ProtocolServeResponse in UnifiedNetworkAndJobHandling\n"); return 0; }
+   if(!ProtocolServeResponse(vsh,peer_id,peersock,0))  { fprintf(stderr,"Error with ProtocolServeResponse in UnifiedNetworkAndJobHandling\n"); return 0; }
 
    /* TEMPORARY INSTEAD OF JOB EXECUTIONER */
    vsh->total_jobs_done+=ExecutePendingJobsForPeerID(vsh,peer_id);

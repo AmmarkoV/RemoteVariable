@@ -27,11 +27,11 @@ int Accept_Handshake(struct VariableShare * vsh,int peersock);
 int InitCloneShare_Handshake(struct VariableShare * vsh);
 int AcceptCloneShare_Handshake(struct VariableShare * vsh);
 
-int RequestVariable_Handshake(struct VariableShare * vsh,unsigned int var_id,int peersock,unsigned int *peerlock);
-int AcceptRequestVariable_Handshake(struct VariableShare * vsh,int peersock,unsigned int *peerlock);
+int RequestVariable_Handshake(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,int peersock,unsigned int *peerlock);
+int AcceptRequestVariable_Handshake(struct VariableShare * vsh,unsigned int peer_id,int peersock,unsigned int *peerlock);
 
 int MasterSignalChange_Handshake(struct VariableShare * vsh,unsigned int var_changed,int peersock,unsigned int *peerlock);
 int MasterAcceptChange_Handshake(struct VariableShare * vsh,int peersock,unsigned int *peerlock);
 
-int ProtocolServeResponse(struct VariableShare * vsh , int peersock,unsigned int *peerlock);
+int ProtocolServeResponse(struct VariableShare * vsh ,unsigned int peer_id, int peersock,unsigned int *peerlock);
 #endif // PROTOCOLTHREADS_H_INCLUDED

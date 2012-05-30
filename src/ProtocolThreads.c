@@ -27,6 +27,7 @@
 #include "VariableDatabase.h"
 #include "NetworkFrameworkLowLevel.h"
 
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -39,6 +40,33 @@
 char RVS_PROTOCOL_VERSION='A';
 
 
+
+long timeval_diff ( struct timeval *difference, struct timeval *end_time, struct timeval *start_time )
+{
+   struct timeval temp_diff;
+   if(difference==0) { difference=&temp_diff; }
+   difference->tv_sec =end_time->tv_sec -start_time->tv_sec ;
+   difference->tv_usec=end_time->tv_usec-start_time->tv_usec;
+  /* Using while instead of if below makes the code slightly more robust. */
+  while(difference->tv_usec<0)
+  {
+    difference->tv_usec+=1000000;
+    difference->tv_sec -=1;
+  }
+
+  return 1000000LL*difference->tv_sec+ difference->tv_usec;
+}
+
+long TimerStart(struct timeval *start_time)
+{
+  return gettimeofday(start_time,0x0);
+}
+
+long TimerEnd(struct timeval *start_time,struct timeval *end_time,struct timeval *duration_time)
+{
+  gettimeofday(end_time,0x0);
+  return timeval_diff(duration_time,end_time,start_time);
+}
 
 int Connect_Handshake(struct VariableShare * vsh,int peersock /*unsigned int *peerlock These operations dont need the peerlock mechanism since they are the only ones happening on init*/)
 {
@@ -60,6 +88,8 @@ int Connect_Handshake(struct VariableShare * vsh,int peersock /*unsigned int *pe
   memset (message,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
   RecvRAWFrom(peersock,message,8,MSG_WAITALL);
   if (strncmp(message,"VERSION=",8)!=0) { error("Error at connect handshaking : Did not receive version string "); return 0;}
+
+
 
   char remote_version=0;
   RecvRAWFrom(peersock,&remote_version,1,MSG_WAITALL);
@@ -145,15 +175,19 @@ int AcceptCloneShare_Handshake(struct VariableShare * vsh)
 */
 
 
-int RequestVariable_Handshake(struct VariableShare * vsh,unsigned int var_id,int peersock,unsigned int *peerlock)
+int RequestVariable_Handshake(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,int peersock,unsigned int *peerlock)
 {
   WaitForSocketLockToClear(peersock,peerlock);
   LockSocket(peersock,peerlock);
 
 
+  struct timeval dur_time , end_time , start_time;
   char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE];
   memset (message,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
 
+
+
+  TimerStart(&start_time);// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> PING TIMER FUNCTION
   // 1ST MESSAGE SENT
   sprintf(message,"GET=%s",vsh->share.variables[var_id].ptr_name);
   int opres=SendRAWTo(peersock,message,strlen(message)); // +1 to send the null termination accross
@@ -172,6 +206,8 @@ int RequestVariable_Handshake(struct VariableShare * vsh,unsigned int var_id,int
       UnlockSocket(peersock,peerlock);
       return 0;
     }
+  PeerNewPingValue(vsh,peer_id,TimerEnd(&start_time,&end_time,&dur_time)); // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> PING TIMER FUNCTION
+
 
   fprintf(stderr,"Successfull RequestVariable_Handshake handshaking..!\n");
   opres=RecvVariableFrom(vsh,peersock,var_id);
@@ -181,11 +217,12 @@ int RequestVariable_Handshake(struct VariableShare * vsh,unsigned int var_id,int
   return opres;
 }
 
-int AcceptRequestVariable_Handshake(struct VariableShare * vsh,int peersock,unsigned int *peerlock)
+int AcceptRequestVariable_Handshake(struct VariableShare * vsh,unsigned int peer_id,int peersock,unsigned int *peerlock)
 {
   WaitForSocketLockToClear(peersock,peerlock);
   LockSocket(peersock,peerlock);
 
+  struct timeval dur_time , end_time , start_time;
   char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE];
   memset (message,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
 
@@ -198,16 +235,19 @@ int AcceptRequestVariable_Handshake(struct VariableShare * vsh,int peersock,unsi
      return 0;
    }
 
+  TimerStart(&start_time);// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> PING TIMER FUNCTION
   message[0]=0; message[1]=0; message[2]=0; message[3]=0; message[4]=0; message[5]=0;
   opres=RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE,0);
-  fprintf(stderr,"Peer Signaled that it wants a variable %s changed \n",message);
+  fprintf(stderr,"Peer %u Signaled that it wants a variable %s changed \n",peer_id,message);
 
   unsigned int var_id = FindVariable_Database(vsh,message);
 
+  opres=0;
   if (var_id == 0)
   {
      fprintf(stderr,"Variable %s doesnt exist\n",message);
      opres=SendRAWTo(peersock,"NO",2);
+     opres=0;
   } else
   {
      --var_id; // FindVariable offsets results by +1 to have null return value for negative find operations
@@ -215,12 +255,12 @@ int AcceptRequestVariable_Handshake(struct VariableShare * vsh,int peersock,unsi
 
      opres=SendRAWTo(peersock,"OK",2);
      opres=SendVariableTo(vsh,peersock,var_id);
-     UnlockSocket(peersock,peerlock);
-     return opres;
+     opres=1;
   }
 
+  PeerNewPingValue(vsh,peer_id,TimerEnd(&start_time,&end_time,&dur_time)); // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> PING TIMER FUNCTION
   UnlockSocket(peersock,peerlock);
-  return 0;
+  return opres;
 }
 
 
@@ -305,7 +345,7 @@ int MasterAcceptChange_Handshake(struct VariableShare * vsh,int peersock,unsigne
 */
 
 
-int ProtocolServeResponse(struct VariableShare * vsh ,int peersock,unsigned int *peerlock)
+int ProtocolServeResponse(struct VariableShare * vsh ,unsigned int peer_id,int peersock,unsigned int *peerlock)
 {
   //WaitForSocketLockToClear(peersock,peerlock);
   //LockSocket(peersock,peerlock);
@@ -333,7 +373,7 @@ int ProtocolServeResponse(struct VariableShare * vsh ,int peersock,unsigned int 
      if (strncmp(peek_request,"GET=",4)==0)
       {
           fprintf(stderr,"ProtocolServeResponse peeked on a Get Share request \n");
-          return AcceptRequestVariable_Handshake(vsh,peersock,peerlock);
+          return AcceptRequestVariable_Handshake(vsh,peer_id,peersock,peerlock);
       } else
       {
         fprintf(stderr,"Incoming message from background data processed of length %u received and ignored ( str = `%s` ) , flushing it down the drain\n",(unsigned int) strlen(peek_request),peek_request);

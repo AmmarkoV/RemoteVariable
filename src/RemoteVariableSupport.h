@@ -95,7 +95,7 @@ struct SharePeer
     int socket_to_client;
     unsigned int socket_locked;
 
-    unsigned int ping;
+    unsigned int ping_in_microseconds;
     unsigned int last_transaction;
 
     unsigned int peer_state; /* enum VariableShareStates */

@@ -167,7 +167,7 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
                        RemoteVariableServer_Thread_Pause(vsh);
 
 
-                       if (RequestVariable_Handshake(vsh,var_id,peer_socket,peer_lock))
+                       if (RequestVariable_Handshake(vsh,peer,var_id,peer_socket,peer_lock))
                         {
                             DoneWithJob(vsh,job_id);
                         }  else

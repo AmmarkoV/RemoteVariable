@@ -81,3 +81,15 @@ int RemPeerBySock(struct VariableShare * vsh,int clientsock)
 {
  return RemPeer(vsh,GetPeerIdBySock(vsh,clientsock));
 }
+
+
+
+int PeerNewPingValue(struct VariableShare * vsh,unsigned int peer_id,long ping_in_microseconds)
+{
+  if (vsh==0) { return 0; }
+  if (vsh->total_peers<=peer_id) { return 0; }
+  vsh->peer_list[peer_id].ping_in_microseconds=ping_in_microseconds;
+  fprintf(stderr,"New ping value for peer %u = %u milliseconds \n",peer_id,(unsigned int) ping_in_microseconds/1000);
+  return 1;
+}
+
