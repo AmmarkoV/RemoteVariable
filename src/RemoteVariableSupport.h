@@ -104,6 +104,10 @@ struct SharePeer
     unsigned int pause_peer_thread;
     unsigned int stop_peer_thread;
 
+    struct MessageTableItem * message_queue;
+    unsigned int message_queue_total_length;
+    unsigned int message_queue_current_length;
+
     struct ShareList share;
 };
 

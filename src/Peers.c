@@ -26,6 +26,11 @@ int AddPeer(struct VariableShare * vsh,char * name,unsigned int port , int clien
        vsh->peer_list[pos].socket_to_client = clientsock;
        vsh->peer_list[pos].socket_locked=0;
        vsh->peer_list[pos].peer_state=VSS_WAITING_FOR_HANDSHAKE;
+
+       vsh->peer_list[pos].message_queue=AllocateMessageQueue(1000);
+       vsh->peer_list[pos].message_queue_total_length=1000;
+       vsh->peer_list[pos].message_queue_current_length=0;
+
        ++vsh->total_peers;
        return pos+1;
    }
@@ -50,6 +55,11 @@ int SwapPeers(struct VariableShare * vsh,int peer_id1,int peer_id2)
 
 int RemPeer(struct VariableShare * vsh,int peer_id)
 {
+  FreeMessageQueue(vsh->peer_list[peer_id].message_queue);
+  vsh->peer_list[peer_id].message_queue=0;
+  vsh->peer_list[peer_id].message_queue_total_length=0;
+  vsh->peer_list[peer_id].message_queue_current_length=0;
+
  if ( (vsh->total_peers==1)&&(peer_id==0)) { vsh->total_peers=0; return 1; }
  if ( (vsh->total_peers>1) )
   {
