@@ -88,6 +88,14 @@ int RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt)
 
 void * SocketAdapterToMessageTable_Thread(void * ptr)
 {
+  struct SocketAdapterToMessageTablesContext * thread_context=(struct SocketAdapterToMessageTablesContext *) ptr;
+  struct VariableShare * vsh = thread_context->vsh;
+  unsigned int peer_id =  thread_context->peer_id;
+  int peersock = thread_context->peersock;
+  unsigned int * peerlock =  &vsh->peer_list[peer_id].socket_locked;
+  thread_context->keep_var_on_stack=0;
+
+
   struct PacketHeader incoming_packet;
   int rest_perms = fcntl(peersock,F_GETFL,0);
   fcntl(peersock,F_SETFL,rest_perms | O_NONBLOCK);

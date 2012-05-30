@@ -228,6 +228,14 @@ struct PeerServerContext
    unsigned int keep_var_on_stack;
 };
 
+struct SocketAdapterToMessageTablesContext
+{
+   struct VariableShare * vsh;
+   unsigned int peer_id;
+   int peersock;
+   unsigned int keep_var_on_stack;
+};
+
 
 struct VariableShare * Start_VariableSharing(char * sharename,char * bindaddress,unsigned int port,char * password);
 struct VariableShare * ConnectToRemote_VariableSharing(char * sharename,char * IP,unsigned int port,char * password);
