@@ -179,6 +179,12 @@ GamesTesterFrame::GamesTesterFrame(wxWindow* parent,wxWindowID id)
         Add_VariableToSharingList(vsh,"HOST_MOVE",7,&OurMove,sizeof(OurMove));
         Add_VariableToSharingList(vsh,"CLIENT_MOVE",7,&OpponentMove,sizeof(OpponentMove));
         Add_VariableToSharingList(vsh,"GAME_STATE",7,&game_state,sizeof(game_state));
+
+        fprintf(stderr,"Waiting for initialization ");
+        game_state=1;
+        while (game_state!=2) { wxSleep(0.01); fprintf(stderr,"."); }
+        fprintf(stderr,"\nLets go!\n");
+
       } else
       {
         // Client setup
@@ -187,6 +193,12 @@ GamesTesterFrame::GamesTesterFrame(wxWindow* parent,wxWindowID id)
         Add_VariableToSharingList(vsh,"HOST_MOVE",7,&OpponentMove,sizeof(OpponentMove));
         Add_VariableToSharingList(vsh,"CLIENT_MOVE",7,&OurMove,sizeof(OurMove));
         Add_VariableToSharingList(vsh,"GAME_STATE",7,&game_state,sizeof(game_state));
+
+        fprintf(stderr,"Waiting for initialization ");
+        while (game_state!=1) { wxSleep(0.01); fprintf(stderr,"."); }
+        fprintf(stderr,"\nLets go!\n");
+        game_state=2;
+
       }
 
 

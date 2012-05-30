@@ -96,9 +96,8 @@ int Connect_Handshake(struct VariableShare * vsh,int peersock /*unsigned int *pe
   if (remote_version!= RVS_PROTOCOL_VERSION) { fprintf(stderr,"Error at connect handshaking : Incorrect version for peer ( got %c we have %c ) ",remote_version,RVS_PROTOCOL_VERSION); return 0;}
 
   // FOURTH MESSAGE SENT
-  memset (message,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
-  sprintf(message,"CON=%s",vsh->sharename);
-  SendRAWTo(peersock,message,strlen(message)+1);
+  SendRAWTo(peersock,"CON=",4);
+  SendStringTo(peersock,vsh->sharename,strlen(vsh->sharename));
 
   memset (message,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
   RecvRAWFrom(peersock,message,2,MSG_WAITALL);
@@ -135,7 +134,7 @@ int Accept_Handshake(struct VariableShare * vsh,int peersock /*unsigned int *pee
   RecvRAWFrom(peersock,message,4,MSG_WAITALL);
   if (strncmp(message,"CON=",4)!=0) { error("Error at accept handshaking : 2"); return 0;}
 
-  RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE,0);
+  RecvStringFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
   fprintf(stderr,"Peer Wants Access to %s\n",message);
   if (strcmp(message,vsh->sharename)!=0)
    {
@@ -189,9 +188,10 @@ int RequestVariable_Handshake(struct VariableShare * vsh,unsigned int peer_id,un
 
   TimerStart(&start_time);// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> PING TIMER FUNCTION
   // 1ST MESSAGE SENT
-  sprintf(message,"GET=%s",vsh->share.variables[var_id].ptr_name);
-  int opres=SendRAWTo(peersock,message,strlen(message)); // +1 to send the null termination accross
-  if (opres!=strlen(message))
+  int opres=SendRAWTo(peersock,"GET=",4);
+
+  opres=SendStringTo(peersock,vsh->share.variables[var_id].ptr_name,vsh->share.variables[var_id].ptr_name_length);
+  if (opres!=vsh->share.variables[var_id].ptr_name_length)
     {
       fprintf(stderr,"Error @RequestVariable_Handshake got response %d instead of %u",opres,(unsigned int ) strlen(message)+1);
       UnlockSocket(peersock,peerlock);
@@ -237,7 +237,7 @@ int AcceptRequestVariable_Handshake(struct VariableShare * vsh,unsigned int peer
 
   TimerStart(&start_time);// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> PING TIMER FUNCTION
   message[0]=0; message[1]=0; message[2]=0; message[3]=0; message[4]=0; message[5]=0;
-  opres=RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE,0);
+  opres=RecvStringFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
   fprintf(stderr,"Peer %u Signaled that it wants a variable %s changed \n",peer_id,message);
 
   unsigned int var_id = FindVariable_Database(vsh,message);
@@ -271,13 +271,15 @@ int AcceptRequestVariable_Handshake(struct VariableShare * vsh,unsigned int peer
 */
 
 
-int MasterSignalChange_Handshake(struct VariableShare * vsh,unsigned int var_changed,int peersock,unsigned int *peerlock)
+int MasterSignalChange_Handshake(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_changed,int peersock,unsigned int *peerlock)
 {
   WaitForSocketLockToClear(peersock,peerlock);
   LockSocket(peersock,peerlock);
 
+  struct timeval dur_time , end_time , start_time;
   char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE]={0};
 
+  TimerStart(&start_time);// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> PING TIMER FUNCTION
   // 1ST MESSAGE SENT
   int opres=SendRAWTo(peersock,"SIG=",4);
   opres=SendRAWTo(peersock,vsh->share.variables[var_changed].ptr_name,vsh->share.variables[var_changed].ptr_name_length);
@@ -299,15 +301,17 @@ int MasterSignalChange_Handshake(struct VariableShare * vsh,unsigned int var_cha
     }
   fprintf(stderr,"Successfull Signal change handshaking..!\n");
 
+  PeerNewPingValue(vsh,peer_id,TimerEnd(&start_time,&end_time,&dur_time)); // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> PING TIMER FUNCTION
   UnlockSocket(peersock,peerlock);
   return 1;
 }
 
-int MasterAcceptChange_Handshake(struct VariableShare * vsh,int peersock,unsigned int *peerlock)
+int MasterAcceptChange_Handshake(struct VariableShare * vsh,unsigned int peer_id,int peersock,unsigned int *peerlock)
 {
   WaitForSocketLockToClear(peersock,peerlock);
   LockSocket(peersock,peerlock);
 
+  struct timeval dur_time , end_time , start_time;
   char message[RVS_MAX_RAW_HANDSHAKE_MESSAGE];
 
   memset (message,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
@@ -320,6 +324,7 @@ int MasterAcceptChange_Handshake(struct VariableShare * vsh,int peersock,unsigne
     return 0;
   }
 
+  TimerStart(&start_time);// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> PING TIMER FUNCTION
   memset (message,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
   RecvRAWFrom(peersock,message,RVS_MAX_RAW_HANDSHAKE_MESSAGE,0);
   if ( MarkVariableAsNeedsRefresh_VariableDatabase(vsh,message,peersock) )
@@ -333,7 +338,7 @@ int MasterAcceptChange_Handshake(struct VariableShare * vsh,int peersock,unsigne
    }
 
 
-
+  PeerNewPingValue(vsh,peer_id,TimerEnd(&start_time,&end_time,&dur_time)); // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> PING TIMER FUNCTION
   UnlockSocket(peersock,peerlock);
   return 1;
 }
@@ -347,13 +352,11 @@ int MasterAcceptChange_Handshake(struct VariableShare * vsh,int peersock,unsigne
 
 int ProtocolServeResponse(struct VariableShare * vsh ,unsigned int peer_id,int peersock,unsigned int *peerlock)
 {
-  //WaitForSocketLockToClear(peersock,peerlock);
-  //LockSocket(peersock,peerlock);
-
-   char peek_request[RVS_MAX_RAW_HANDSHAKE_MESSAGE];
-
-  int rest_perms;
-  rest_perms=fcntl(peersock,F_GETFL,0);
+  WaitForSocketLockToClear(peersock,peerlock);
+  LockSocket(peersock,peerlock);
+  // --------------- LOCK PROTECTED OPERATION  ---------------------
+  char peek_request[RVS_MAX_RAW_HANDSHAKE_MESSAGE];
+  int rest_perms = fcntl(peersock,F_GETFL,0);
   fcntl(peersock,F_SETFL,rest_perms | O_NONBLOCK);
 
    memset (peek_request,0,RVS_MAX_RAW_HANDSHAKE_MESSAGE);
@@ -361,14 +364,15 @@ int ProtocolServeResponse(struct VariableShare * vsh ,unsigned int peer_id,int p
 
 
   fcntl(peersock,F_SETFL,rest_perms);
-   //UnlockSocket(peersock,peerlock);
+  // --------------- LOCK PROTECTED OPERATION  ---------------------
+   UnlockSocket(peersock,peerlock);
 
    if (data_received>0)
    {
      if (strncmp(peek_request,"SIG=",4)==0)
       {
           fprintf(stderr,"ProtocolServeResponse peeked on a Signal request \n");
-          return MasterAcceptChange_Handshake(vsh,peersock,peerlock);
+          return MasterAcceptChange_Handshake(vsh,peer_id,peersock,peerlock);
       } else
      if (strncmp(peek_request,"GET=",4)==0)
       {

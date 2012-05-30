@@ -18,6 +18,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <sys/uio.h>
+#include <errno.h>
 
 int SendRAWTo(int clientsock,char * message,unsigned int length)
 {
@@ -35,6 +36,62 @@ int RecvRAWFrom(int clientsock,char * message,unsigned int length,int flags)
   fprintf(stderr,"Received `%s` from peer socket %d  \n",message,clientsock);
   return retres;
 }
+
+
+
+
+
+
+
+int SendStringTo(int clientsock,char * message,unsigned int length)
+{
+  fprintf(stderr,"SendStringTo Trying to send length %u to peer socket %d \n",length,clientsock);
+  int opres1 = send(clientsock,&length,sizeof(length),0);
+  if ( opres1 < 0 ) { fprintf(stderr,"Error %u while SendStringTo the length packet\n",errno); return opres1; } else
+  if ( opres1 < sizeof(length) ) { fprintf(stderr,"Did not send the whole length packet ( only %u bytes ) while SendStringTo\n",opres1); return opres1; }
+
+  fprintf(stderr,"SendStringTo Trying to send `%s` to peer socket %d \n",message,clientsock);
+  int opres2 = send(clientsock,message,length, 0);
+  if ( opres2 < 0 ) { fprintf(stderr,"Error %u while SendStringTo the length packet\n",errno); return opres2; } else
+  if ( opres2 < sizeof(length) ) { fprintf(stderr,"Did not send the whole length packet ( only %u bytes ) while SendStringTo\n",opres2); return opres2; }
+
+  return opres2;
+}
+
+int RecvStringFrom(int clientsock,char * message,unsigned int length)
+{
+  fprintf(stderr,"Trying RecvStringFrom\n");
+  memset (message,0,length);
+
+  unsigned int incoming_string_length=0;
+  int opres1=recv(clientsock,(char*) &incoming_string_length,sizeof(incoming_string_length),MSG_WAITALL);
+  if ( opres1 < 0 ) { fprintf(stderr,"Error %u while RecvStringFrom the length packet\n",errno); return opres1; } else
+  if ( opres1 < sizeof(length) ) { fprintf(stderr,"Did not receive the whole length packet ( only %u bytes ) while RecvStringFrom\n",opres1); return opres1; }
+  fprintf(stderr,"Incoming string is %u bytes long ( from peer socket %d ) \n",incoming_string_length,clientsock);
+
+  if (length<incoming_string_length)
+   {
+     fprintf(stderr,"Incoming string will overflow .. clipping it to our buffer size ( %u ).. \n",length);
+     incoming_string_length=length;
+   }
+
+  int opres2=recv(clientsock,message,incoming_string_length,MSG_WAITALL);
+  if ( opres2 < 0 ) { fprintf(stderr,"Error %u while RecvStringFrom the length packet\n",errno); return opres2; } else
+  if ( opres2 < incoming_string_length ) { fprintf(stderr,"Did not receive the whole length packet ( only %u bytes ) while RecvStringFrom\n",opres2); return opres2; }
+  fprintf(stderr,"Incoming string is `%s` ( from peer socket %d ) \n",message,clientsock);
+
+  return opres2;
+}
+
+
+
+
+
+
+
+
+
+
 
 int RecvVariableFrom(struct VariableShare * vsh,int clientsock,unsigned int variable_id)
 {
@@ -135,7 +192,6 @@ int SendFileTo(struct VariableShare * vsh,int clientsock,unsigned int variable_i
 
 int WaitForSocketLockToClear(int peersock,unsigned int * peerlock)
 {
-  return 1;
   if (peerlock==0) { fprintf(stderr,"WaitForSocketLock skipped by null pointer \n"); return 0; }
   unsigned int waitloops=0;
   while (*peerlock)
@@ -150,7 +206,6 @@ int WaitForSocketLockToClear(int peersock,unsigned int * peerlock)
 
 int LockSocket(int peersock,unsigned int * peerlock)
 {
-  return 1;
   if (peerlock==0) { fprintf(stderr,"LockSocket skipped by null pointer \n"); return 0; }
   if (*peerlock!=0) {
                       fprintf(stderr,"LockSocket found locked variable ! , waiting for it to clear out\n");
@@ -162,7 +217,6 @@ int LockSocket(int peersock,unsigned int * peerlock)
 
 int UnlockSocket(int peersock,unsigned int * peerlock)
 {
-  return 1;
   if (peerlock==0) { fprintf(stderr,"UnlockSocket skipped by null pointer \n"); return 0; }
   *peerlock=0;
   return 1;
