@@ -26,7 +26,7 @@
 #include "Peers.h"
 #include "helper.h"
 #include "RemoteVariableSupport.h"
-
+#include "SocketAdapterToMessageTables.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -39,19 +39,41 @@ void * RemoteVariableServer_Thread(void * ptr);
 void * RemoteVariableClient_Thread(void * ptr);
 
 
-
 /*
-
-
---------------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------
-
-                ||  ||  ||   ||                   SERVER Framework
-                \/  \/  \/   \/
---------------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------
-
+     ----------------------------------- TIMERS CODE -----------------------------------
 */
+long timeval_diff ( struct timeval *difference, struct timeval *end_time, struct timeval *start_time )
+{
+   struct timeval temp_diff;
+   if(difference==0) { difference=&temp_diff; }
+   difference->tv_sec =end_time->tv_sec -start_time->tv_sec ;
+   difference->tv_usec=end_time->tv_usec-start_time->tv_usec;
+  /* Using while instead of if below makes the code slightly more robust. */
+  while(difference->tv_usec<0)
+  {
+    difference->tv_usec+=1000000;
+    difference->tv_sec -=1;
+  }
+
+  return 1000000LL*difference->tv_sec+ difference->tv_usec;
+}
+
+long TimerStart(struct timeval *start_time)
+{
+  return gettimeofday(start_time,0x0);
+}
+
+long TimerEnd(struct timeval *start_time,struct timeval *end_time,struct timeval *duration_time)
+{
+  gettimeofday(end_time,0x0);
+  return timeval_diff(duration_time,end_time,start_time);
+}
+/*
+     ----------------------------------- TIMERS CODE -----------------------------------
+*/
+
+
+
 
 int GenerateNewClientLoop(struct VariableShare * vsh,int clientsock,struct sockaddr_in client,unsigned int clientlen)
 {
@@ -64,14 +86,16 @@ int GenerateNewClientLoop(struct VariableShare * vsh,int clientsock,struct socka
   vsh->peer_list[peer_id].pause_peer_thread=0;
   vsh->peer_list[peer_id].stop_peer_thread=0;
 
-  struct PeerServerContext pass_to_thread;
+  struct SocketAdapterToMessageTablesContext pass_to_thread;
   pass_to_thread.vsh=vsh;
   pass_to_thread.peer_id = peer_id;
   pass_to_thread.peersock = clientsock;
   pass_to_thread.keep_var_on_stack = 1;
+  pass_to_thread.peersock = clientsock;
+  pass_to_thread.keep_var_on_stack = 1;
 
   fprintf(stderr,"Server Thread : Server is ready to spawn a new dedicated thread for the client .. ");
-  int retres = pthread_create(&vsh->peer_list[peer_id].peer_thread,0,PeerServer_Thread,(void*) &pass_to_thread);
+  int retres = pthread_create(&vsh->peer_list[peer_id].peer_thread,0,SocketAdapterToMessageTable_Thread,(void*) &pass_to_thread);
   if ( retres==0 ) { while (pass_to_thread.keep_var_on_stack) { usleep(10); } } // <- Keep PeerServerContext in stack for long enough :P
 
   fprintf(stderr,"done\n");
@@ -131,18 +155,6 @@ RemoteVariableServer_Thread(void * ptr)
 
 
 
-
-void RemoteVariableServer_Thread_Pause(struct VariableShare * vsh)
-{
-  vsh->pause_server_thread=1;
-}
-
-void RemoteVariableServer_Thread_Resume(struct VariableShare * vsh)
-{
-  vsh->pause_server_thread=0;
-}
-
-
 int
 StartRemoteVariableServer(struct VariableShare * vsh)
 {
@@ -155,51 +167,17 @@ StartRemoteVariableServer(struct VariableShare * vsh)
 }
 
 
-/*
---------------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------
-                /\  /\  /\   /\
-                ||  ||  ||   ||                   SERVER Framework
-
---------------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------
-
-
-
---------------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------
-
-                ||  ||  ||   ||                   Client Framework
-                \/  \/  \/   \/
---------------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------
-
-*/
-
-
 int RemoteVariable_InitiateConnection(struct VariableShare * vsh)
 {
   int sockfd;
   struct hostent *he=0;
   struct sockaddr_in their_addr;
 
+  if ((he=gethostbyname(vsh->ip)) == 0) { fprintf(stderr,"Error getting host (%s) by name  \n",vsh->ip); return 0; } else
+                                        { printf("Client-The remote host is: %s\n", vsh->ip); }
 
-  if ((he=gethostbyname(vsh->ip)) == 0)
-  {
-    fprintf(stderr,"Error getting host (%s) by name  \n",vsh->ip);
-    return 0;
-   }
-    else
-    printf("Client-The remote host is: %s\n", vsh->ip);
-
-  if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-  {
-    error("Could not create the socket for the connection\n");
-    return 0;
-  }
-    else
-    printf("Client socket ok\n");
-
+  if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) { error("Could not create the socket for the connection\n"); return 0; } else
+                                                        { printf("Client socket ok\n"); }
 
     // host byte order
     their_addr.sin_family = AF_INET;
@@ -208,37 +186,14 @@ int RemoteVariable_InitiateConnection(struct VariableShare * vsh)
     their_addr.sin_port = htons(vsh->port);
     their_addr.sin_addr = *((struct in_addr *)he->h_addr);
     // zero the rest of the struct
+    memset(&(their_addr.sin_zero), '\0', 8);
 
-     memset(&(their_addr.sin_zero), '\0', 8);
-
-
-
-   if(connect(sockfd, (struct sockaddr *)&their_addr, sizeof(struct sockaddr)) == -1)
-   {
-    error("Could not connect the created socket \n");
-    vsh->global_state=VSS_CONNECTION_FAILED;
-    return 0;
-   }
-    else
-   {
-    printf("Client-The connect() is OK...\n");
-   }
-
+   if(connect(sockfd, (struct sockaddr *)&their_addr, sizeof(struct sockaddr)) == -1) { error("Could not connect the created socket \n");
+                                                                                           vsh->global_state=VSS_CONNECTION_FAILED;
+                                                                                           return 0; } else
+                                                                                         { printf("Client-The connect() is OK...\n"); }
    vsh->master.socket_to_client=sockfd;
    return 1;
-}
-
-
-
-
-void RemoteVariableClient_Thread_Pause(struct VariableShare * vsh)
-{
-  vsh->pause_client_thread=1;
-}
-
-void RemoteVariableClient_Thread_Resume(struct VariableShare * vsh)
-{
-  vsh->pause_client_thread=0;
 }
 
 
@@ -279,7 +234,7 @@ StartRemoteVariableConnection(struct VariableShare * vsh)
 
    vsh->pause_client_thread=0;
    vsh->stop_client_thread=0;
-   int retres = pthread_create( &vsh->client_thread, NULL,  RemoteVariableClient_Thread ,(void*) vsh);
+   int retres = pthread_create( &vsh->client_thread, NULL,  SocketAdapterToMessageTable_Thread ,(void*) vsh);
    if (retres!=0) retres = 0; else
                   retres = 1;
    return retres;

@@ -51,8 +51,8 @@ enum jobactions
 
 struct PacketHeader
 {
-   unsigned char IncrementalValue;
-   unsigned char OperationType;
+   unsigned char incremental_value;
+   unsigned char operation_type;
    unsigned int  payload_size;
 };
 
@@ -120,7 +120,6 @@ struct SharePeer
     unsigned int port;
 
     int socket_to_client;
-    unsigned int socket_locked;
 
     unsigned int ping_in_microseconds;
     unsigned int last_transaction;
@@ -234,6 +233,8 @@ struct SocketAdapterToMessageTablesContext
    unsigned int peer_id;
    int peersock;
    unsigned int keep_var_on_stack;
+   unsigned int * pause_switch;
+   unsigned int * stop_switch;
 };
 
 

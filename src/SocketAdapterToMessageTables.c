@@ -104,30 +104,32 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
   struct VariableShare * vsh = thread_context->vsh;
   unsigned int peer_id =  thread_context->peer_id;
   int peersock = thread_context->peersock;
-  unsigned int * peerlock =  &vsh->peer_list[peer_id].socket_locked;
   thread_context->keep_var_on_stack=0;
 
+  struct PacketHeader incoming_packet;
   struct MessageTable * mt = &vsh->peer_list[peer_id].message_queue;
 
 
-   /*
-   if (Accept_Handshake(vsh,peersock))
-     {
-       debug_say("Peer Thread : Successfully accepted connection handshake\n");
-       vsh->peer_list[peer_id].peer_state=VSS_NORMAL;
-     } else
-     {
-       fprintf(stderr,"Peer Thread : Could not accept handshake for RemoteVariable Share , ignoring client\n");
-       vsh->peer_list[peer_id].peer_state=VSS_UNITIALIZED;
-       close(peersock);
-       return 0;
-     }
-*/
+  if ( vsh.this_address_space_is_master )
+   {
+      if (Start_Version_Handshake(vsh,peersock)) { vsh->peer_list[peer_id].peer_state=VSS_NORMAL; } else
+                                                 { fprintf(stderr,"SocketAdapterToMessageTable_Thread Thread : Could not accept handshake for peer %u",peer_id);
+                                                   vsh->peer_list[peer_id].peer_state=VSS_UNITIALIZED;
+                                                   //RemPeerBySock(vsh,peersock);
+                                                   close(peersock);
+                                                   return 0;}
+   } else
+   {
+      if (Accept_Version_Handshake(vsh,peersock)) { vsh->peer_list[peer_id].peer_state=VSS_NORMAL; } else
+                                                  { fprintf(stderr,"SocketAdapterToMessageTable_Thread Thread : Could not accept handshake for peer %u",peer_id);
+                                                    vsh->peer_list[peer_id].peer_state=VSS_UNITIALIZED;
+                                                    //RemPeerBySock(vsh,peersock);
+                                                    close(peersock);
+                                                    return 0;}
+   }
 
 
-
-
-  struct PacketHeader incoming_packet;
+  // Set socket to nonblocking mode..!
   int rest_perms = fcntl(peersock,F_GETFL,0);
   fcntl(peersock,F_SETFL,rest_perms | O_NONBLOCK);
 
@@ -135,11 +137,7 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
   int data_received = 0;
   while (1)
   {
-   /*
-     -------------------------------------------------
-                      RECEIVE PART
-     -------------------------------------------------
-   */
+   /* ------------------------------------------------- RECEIVE PART ------------------------------------------------- */
    data_received = recv(peersock,&incoming_packet,sizeof(incoming_packet), MSG_DONTWAIT |MSG_PEEK);
 
    if (data_received==sizeof(incoming_packet)) { RecvPacketAndPassToMT(peersock,mt); } else
@@ -147,29 +145,14 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
     {
       data_received = errno;
       if (data_received == EWOULDBLOCK)
-        {
-          //This actually isnt an error!
-          //If no messages are available at the socket and O_NONBLOCK is set on the socket's file descriptor, recv() shall fail and set errno to [EAGAIN] or [EWOULDBLOCK].
-          return 1;
-        } else
-        {
-          PrintError(data_received);
-          break;
-        }
+        {/*This actually isnt an error , if no messages are available at the socket and O_NONBLOCK is set on the socket's file descriptor, recv() shall fail and set errno to [EAGAIN] or [EWOULDBLOCK]*/ }
+         else
+        { PrintError(data_received); break; }
     }
-   /*
-     -------------------------------------------------
-                      SEND PART
-     -------------------------------------------------
-   */
-
-
-
+   /*------------------------------------------------- SEND PART -------------------------------------------------*/
   }
 
   RemPeerBySock(vsh,peersock);
 
-
-  fcntl(peersock,F_SETFL,rest_perms);
-  // --------------- LOCK PROTECTED OPERATION  ---------------------
+ // fcntl(peersock,F_SETFL,rest_perms);
 }

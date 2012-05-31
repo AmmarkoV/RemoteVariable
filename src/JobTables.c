@@ -139,14 +139,11 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
    if (job_id>=vsh->jobs_loaded) { error("Job Execute call on jobid out of bounds\n"); return 0; }
 
    unsigned int peer = vsh->job_list[job_id].remote_peer_id;
-   fprintf(stderr,"ExecuteJob job for peer %u ",peer);
+   fprintf(stderr,"ExecuteJob job for peer %u \n",peer);
 
    unsigned int var_id = vsh->job_list[job_id].local_var_id;
    char * variable_name = vsh->share.variables[var_id].ptr_name;
    unsigned int peer_socket =  vsh->job_list[job_id].remote_peer_socket;
-
-   unsigned int * peer_lock =  & vsh->peer_list[peer].socket_locked;  //vsh->peer_list[peer].socket_to_client;
-   fprintf(stderr,"and peerlock %u \n",*peer_lock);
 
 
    switch ( vsh->job_list[job_id].action )
@@ -162,8 +159,6 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
       case READFROM :
                        fprintf(stderr,"Execution of Read from peer : %u of variable %s with var id %u \n",peer,variable_name,var_id);
                        AutoRefreshVariable_Thread_Pause(vsh);
-                       RemoteVariableClient_Thread_Pause(vsh);
-                       RemoteVariableServer_Thread_Pause(vsh);
 
                    /*
                        if (RequestVariable_Handshake(vsh,peer,var_id,peer_socket,peer_lock))
@@ -175,16 +170,12 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
                         }*/
 
                        AutoRefreshVariable_Thread_Resume(vsh);
-                       RemoteVariableClient_Thread_Resume(vsh);
-                       RemoteVariableServer_Thread_Resume(vsh);
                        break;
 
 
       case SIGNALCHANGED :
                            fprintf(stderr,"Execution of Singal Changed to peer : %u of variable %s with var id %u \n",peer,variable_name,var_id);
                            AutoRefreshVariable_Thread_Pause(vsh);
-                           RemoteVariableClient_Thread_Pause(vsh);
-                           RemoteVariableServer_Thread_Pause(vsh);
 /*
                             if ( MasterSignalChange_Handshake(vsh,peer,var_id,peer_socket,peer_lock) )
                              {
@@ -195,8 +186,6 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
                              }
 */
                            AutoRefreshVariable_Thread_Resume(vsh);
-                           RemoteVariableClient_Thread_Resume(vsh);
-                           RemoteVariableServer_Thread_Resume(vsh);
                            break;
       case SYNC :
                      fprintf(stderr,"Simulating Execution of Sync Operation : %u of variable %s with var id %u \n",peer,variable_name,var_id);

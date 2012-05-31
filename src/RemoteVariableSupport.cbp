@@ -56,19 +56,11 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="NetworkFramework.h" />
-		<Unit filename="NetworkFrameworkLowLevel.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="NetworkFrameworkLowLevel.h" />
 		<Unit filename="Peers.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="Peers.h" />
 		<Unit filename="PortableSocket.h" />
-		<Unit filename="ProtocolThreads.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="ProtocolThreads.h" />
 		<Unit filename="RemoteVariableSupport.c">
 			<Option compilerVar="CC" />
 		</Unit>
