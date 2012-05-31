@@ -61,6 +61,10 @@
 		</Unit>
 		<Unit filename="Peers.h" />
 		<Unit filename="PortableSocket.h" />
+		<Unit filename="Protocol.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Protocol.h" />
 		<Unit filename="RemoteVariableSupport.c">
 			<Option compilerVar="CC" />
 		</Unit>

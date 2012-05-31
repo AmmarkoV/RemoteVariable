@@ -18,7 +18,6 @@
 #include <errno.h>
 #include <fcntl.h>
 
-
 void PrintError(unsigned int errornum)
 {
       fprintf(stderr," Error received is  :");
@@ -51,8 +50,6 @@ void PrintError(unsigned int errornum)
              break;
       };
 }
-
-
 
 
 int SendPacketAndPassToMT(int clientsock,struct MessageTable * mt,unsigned int item_num)
@@ -109,13 +106,14 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
   struct PacketHeader incoming_packet;
   struct MessageTable * mt = &vsh->peer_list[peer_id].message_queue;
 
+  fprintf(stderr,"SocketAdapterToMessageTable_Thread started , peer_id = %u , peer socket = %d , master = %u \n",peer_id,peersock,vsh->this_address_space_is_master);
 
-  if ( vsh.this_address_space_is_master )
+  if ( vsh->this_address_space_is_master )
    {
       if (Start_Version_Handshake(vsh,peersock)) { vsh->peer_list[peer_id].peer_state=VSS_NORMAL; } else
                                                  { fprintf(stderr,"SocketAdapterToMessageTable_Thread Thread : Could not accept handshake for peer %u",peer_id);
                                                    vsh->peer_list[peer_id].peer_state=VSS_UNITIALIZED;
-                                                   //RemPeerBySock(vsh,peersock);
+                                                   RemPeerBySock(vsh,peersock);
                                                    close(peersock);
                                                    return 0;}
    } else
@@ -123,7 +121,7 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
       if (Accept_Version_Handshake(vsh,peersock)) { vsh->peer_list[peer_id].peer_state=VSS_NORMAL; } else
                                                   { fprintf(stderr,"SocketAdapterToMessageTable_Thread Thread : Could not accept handshake for peer %u",peer_id);
                                                     vsh->peer_list[peer_id].peer_state=VSS_UNITIALIZED;
-                                                    //RemPeerBySock(vsh,peersock);
+                                                    RemPeerBySock(vsh,peersock);
                                                     close(peersock);
                                                     return 0;}
    }

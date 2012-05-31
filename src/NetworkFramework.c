@@ -25,6 +25,7 @@
 #include "JobTables.h"
 #include "Peers.h"
 #include "helper.h"
+#include "Protocol.h"
 #include "RemoteVariableSupport.h"
 #include "SocketAdapterToMessageTables.h"
 
@@ -38,39 +39,6 @@
 void * RemoteVariableServer_Thread(void * ptr);
 void * RemoteVariableClient_Thread(void * ptr);
 
-
-/*
-     ----------------------------------- TIMERS CODE -----------------------------------
-*/
-long timeval_diff ( struct timeval *difference, struct timeval *end_time, struct timeval *start_time )
-{
-   struct timeval temp_diff;
-   if(difference==0) { difference=&temp_diff; }
-   difference->tv_sec =end_time->tv_sec -start_time->tv_sec ;
-   difference->tv_usec=end_time->tv_usec-start_time->tv_usec;
-  /* Using while instead of if below makes the code slightly more robust. */
-  while(difference->tv_usec<0)
-  {
-    difference->tv_usec+=1000000;
-    difference->tv_sec -=1;
-  }
-
-  return 1000000LL*difference->tv_sec+ difference->tv_usec;
-}
-
-long TimerStart(struct timeval *start_time)
-{
-  return gettimeofday(start_time,0x0);
-}
-
-long TimerEnd(struct timeval *start_time,struct timeval *end_time,struct timeval *duration_time)
-{
-  gettimeofday(end_time,0x0);
-  return timeval_diff(duration_time,end_time,start_time);
-}
-/*
-     ----------------------------------- TIMERS CODE -----------------------------------
-*/
 
 
 
@@ -91,8 +59,8 @@ int GenerateNewClientLoop(struct VariableShare * vsh,int clientsock,struct socka
   pass_to_thread.peer_id = peer_id;
   pass_to_thread.peersock = clientsock;
   pass_to_thread.keep_var_on_stack = 1;
-  pass_to_thread.peersock = clientsock;
-  pass_to_thread.keep_var_on_stack = 1;
+  pass_to_thread.pause_switch=&vsh->peer_list[peer_id].pause_peer_thread;
+  pass_to_thread.stop_switch=&vsh->peer_list[peer_id].stop_peer_thread;
 
   fprintf(stderr,"Server Thread : Server is ready to spawn a new dedicated thread for the client .. ");
   int retres = pthread_create(&vsh->peer_list[peer_id].peer_thread,0,SocketAdapterToMessageTable_Thread,(void*) &pass_to_thread);
@@ -209,34 +177,30 @@ StartRemoteVariableConnection(struct VariableShare * vsh)
       return 0;
     }
 
-    /*
-   if (Connect_Handshake(vsh,peersock))
-     {
-       fprintf(stderr,"Client Thread : Successfull connection handshake , socket to master = %d \n",peersock);
 
-       peer_id = AddPeer(vsh,vsh->ip,vsh->port,peersock); // peersock doesnt seem to be the right value to pass :S or it gets overflowed
-       if ( peer_id == 0 ) { error("Client Thread : Failed to add peer to list while @ RemoteVariableClient_Thread "); }
-       --peer_id; // Step down one value !
-
-       vsh->global_state=VSS_NORMAL;
-     } else
-     {
-       fprintf(stderr,"Client Thread : Could not handshake for RemoteVariable Share , stopping everything\n");
-       vsh->global_state=VSS_HANDSHAKE_FAILED;
-       return 0;
-     }
+   unsigned int peer_id = AddPeer(vsh,vsh->ip,vsh->port,vsh->master.socket_to_client); // peersock doesnt seem to be the right value to pass :S or it gets overflowed
+   if ( peer_id == 0 ) { error("Client Thread : Failed to add peer to list while @ RemoteVariableClient_Thread "); return 0; }
+   --peer_id; // Step down one value !
 
 
-   int peersock =  vsh->master.socket_to_client;
-   */
-
-
+   struct SocketAdapterToMessageTablesContext pass_to_thread;
+   pass_to_thread.vsh=vsh;
+   pass_to_thread.peer_id = peer_id;
+   pass_to_thread.peersock = vsh->master.socket_to_client;
+   pass_to_thread.keep_var_on_stack = 1;
+   pass_to_thread.pause_switch=&vsh->peer_list[peer_id].pause_peer_thread;
+   pass_to_thread.stop_switch=&vsh->peer_list[peer_id].stop_peer_thread;
 
    vsh->pause_client_thread=0;
    vsh->stop_client_thread=0;
-   int retres = pthread_create( &vsh->client_thread, NULL,  SocketAdapterToMessageTable_Thread ,(void*) vsh);
+   int retres = pthread_create( &vsh->client_thread, 0 ,  SocketAdapterToMessageTable_Thread ,(void*) &pass_to_thread);
+   if ( retres==0 ) { while (pass_to_thread.keep_var_on_stack) { usleep(10); } } // <- Keep PeerServerContext in stack for long enough :P
+
    if (retres!=0) retres = 0; else
                   retres = 1;
+
+
+
    return retres;
 }
 
