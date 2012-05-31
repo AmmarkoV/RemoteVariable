@@ -180,11 +180,33 @@ int Accept_Version_Handshake(struct VariableShare * vsh,int peersock)
 
 int SignalChange_Variable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,int peersock)
 {
+  struct PacketHeader header;
+  header.incremental_value=vsh->peer_list[peer_id].incremental_value;
+  header.operation_type=READFROM;
+  header.payload_size=vsh->share.variables[var_id].size_of_ptr;
+  AddToMessageTable(vsh->peer_list[peer_id].message_queue,0,&header,vsh->share.variables[var_id].ptr);
+
+  return 0;
+}
+
+int AcceptSignalChange_Variable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,int peersock)
+{
   return 0;
 }
 
 int Request_Variable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,int peersock)
 {
+  struct PacketHeader header;
+  header.incremental_value=vsh->peer_list[peer_id].incremental_value;
+  header.operation_type=SIGNALCHANGED;
+  header.payload_size=0;
+  AddToMessageTable(vsh->peer_list[peer_id].message_queue,0,&header,0);
   return 0;
 }
+
+int AcceptRequest_Variable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,int peersock)
+{
+  return 0;
+}
+
 

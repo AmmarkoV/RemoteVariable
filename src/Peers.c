@@ -15,6 +15,7 @@ int AddPeer(struct VariableShare * vsh,char * name,unsigned int port , int clien
        vsh->peer_list[pos].port=port;
        vsh->peer_list[pos].socket_to_client = clientsock;
        vsh->peer_list[pos].peer_state=VSS_WAITING_FOR_HANDSHAKE;
+       vsh->peer_list[pos].incremental_value=0;
 
        AllocateMessageQueue(&vsh->peer_list[pos].message_queue);
 
