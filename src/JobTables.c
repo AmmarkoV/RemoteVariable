@@ -21,7 +21,6 @@
 #include <stdlib.h>
 #include "JobTables.h"
 #include "RemoteVariableSupport.h"
-#include "ProtocolThreads.h"
 #include "NetworkFramework.h"
 #include "VariableDatabase.h"
 #include "helper.h"
@@ -166,14 +165,14 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
                        RemoteVariableClient_Thread_Pause(vsh);
                        RemoteVariableServer_Thread_Pause(vsh);
 
-
+                   /*
                        if (RequestVariable_Handshake(vsh,peer,var_id,peer_socket,peer_lock))
                         {
                             DoneWithJob(vsh,job_id);
                         }  else
                         {
                             fprintf(stderr,"Request of variable %u failed \n",var_id);
-                        }
+                        }*/
 
                        AutoRefreshVariable_Thread_Resume(vsh);
                        RemoteVariableClient_Thread_Resume(vsh);
@@ -186,7 +185,7 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
                            AutoRefreshVariable_Thread_Pause(vsh);
                            RemoteVariableClient_Thread_Pause(vsh);
                            RemoteVariableServer_Thread_Pause(vsh);
-
+/*
                             if ( MasterSignalChange_Handshake(vsh,peer,var_id,peer_socket,peer_lock) )
                              {
                                 DoneWithJob(vsh,job_id);
@@ -194,7 +193,7 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
                              {
                                 fprintf(stderr,"Could not signal change\n");
                              }
-
+*/
                            AutoRefreshVariable_Thread_Resume(vsh);
                            RemoteVariableClient_Thread_Resume(vsh);
                            RemoteVariableServer_Thread_Resume(vsh);
@@ -249,37 +248,6 @@ int ExecutePendingJobs(struct VariableShare *vsh)
     }
   return successfull_jobs;
 }
-
-
-
-int ExecutePendingJobsForPeerIDOneShot(struct VariableShare *vsh,unsigned int peer_id)
-{
-   /*This only does one job at a time and solves a bug yet unadressed after SIG= when we have a GET request pending but we start another request at the same time*/
-   if (!vsh->jobs_loaded)  { /*Nothing to do*/ return 0; }
-   fprintf(stderr,"ExecutePendingJobsForPeerID , id = %u \n",peer_id);
-
-   unsigned int successfull_jobs=0;
-   unsigned int i=0;
-   while (i<vsh->jobs_loaded)
-    {
-
-     if (!MakeSureSocketHasNoIncomingMessages(vsh->job_list[i].remote_peer_socket,& vsh->peer_list[peer_id].socket_locked))
-     {
-         fprintf(stderr,"Deferring job due to incoming input\n");
-         return 0;
-     }
-
-      if (peer_id==vsh->job_list[i].remote_peer_id)
-      {
-       if (ExecuteJob(vsh,i)) { ++successfull_jobs; return 1;} else
-                              { fprintf(stderr,"Job %u on Share %s failed \n",i,vsh->sharename); return 0; }
-
-      }
-       ++i;
-    }
-  return successfull_jobs;
-}
-
 
 
 

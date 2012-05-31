@@ -48,6 +48,10 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="JobTables.h" />
+		<Unit filename="MessageTables.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="MessageTables.h" />
 		<Unit filename="NetworkFramework.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -69,6 +73,10 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="RemoteVariableSupport.h" />
+		<Unit filename="SocketAdapterToMessageTables.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="SocketAdapterToMessageTables.h" />
 		<Unit filename="VariableDatabase.c">
 			<Option compilerVar="CC" />
 		</Unit>

@@ -22,11 +22,9 @@
 #include <stdlib.h>
 #include "VariableDatabase.h"
 #include "NetworkFramework.h"
-#include "NetworkFrameworkLowLevel.h"
 #include "JobTables.h"
 #include "Peers.h"
 #include "helper.h"
-#include "ProtocolThreads.h"
 #include "RemoteVariableSupport.h"
 
 
@@ -58,11 +56,7 @@ void * PeerServer_Thread(void * ptr);
 
 int UnifiedNetworkAndJobHandling(struct VariableShare * vsh,unsigned int peer_id,int peersock , unsigned int * peerlock)
 {
-   if(!ProtocolServeResponse(vsh,peer_id,peersock,peerlock))  { fprintf(stderr,"Error with ProtocolServeResponse in UnifiedNetworkAndJobHandling\n"); return 0; }
-
-   /* TEMPORARY INSTEAD OF JOB EXECUTIONER */
-   vsh->total_jobs_done+=ExecutePendingJobsForPeerIDOneShot(vsh,peer_id); // <- to solve a bug only do one job! // ExecutePendingJobsForPeerID(vsh,peer_id);
-
+  fprintf(stderr,"todo UnifiedNetworkAndJobHandling");
   return 1;
 }
 
@@ -87,6 +81,7 @@ PeerServer_Thread(void * ptr)
 
 
    //First thing to do negotiate with peer about the list , passwords etc
+   /*
    if (Accept_Handshake(vsh,peersock))
      {
        debug_say("Peer Thread : Successfully accepted connection handshake\n");
@@ -98,6 +93,8 @@ PeerServer_Thread(void * ptr)
        close(peersock);
        return 0;
      }
+*/
+
 
    fprintf(stderr,"Peer Thread : Entering main loop for serving thread for peer_id=%u\n",peer_id);
    while ( (!vsh->peer_list[peer_id].stop_peer_thread) && (UnifiedNetworkAndJobHandling(vsh,peer_id,peersock,peerlock)) )
@@ -283,6 +280,7 @@ RemoteVariableClient_Thread(void * ptr)
    int peer_id = 0;
    int peersock =  vsh->master.socket_to_client;
    //First thing to do negotiate with peer about the list , passwords etc
+   /*
    if (Connect_Handshake(vsh,peersock))
      {
        fprintf(stderr,"Client Thread : Successfull connection handshake , socket to master = %d \n",peersock);
@@ -297,7 +295,7 @@ RemoteVariableClient_Thread(void * ptr)
        fprintf(stderr,"Client Thread : Could not handshake for RemoteVariable Share , stopping everything\n");
        vsh->global_state=VSS_HANDSHAKE_FAILED;
        return 0;
-     }
+     }*/
 
    // ClearAllJobs(vsh); // <- This has to be added later to enforce sync issues .. we are now synced to master so clear all local jobs
    fprintf(stderr,"Client Thread : Getting peerlock for Client thread using %u peer id , initial value is %u ",peer_id,vsh->peer_list[peer_id].socket_locked);

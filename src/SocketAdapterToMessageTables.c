@@ -7,7 +7,6 @@
 
 #include "MessageTables.h"
 #include "VariableDatabase.h"
-#include "NetworkFrameworkLowLevel.h"
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -58,11 +57,21 @@ void PrintError(unsigned int errornum)
 
 int SendPacketAndPassToMT(int clientsock,struct MessageTable * mt,unsigned int item_num)
 {
+  if (mt->table[item_num].incoming)
+   {
+      fprintf(stderr,"Asked SendPacketAndPassToMT to send an incoming message ( %u ) , skipping operation\n");
+      return 0;
+   }
+
   int opres=send(clientsock,&mt->table[item_num].header,sizeof(mt->table[item_num].header),0);
   if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); return opres; }
 
-  opres=send(clientsock,&mt->table[item_num].payload,mt->table[item_num].header.payload_size,0);
-  if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); return opres; }
+  if ( mt->table[item_num].header.payload_size > 0 )
+   {
+     opres=send(clientsock,&mt->table[item_num].payload,mt->table[item_num].header.payload_size,0);
+     if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); return opres; }
+   }
+
 
   mt->table[item_num].sent=1;
   return opres;
@@ -77,8 +86,11 @@ int RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt)
   if (opres<0) { fprintf(stderr,"Error complain %u \n",errno); } else
   if (opres!=sizeof(header)) { fprintf(stderr,"Error complain incorrect number of bytes recieved %u \n",opres); } else
 
-  opres=recv(clientsock,&header,sizeof(header),MSG_WAITALL);
-
+  if ( header.payload_size > 0 )
+   {
+    opres=recv(clientsock,&header,sizeof(header),MSG_WAITALL);
+    if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); return opres; }
+   }
 
   void * payload=(void*) malloc(header.payload_size);
   return AddToMessageTable(mt,1,&header,payload);
@@ -95,38 +107,49 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
   unsigned int * peerlock =  &vsh->peer_list[peer_id].socket_locked;
   thread_context->keep_var_on_stack=0;
 
+  struct MessageTable * mt = &vsh->peer_list[peer_id].message_queue;
+
 
   struct PacketHeader incoming_packet;
   int rest_perms = fcntl(peersock,F_GETFL,0);
   fcntl(peersock,F_SETFL,rest_perms | O_NONBLOCK);
 
-  int data_received = recv(peersock,&incoming_packet,sizeof(incoming_packet), MSG_DONTWAIT |MSG_PEEK);
 
+  int data_received = 0;
+  while (1)
+  {
+   /*
+     -------------------------------------------------
+                      RECEIVE PART
+     -------------------------------------------------
+   */
+   data_received = recv(peersock,&incoming_packet,sizeof(incoming_packet), MSG_DONTWAIT |MSG_PEEK);
 
-   if (data_received==sizeof(incoming_packet))
-   {
-    //  RecvPacketAndPassToMT(peersock,mt)
-   } else
-   //if (data_received>0)
-   //{  } else
+   if (data_received==sizeof(incoming_packet)) { RecvPacketAndPassToMT(peersock,mt); } else
    if (data_received<0)
     {
       data_received = errno;
-
       if (data_received == EWOULDBLOCK)
         {
           //This actually isnt an error!
           //If no messages are available at the socket and O_NONBLOCK is set on the socket's file descriptor, recv() shall fail and set errno to [EAGAIN] or [EWOULDBLOCK].
           return 1;
+        } else
+        {
+          PrintError(data_received);
+          break;
         }
-
-
     }
+   /*
+     -------------------------------------------------
+                      SEND PART
+     -------------------------------------------------
+   */
 
+
+
+  }
 
   fcntl(peersock,F_SETFL,rest_perms);
   // --------------- LOCK PROTECTED OPERATION  ---------------------
-
-
-
 }
