@@ -216,65 +216,6 @@ unsigned int FindVariable_Database(struct VariableShare * vsh,char * var_name)
  return 0;
 }
 
-/*
-int CanWriteTo_VariableDatabase(struct VariableShare * vsh,unsigned int var_spot)
-{
- if ( VariableShareOk(vsh) == 0 ) return 0;
- if ( var_spot>=vsh->share.total_variables_shared ) return 0;
-
- debug_say(" AND code for write permissions not sure , skipping for now");
- return 1;
- if ( vsh->share.variables[var_spot].permissions && 2 ) return 1;
- return 0;
-}
-
-int CanReadFrom_VariableDatabase(struct VariableShare * vsh,unsigned int var_spot)
-{
- if ( VariableShareOk(vsh) == 0 ) return 0;
- if ( var_spot>=vsh->share.total_variables_shared ) return 0;
-
- debug_say(" AND code for read permissions not sure , skipping for now");
- return 1;
- if ( vsh->share.variables[var_spot].permissions && 4 ) return 1;
- return 0;
-}
-
-int RefreshLocalVariable_VariableDatabase(struct VariableShare * vsh,char * variable_name)
-{
-   debug_say(" RefreshLocalVariable_VariableDatabase , not implemented ");
-   int var_id = FindVariable_Database(vsh,variable_name);
-   if ( var_id == 0 )
-    {
-      fprintf(stderr,"Variable %s not found , cannot be refreshed to local\n",variable_name);
-      return 0;
-    } else
-    {
-      --var_id; // FindVariableDatabase returns +1 results ( to signal failure with 0 )
-      //TODO
-      //vsh->share.variables[var_id].
-      //UpdateLocalVariable(vsh,  our_varid, peer_varid);
-    }
-   return 0;
-}
-
-int RefreshRemoteVariable_VariableDatabase(struct VariableShare * vsh,char * variable_name)
-{
-   debug_say(" RefreshRemoteVariable_VariableDatabase , not implemented ");
-      int var_id = FindVariable_Database(vsh,variable_name);
-   if ( var_id == 0 )
-    {
-      fprintf(stderr,"Variable %s not found , cannot be refreshed to local\n",variable_name);
-      return 0;
-    } else
-    {
-      --var_id; // FindVariableDatabase returns +1 results ( to signal failure with 0 )
-      //TODO
-      //vsh->share.variables[var_id].
-      //UpdateRemoteVariable(vsh,  our_varid, peer_varid);
-    }
-   return 0;
-}
-*/
 
 int VariableIdExists(struct VariableShare * vsh,unsigned int var_id)
 {

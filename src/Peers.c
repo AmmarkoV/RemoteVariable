@@ -4,16 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-int AddMaster(struct VariableShare * vsh,char * name,unsigned int port , int clientsock)
-{
-  unsigned int name_len = strlen(name);
-  if ( name_len > RVS_MAX_SHARE_IP_CHARS ) { name_len = RVS_MAX_SHARE_IP_CHARS; }
- // strncpy(vsh->master.IP,name,name_len);
-  vsh->master.port=port;
-  vsh->master.socket_to_client=clientsock;
-  return 1;
-}
-
 int AddPeer(struct VariableShare * vsh,char * name,unsigned int port , int clientsock)
 {
   if (vsh->total_peers < RVS_MAX_PEERS)

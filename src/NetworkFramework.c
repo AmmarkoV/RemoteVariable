@@ -37,7 +37,6 @@
 
 void * RemoteVariableServer_Thread(void * ptr);
 void * RemoteVariableClient_Thread(void * ptr);
-void * PeerServer_Thread(void * ptr);
 
 
 
@@ -53,59 +52,6 @@ void * PeerServer_Thread(void * ptr);
 --------------------------------------------------------------------------------------------------------------
 
 */
-
-int UnifiedNetworkAndJobHandling(struct VariableShare * vsh,unsigned int peer_id,int peersock , unsigned int * peerlock)
-{
-  fprintf(stderr,"todo UnifiedNetworkAndJobHandling");
-  return 1;
-}
-
-
-
-void *
-PeerServer_Thread(void * ptr)
-{
-  fprintf(stderr,"Peer Thread : New Peer thread just spawned , trying to find its context \n");
-  struct PeerServerContext * thread_context=(struct PeerServerContext *) ptr;
-  struct VariableShare * vsh = thread_context->vsh;
-  unsigned int peer_id =  thread_context->peer_id;
-  int peersock = thread_context->peersock;
-  unsigned int * peerlock =  &vsh->peer_list[peer_id].socket_locked;
-  thread_context->keep_var_on_stack=0;
-  fprintf(stderr,"Peer Thread : New Peer thread : peer_id=%u",peer_id);
-  fprintf(stderr," socket=%d",peersock);
-  fprintf(stderr," peerlock=%u\n",*peerlock);
-
-
-  fprintf(stderr,"Peer Thread : Getting peerlock for Server HandleClientLoop using %u peer id , initial value is %u ",peer_id,vsh->peer_list[peer_id].socket_locked);
-
-
-   //First thing to do negotiate with peer about the list , passwords etc
-   /*
-   if (Accept_Handshake(vsh,peersock))
-     {
-       debug_say("Peer Thread : Successfully accepted connection handshake\n");
-       vsh->peer_list[peer_id].peer_state=VSS_NORMAL;
-     } else
-     {
-       fprintf(stderr,"Peer Thread : Could not accept handshake for RemoteVariable Share , ignoring client\n");
-       vsh->peer_list[peer_id].peer_state=VSS_UNITIALIZED;
-       close(peersock);
-       return 0;
-     }
-*/
-
-
-   fprintf(stderr,"Peer Thread : Entering main loop for serving thread for peer_id=%u\n",peer_id);
-   while ( (!vsh->peer_list[peer_id].stop_peer_thread) && (UnifiedNetworkAndJobHandling(vsh,peer_id,peersock,peerlock)) )
-    {
-        usleep(100);
-    }
-   fprintf(stderr,"Peer Thread : Exiting main loop for serving thread for peer_id=%u\n",peer_id);
-
-   RemPeerBySock(vsh,peersock);
-   return 0;
-}
 
 int GenerateNewClientLoop(struct VariableShare * vsh,int clientsock,struct sockaddr_in client,unsigned int clientlen)
 {
@@ -186,6 +132,29 @@ RemoteVariableServer_Thread(void * ptr)
 
 
 
+void RemoteVariableServer_Thread_Pause(struct VariableShare * vsh)
+{
+  vsh->pause_server_thread=1;
+}
+
+void RemoteVariableServer_Thread_Resume(struct VariableShare * vsh)
+{
+  vsh->pause_server_thread=0;
+}
+
+
+int
+StartRemoteVariableServer(struct VariableShare * vsh)
+{
+  vsh->pause_server_thread=0;
+  vsh->stop_server_thread=0;
+  int retres = pthread_create( &vsh->server_thread, NULL,  RemoteVariableServer_Thread ,(void*) vsh);
+  if (retres!=0) retres = 0; else
+                 retres = 1;
+  return retres;
+}
+
+
 /*
 --------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------
@@ -261,80 +230,6 @@ int RemoteVariable_InitiateConnection(struct VariableShare * vsh)
 
 
 
-void *
-RemoteVariableClient_Thread(void * ptr)
-{
-  debug_say("Client Thread : Remote Variable TCP Client thread started..\n");
-  struct VariableShare *vsh=0;
-  vsh = (struct VariableShare *) ptr;
-  if (vsh==0) { fprintf(stderr,"Client Thread : Virtual Share Parameter is damaged \n"); return 0; }
-
-
-  if (!RemoteVariable_InitiateConnection(vsh))
-    {
-      fprintf(stderr,"Client Thread : Could not Initiate Connection\n");
-      vsh->global_state=VSS_CONNECTION_FAILED;
-      return 0;
-    }
-
-   int peer_id = 0;
-   int peersock =  vsh->master.socket_to_client;
-   //First thing to do negotiate with peer about the list , passwords etc
-   /*
-   if (Connect_Handshake(vsh,peersock))
-     {
-       fprintf(stderr,"Client Thread : Successfull connection handshake , socket to master = %d \n",peersock);
-
-       peer_id = AddPeer(vsh,vsh->ip,vsh->port,peersock); // peersock doesnt seem to be the right value to pass :S or it gets overflowed
-       if ( peer_id == 0 ) { error("Client Thread : Failed to add peer to list while @ RemoteVariableClient_Thread "); }
-       --peer_id; // Step down one value !
-
-       vsh->global_state=VSS_NORMAL;
-     } else
-     {
-       fprintf(stderr,"Client Thread : Could not handshake for RemoteVariable Share , stopping everything\n");
-       vsh->global_state=VSS_HANDSHAKE_FAILED;
-       return 0;
-     }*/
-
-   // ClearAllJobs(vsh); // <- This has to be added later to enforce sync issues .. we are now synced to master so clear all local jobs
-   fprintf(stderr,"Client Thread : Getting peerlock for Client thread using %u peer id , initial value is %u ",peer_id,vsh->peer_list[peer_id].socket_locked);
-   unsigned int * peerlock =  &vsh->peer_list[peer_id].socket_locked;
-
-   fprintf(stderr,"Client Thread : Entering main loop\n");
-   while ( (!vsh->stop_client_thread) && (UnifiedNetworkAndJobHandling(vsh,peer_id,peersock,peerlock)) )
-    {
-        usleep(100);
-    }
-   fprintf(stderr,"Client Thread : Exiting main loop\n");
-
-  RemPeerBySock(vsh,peersock);
-
-  return 0;
-}
-
-
-
-/*
---------------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------
-                /\  /\  /\   /\
-                ||  ||  ||   ||                   Client Framework
-
---------------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------
-
-
-
---------------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------
-
-                ||  ||  ||   ||                   Thread Starters
-                \/  \/  \/   \/
---------------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------
-
-*/
 
 void RemoteVariableClient_Thread_Pause(struct VariableShare * vsh)
 {
@@ -351,6 +246,37 @@ void RemoteVariableClient_Thread_Resume(struct VariableShare * vsh)
 int
 StartRemoteVariableConnection(struct VariableShare * vsh)
 {
+
+  if (!RemoteVariable_InitiateConnection(vsh))
+    {
+      fprintf(stderr,"Client Thread : Could not Initiate Connection\n");
+      vsh->global_state=VSS_CONNECTION_FAILED;
+      return 0;
+    }
+
+    /*
+   if (Connect_Handshake(vsh,peersock))
+     {
+       fprintf(stderr,"Client Thread : Successfull connection handshake , socket to master = %d \n",peersock);
+
+       peer_id = AddPeer(vsh,vsh->ip,vsh->port,peersock); // peersock doesnt seem to be the right value to pass :S or it gets overflowed
+       if ( peer_id == 0 ) { error("Client Thread : Failed to add peer to list while @ RemoteVariableClient_Thread "); }
+       --peer_id; // Step down one value !
+
+       vsh->global_state=VSS_NORMAL;
+     } else
+     {
+       fprintf(stderr,"Client Thread : Could not handshake for RemoteVariable Share , stopping everything\n");
+       vsh->global_state=VSS_HANDSHAKE_FAILED;
+       return 0;
+     }
+
+
+   int peersock =  vsh->master.socket_to_client;
+   */
+
+
+
    vsh->pause_client_thread=0;
    vsh->stop_client_thread=0;
    int retres = pthread_create( &vsh->client_thread, NULL,  RemoteVariableClient_Thread ,(void*) vsh);
@@ -359,26 +285,3 @@ StartRemoteVariableConnection(struct VariableShare * vsh)
    return retres;
 }
 
-
-
-void RemoteVariableServer_Thread_Pause(struct VariableShare * vsh)
-{
-  vsh->pause_server_thread=1;
-}
-
-void RemoteVariableServer_Thread_Resume(struct VariableShare * vsh)
-{
-  vsh->pause_server_thread=0;
-}
-
-
-int
-StartRemoteVariableServer(struct VariableShare * vsh)
-{
-  vsh->pause_server_thread=0;
-  vsh->stop_server_thread=0;
-  int retres = pthread_create( &vsh->server_thread, NULL,  RemoteVariableServer_Thread ,(void*) vsh);
-  if (retres!=0) retres = 0; else
-                 retres = 1;
-  return retres;
-}

@@ -26,6 +26,12 @@
 
 void under_construction_msg()
 {
+   fprintf(stderr,"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+   fprintf(stderr," THIS VERSION OF libRemoteVariableSupport.a doesnt work \n");
+   fprintf(stderr,"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+
+
+
    fprintf(stderr,"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
    fprintf(stderr,"RemoteVariables Version %s build %u ,  %s / %s / %s \n",FULLVERSION_STRING,(unsigned int) BUILDS_COUNT,DATE,MONTH,YEAR);
 

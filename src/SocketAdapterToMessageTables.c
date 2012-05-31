@@ -110,6 +110,23 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
   struct MessageTable * mt = &vsh->peer_list[peer_id].message_queue;
 
 
+   /*
+   if (Accept_Handshake(vsh,peersock))
+     {
+       debug_say("Peer Thread : Successfully accepted connection handshake\n");
+       vsh->peer_list[peer_id].peer_state=VSS_NORMAL;
+     } else
+     {
+       fprintf(stderr,"Peer Thread : Could not accept handshake for RemoteVariable Share , ignoring client\n");
+       vsh->peer_list[peer_id].peer_state=VSS_UNITIALIZED;
+       close(peersock);
+       return 0;
+     }
+*/
+
+
+
+
   struct PacketHeader incoming_packet;
   int rest_perms = fcntl(peersock,F_GETFL,0);
   fcntl(peersock,F_SETFL,rest_perms | O_NONBLOCK);
@@ -149,6 +166,9 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
 
 
   }
+
+  RemPeerBySock(vsh,peersock);
+
 
   fcntl(peersock,F_SETFL,rest_perms);
   // --------------- LOCK PROTECTED OPERATION  ---------------------
