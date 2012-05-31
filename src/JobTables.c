@@ -23,6 +23,7 @@
 #include "RemoteVariableSupport.h"
 #include "NetworkFramework.h"
 #include "VariableDatabase.h"
+#include "Protocol.h"
 #include "helper.h"
 
 
@@ -160,14 +161,14 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
                        fprintf(stderr,"Execution of Read from peer : %u of variable %s with var id %u \n",peer,variable_name,var_id);
                        AutoRefreshVariable_Thread_Pause(vsh);
 
-                   /*
-                       if (RequestVariable_Handshake(vsh,peer,var_id,peer_socket,peer_lock))
+
+                       if ( Request_Variable(vsh,peer,var_id,peer_socket) )
                         {
                             DoneWithJob(vsh,job_id);
                         }  else
                         {
                             fprintf(stderr,"Request of variable %u failed \n",var_id);
-                        }*/
+                        }
 
                        AutoRefreshVariable_Thread_Resume(vsh);
                        break;
@@ -176,15 +177,15 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
       case SIGNALCHANGED :
                            fprintf(stderr,"Execution of Singal Changed to peer : %u of variable %s with var id %u \n",peer,variable_name,var_id);
                            AutoRefreshVariable_Thread_Pause(vsh);
-/*
-                            if ( MasterSignalChange_Handshake(vsh,peer,var_id,peer_socket,peer_lock) )
+
+                            if ( SignalChange_Variable(vsh,peer,var_id,peer_socket) )
                              {
                                 DoneWithJob(vsh,job_id);
                              } else
                              {
                                 fprintf(stderr,"Could not signal change\n");
                              }
-*/
+
                            AutoRefreshVariable_Thread_Resume(vsh);
                            break;
       case SYNC :

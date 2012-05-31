@@ -177,3 +177,14 @@ int Accept_Version_Handshake(struct VariableShare * vsh,int peersock)
 }
 
 
+
+int SignalChange_Variable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,int peersock)
+{
+  return 0;
+}
+
+int Request_Variable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,int peersock)
+{
+  return 0;
+}
+
