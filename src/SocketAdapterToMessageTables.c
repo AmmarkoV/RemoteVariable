@@ -87,21 +87,25 @@ struct failint RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt)
 
   struct PacketHeader header;
   int opres=recv(clientsock,&header,sizeof(header),MSG_WAITALL);
-  if (opres<0) { fprintf(stderr,"Error complain %u \n",errno); } else
-  if (opres!=sizeof(header)) { fprintf(stderr,"Error complain incorrect number of bytes recieved %u \n",opres); }
+  if (opres<0) { fprintf(stderr,"Error RecvPacketAndPassToMT recv error %u \n",errno); retres.failed=1; return retres; } else
+  if (opres!=sizeof(header)) { fprintf(stderr,"Error RecvPacketAndPassToMT incorrect number of bytes recieved %u \n",opres); retres.failed=1; return retres; }
 
 
 
   if ( header.payload_size > 0 )
    {
+    fprintf(stderr,"RecvPacketAndPassToMT with payload size %u \n",header.payload_size);
     void * payload = (void * ) malloc(header.payload_size);
     opres=recv(clientsock,&payload,header.payload_size,MSG_WAITALL);
     if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; return retres; }
     return AddToMessageTable(mt,1,1,&header,payload);
+   } else
+   {
+     fprintf(stderr,"RecvPacketAndPassToMT with no payload\n");
    }
 
-  fprintf(stderr,"RecvPacketAndPassToMT FAILED\n");
-  retres.failed=1;
+
+  fprintf(stderr,"RecvPacketAndPassToMT Succeeded\n");
   return retres;
 }
 
@@ -194,7 +198,7 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
     ExecutePendingJobsForPeerID(vsh,peer_id);
 
    /*------------------------------------------------- SEND PART -------------------------------------------------*/
-    if (mt->message_queue_current_length!=0) { fprintf(stderr,"Table iterator scanning %u messages \n",mt->message_queue_current_length); }
+    //if (mt->message_queue_current_length!=0) { fprintf(stderr,"Table iterator scanning %u messages \n",mt->message_queue_current_length); }
     for ( table_iterator=0; table_iterator< mt->message_queue_current_length; table_iterator++)
     {
         if ( (!mt->table[table_iterator].remove)&&(!mt->table[table_iterator].incoming)&&(!mt->table[table_iterator].sent) )

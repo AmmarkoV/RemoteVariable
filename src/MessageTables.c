@@ -140,7 +140,7 @@ int WaitForSuccessIndicatorAtMessageTableItem(struct MessageTable *mt , unsigned
        if (mt_traverse>=mt->message_queue_current_length) { mt_traverse=0; }
        usleep(10);
    }
-  return 0;
+  return 1;
 }
 
 int WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *mt , unsigned int mt_id,struct VariableShare *vsh ,unsigned int var_id)
@@ -176,6 +176,6 @@ int WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *mt , unsigne
        if (mt_traverse>=mt->message_queue_current_length) { mt_traverse=0; }
        usleep(10);
    }
-  return 0;
+  return 1;
 }
 
