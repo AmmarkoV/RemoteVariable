@@ -51,6 +51,27 @@ void PrintError(unsigned int errornum)
       };
 }
 
+void PrintMessageType(struct PacketHeader *header)
+{
+      switch (header->operation_type)
+      {
+        // case EAGAIN :
+         case NOACTION : fprintf(stderr,"NOACTION"); break;
+         case RESP_WRITETO : fprintf(stderr,"RESP_WRITETO"); break;
+         case WRITETO : fprintf(stderr,"WRITETO"); break;
+         case READFROM : fprintf(stderr,"READFROM"); break;
+         case SIGNALCHANGED : fprintf(stderr,"SIGNALCHANGED"); break;
+         case SIGNALMSGSUCCESS : fprintf(stderr,"SIGNALMSGSUCCESS"); break;
+         case SIGNALMSGFAILURE : fprintf(stderr,"SIGNALMSGFAILURE"); break;
+         case SYNC : fprintf(stderr,"SYNC"); break;
+         default :
+             fprintf(stderr," Unknown message type %u \n",header->operation_type);
+             break;
+      };
+
+    fprintf(stderr,"\n");
+}
+
 
 struct failint SendPacketPassedToMT(int clientsock,struct MessageTable * mt,unsigned int item_num)
 {
@@ -73,9 +94,11 @@ struct failint SendPacketPassedToMT(int clientsock,struct MessageTable * mt,unsi
      if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; return retres; }
    }
 
+  PrintMessageType(&mt->table[item_num].header);
 
   mt->table[item_num].sent=1;
   retres.value=item_num;
+  retres.failed=0;
   return retres;
 }
 
@@ -91,6 +114,7 @@ struct failint RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt)
   if (opres!=sizeof(header)) { fprintf(stderr,"Error RecvPacketAndPassToMT incorrect number of bytes recieved %u \n",opres); retres.failed=1; return retres; }
 
 
+  PrintMessageType(&header);
 
   if ( header.payload_size > 0 )
    {
@@ -104,9 +128,7 @@ struct failint RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt)
      fprintf(stderr,"RecvPacketAndPassToMT with no payload\n");
    }
 
-
-  fprintf(stderr,"RecvPacketAndPassToMT Succeeded\n");
-  return retres;
+  return AddToMessageTable(mt,1,0,&header,0);
 }
 
 
@@ -167,10 +189,15 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
       mt_id=res.value;
       switch ( incoming_packet.operation_type )
       {
-        case READFROM: AcceptRequest_ReadVariable(vsh,peer_id,mt,mt_id,peersock); break;
+        case NOACTION : fprintf(stderr,"NOACTION received packet doesnt trigger New Protocol Request\n"); break;
+        case RESP_WRITETO : fprintf(stderr,"RESP_WRITETO received packet doesnt trigger New Protocol Request\n"); break;
         case WRITETO:  AcceptRequest_WriteVariable(vsh,peer_id,mt,mt_id,peersock); break;
-        case SIGNALCHANGED: AcceptRequest_SignalChangeVariable(vsh,peer_id,mt,mt_id,peersock);  break;
-        default : fprintf(stderr,"Unhandled incoming packet operation ( %u ) \n",incoming_packet.operation_type);
+        case READFROM: AcceptRequest_ReadVariable(vsh,peer_id,mt,mt_id,peersock); break;
+        case SIGNALCHANGED : AcceptRequest_SignalChangeVariable(vsh,peer_id,mt,mt_id,peersock); break;
+        case SIGNALMSGSUCCESS : fprintf(stderr,"SIGNALMSGSUCCESS received packet doesnt trigger New Protocol Request\n"); break;
+        case SIGNALMSGFAILURE : fprintf(stderr,"SIGNALMSGFAILURE received packet doesnt trigger New Protocol Request\n"); break;
+        case SYNC : fprintf(stderr,"SYNC received packet doesnt trigger New Protocol Request\n"); break;
+        default : fprintf(stderr,"Unhandled incoming packet operation ( %u ) \n",incoming_packet.operation_type); break;
       };
     }
    } else

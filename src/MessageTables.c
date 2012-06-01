@@ -116,6 +116,8 @@ int WaitForSuccessIndicatorAtMessageTableItem(struct MessageTable *mt , unsigned
   if (mt==0) { fprintf(stderr,"WaitForSuccessIndicatorAtMessageTableItem Called with zero MessageTable\n"); return 0;}
   if (mt->message_queue_current_length <= mt_id ) { error("WaitForSuccessIndicatorAtMessageTableItem mt_id out of bounds \n"); return 0; }
 
+  fprintf(stderr,"WaitForSuccessIndicatorAtMessageTableItem mt_id=%u \n",mt_id);
+
   unsigned int our_incremental_value=mt->table[mt_id].header.incremental_value;
   unsigned int done_waiting=0;
   unsigned int mt_traverse=0;
@@ -140,6 +142,8 @@ int WaitForSuccessIndicatorAtMessageTableItem(struct MessageTable *mt , unsigned
        if (mt_traverse>=mt->message_queue_current_length) { mt_traverse=0; }
        usleep(10);
    }
+
+  fprintf(stderr,"WaitForSuccessIndicatorAtMessageTableItem success\n");
   return 1;
 }
 
@@ -147,6 +151,9 @@ int WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *mt , unsigne
 {
   if (mt==0) { fprintf(stderr,"WaitForVariableAndCopyItAtMessageTableItem Called with zero MessageTable\n"); return 0;}
   if (mt->message_queue_current_length <= mt_id ) { error("WaitForVariableAndCopyItAtMessageTableItem mt_id out of bounds \n"); return 0; }
+
+
+  fprintf(stderr,"WaitForVariableAndCopyItAtMessageTableItem mt_id=%u , var_id=%u\n",mt_id,var_id);
 
   unsigned int our_incremental_value=0;
   unsigned int done_waiting=0;
@@ -176,6 +183,7 @@ int WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *mt , unsigne
        if (mt_traverse>=mt->message_queue_current_length) { mt_traverse=0; }
        usleep(10);
    }
+  fprintf(stderr,"WaitForVariableAndCopyItAtMessageTableItem success\n");
   return 1;
 }
 

@@ -303,28 +303,26 @@ int Request_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id
   header.payload_size=0;
 
   struct failint res=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,0);
-  if (res.failed)
-   {
-      fprintf(stderr,"Could not add SignalChange_Variable to local MessageTable\n");
-      return 0;
-   }
+  if (res.failed) { fprintf(stderr,"Could not add SignalChange_Variable to local MessageTable\n"); return 0; }
 
-  return WaitForSuccessIndicatorAtMessageTableItem(&vsh->peer_list[peer_id].message_queue,res.value);
+  int opres=WaitForSuccessIndicatorAtMessageTableItem(&vsh->peer_list[peer_id].message_queue,res.value);
+  fprintf(stderr,"Request_SignalChangeVariable ending opres=%d",opres);
+  return opres;
 }
 
 int AcceptRequest_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id,struct MessageTable * mt,unsigned int mt_id,int peersock)
 {
   fprintf(stderr,"AcceptRequest_SignalChangeVariable called for peer_id %u ,  socket %u \n",peer_id,peersock);
   struct PacketHeader header = mt->table[mt_id].header;
+
+  fprintf(stderr,"Todo check about var permissions here in case a SIGNALMSGFAILURE needs to be sent back\n");
+
+
   header.operation_type=SIGNALMSGSUCCESS; // Only change message type the rest remains the same
-
   struct failint res=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,0);
-  if (res.failed)
-   {
-      fprintf(stderr,"Could not add AcceptRequest_Variable to local MessageTable\n");
-      return 0;
-   }
+  if (res.failed) { fprintf(stderr,"Could not add AcceptRequest_Variable to local MessageTable\n"); return 0; }
 
+  fprintf(stderr,"Request_SignalChangeVariable ending successfully\n");
   return 1;
 }
 
