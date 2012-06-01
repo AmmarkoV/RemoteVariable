@@ -35,8 +35,19 @@ int AddToMessageTable(struct MessageTable * mt,unsigned int incoming,struct Pack
   mt->table[mt_pos].incoming=incoming;
 
   if (mt->table[mt_pos].payload!=0) { error("complain here\n"); return 0; }
-  mt->table[mt_pos].payload = (void *) malloc(header->payload_size);
-  memcpy(mt->table[mt_pos].payload,payload,mt->table[mt_pos].header.payload_size);
+
+
+  mt->table[mt_pos].payload_local_malloc=0;
+
+  if (mt->table[mt_pos].payload_local_malloc)
+   {
+     mt->table[mt_pos].payload = (void *) malloc(header->payload_size);
+     memcpy(mt->table[mt_pos].payload,payload,mt->table[mt_pos].header.payload_size);
+   } else
+   {
+     mt->table[mt_pos].payload=payload;
+   }
+
 
   return 1;
 }
@@ -45,6 +56,17 @@ int RemFromMessageTable(struct MessageTable * mt,unsigned int mt_id)
 {
   if (mt->message_queue_current_length <= mt_id ) { error("complain here\n"); return 0; }
   mt->table[mt_id].remove=0;
+
+    mt->table[mt_id].payload_local_malloc=0;
+
+  if (mt->table[mt_id].payload_local_malloc)
+   {
+     free(mt->table[mt_id].payload);
+     mt->table[mt_id].payload=0;
+   } else
+   {
+     mt->table[mt_id].payload=0;
+   }
 
   return 1;
 }

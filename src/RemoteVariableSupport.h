@@ -63,6 +63,7 @@ struct MessageTableItem
    unsigned char sent;
    struct PacketHeader header;
    void * payload;
+   unsigned char payload_local_malloc;
 };
 
 
