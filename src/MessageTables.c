@@ -32,7 +32,7 @@ struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,
   retres.failed=0;
   retres.value=0;
 
-  if (mt->message_queue_current_length >= mt->message_queue_total_length) { error("complain here\n"); retres.failed=1; return retres; }
+  if (mt->message_queue_current_length >= mt->message_queue_total_length) { error("AddToMessageTable complain 1\n"); retres.failed=1; return retres; }
 
   unsigned int mt_pos = mt->message_queue_current_length;
   ++mt->message_queue_current_length;
@@ -41,7 +41,7 @@ struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,
   mt->table[mt_pos].remove=0;
   mt->table[mt_pos].incoming=incoming;
 
-  if (mt->table[mt_pos].payload!=0) { error("complain here\n"); retres.failed=1; return retres; }
+  if (mt->table[mt_pos].payload!=0) { error("AddToMessageTable complain 2\n"); retres.failed=1; return retres; }
 
 
   mt->table[mt_pos].payload_local_malloc=free_malloc_at_disposal;

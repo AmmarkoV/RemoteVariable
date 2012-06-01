@@ -235,6 +235,7 @@ WRITETO
 
 int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,int peersock)
 {
+  fprintf(stderr,"Request_ReadVariable called for peer_id %u , var_id %u , socket %u \n",peer_id,var_id,peersock);
   ++vsh->peer_list[peer_id].incremental_value;
   struct PacketHeader header;
   header.incremental_value=vsh->peer_list[peer_id].incremental_value;
@@ -267,6 +268,7 @@ int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigne
 
 int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,struct MessageTable * mt,unsigned int mt_id,int peersock)
 {
+  fprintf(stderr,"AcceptRequest_ReadVariable called for peer_id %u ,  socket %u \n",peer_id,peersock);
   struct PacketHeader header = mt->table[mt_id].header;
   unsigned int var_id = header.var_id;
   header.operation_type=WRITETO; // Only change message type the rest remains the same
@@ -292,6 +294,7 @@ int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,s
 
 int Request_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,int peersock)
 {
+  fprintf(stderr,"Request_SignalChangeVariable called for peer_id %u , var_id %u , socket %u \n",peer_id,var_id,peersock);
   ++vsh->peer_list[peer_id].incremental_value;
   struct PacketHeader header;
   header.incremental_value=vsh->peer_list[peer_id].incremental_value;
@@ -311,6 +314,7 @@ int Request_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id
 
 int AcceptRequest_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id,struct MessageTable * mt,unsigned int mt_id,int peersock)
 {
+  fprintf(stderr,"AcceptRequest_SignalChangeVariable called for peer_id %u ,  socket %u \n",peer_id,peersock);
   struct PacketHeader header = mt->table[mt_id].header;
   header.operation_type=SIGNALMSGSUCCESS; // Only change message type the rest remains the same
 

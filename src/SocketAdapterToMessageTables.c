@@ -55,6 +55,7 @@ void PrintError(unsigned int errornum)
 struct failint SendPacketPassedToMT(int clientsock,struct MessageTable * mt,unsigned int item_num)
 {
   struct failint retres={0};
+  fprintf(stderr,"Trying SendPacketPassedToMT\n");
 
   if (mt->table[item_num].incoming)
    {
@@ -139,6 +140,8 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
                                                     return 0;}
    }
 
+  fprintf(stderr,"SocketAdapterToMessageTable_Thread done with handshakes , starting recv/send loop\n");
+
 
   // Set socket to nonblocking mode..!
   int rest_perms = fcntl(peersock,F_GETFL,0);
@@ -157,30 +160,42 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
     res=RecvPacketAndPassToMT(peersock,mt);
     if (!res.failed)
     {
-    mt_id=res.value;
-    switch ( incoming_packet.operation_type )
-    {
-      case READFROM: AcceptRequest_ReadVariable(vsh,peer_id,mt,mt_id,peersock); break;
-      case WRITETO:  AcceptRequest_WriteVariable(vsh,peer_id,mt,mt_id,peersock); break;
-      case SIGNALCHANGED: AcceptRequest_SignalChangeVariable(vsh,peer_id,mt,mt_id,peersock);  break;
-      default : fprintf(stderr,"Unhandled incoming packet operation ( %u ) \n",incoming_packet.operation_type);
-    };
-
+      mt_id=res.value;
+      switch ( incoming_packet.operation_type )
+      {
+        case READFROM: AcceptRequest_ReadVariable(vsh,peer_id,mt,mt_id,peersock); break;
+        case WRITETO:  AcceptRequest_WriteVariable(vsh,peer_id,mt,mt_id,peersock); break;
+        case SIGNALCHANGED: AcceptRequest_SignalChangeVariable(vsh,peer_id,mt,mt_id,peersock);  break;
+        default : fprintf(stderr,"Unhandled incoming packet operation ( %u ) \n",incoming_packet.operation_type);
+      };
     }
    } else
    if (data_received<0)
-    {
+   {
       data_received = errno;
       if (data_received == EWOULDBLOCK)
         {/*This actually isnt an error , if no messages are available at the socket and O_NONBLOCK is set on the socket's file descriptor, recv() shall fail and set errno to [EAGAIN] or [EWOULDBLOCK]*/ }
          else
         { PrintError(data_received); break; }
-    }
+   } else
+    if (data_received==0)
+   { /*SILENCE */ }
+      else
+   {
+        fprintf(stderr,"A part of a incoming packet just arrived , sized %u \n",data_received);
+   }
+
+
 
     //First delete from message table messages pending removal
     DeleteRemovedFromMessageTable(mt);
 
-    for ( table_iterator=0; table_iterator<mt->message_queue_current_length; table_iterator++)
+    //Pass JobTables To message tables
+    ExecutePendingJobsForPeerID(vsh,peer_id);
+
+   /*------------------------------------------------- SEND PART -------------------------------------------------*/
+    if (mt->message_queue_current_length!=0) { fprintf(stderr,"Table iterator scanning %u messages \n",mt->message_queue_current_length); }
+    for ( table_iterator=0; table_iterator< mt->message_queue_current_length; table_iterator++)
     {
         if ( (!mt->table[table_iterator].remove)&&(!mt->table[table_iterator].incoming)&&(!mt->table[table_iterator].sent) )
         {
@@ -190,10 +205,10 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
         }
     }
 
-   /*------------------------------------------------- SEND PART -------------------------------------------------*/
+
   }
 
+  fcntl(peersock,F_SETFL,rest_perms); // restore sockets to prior blocking state ( TODO: add de init code afterwards )
   RemPeerBySock(vsh,peersock);
 
- // fcntl(peersock,F_SETFL,rest_perms);
 }
