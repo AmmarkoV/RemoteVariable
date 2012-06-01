@@ -45,6 +45,8 @@ enum jobactions
     WRITETO,
     READFROM,
     SIGNALCHANGED,
+    SIGNALMSGSUCCESS,
+    SIGNALMSGFAILURE,
     SYNC
 };
 
@@ -58,6 +60,7 @@ struct PacketHeader
 {
    unsigned char incremental_value;
    unsigned char operation_type;
+   unsigned int  var_id;
    unsigned int  payload_size;
 };
 
@@ -199,11 +202,6 @@ struct VariableShare
     struct SharePeer master;
     struct SharePeer peer_list[RVS_MAX_PEERS];
     unsigned int total_peers;
-
-
-    pthread_t job_thread;
-    unsigned int pause_job_thread;
-    unsigned int stop_job_thread;
 
     pthread_t refresh_thread;
     unsigned int pause_refresh_thread;

@@ -70,6 +70,23 @@ int RemFromMessageTable(struct MessageTable * mt,unsigned int mt_id)
   return 1;
 }
 
+
+int RemFromMessageTableByIncrementalValue(struct MessageTable * mt,unsigned int inc_val)
+{
+  unsigned int mt_id=0;
+  unsigned int messages_removed=0;
+
+  for (mt_id=0; mt_id<mt->message_queue_current_length; mt_id++)
+   {
+     if ( mt->table[mt_id].header.incremental_value == inc_val )
+         {
+            if ( RemFromMessageTable(mt,mt_id) ) { ++messages_removed; }
+         }
+   }
+
+  return messages_removed;
+}
+
 int DeleteRemovedFromMessageTable(struct MessageTable * mt)
 {
    unsigned int mt_id=0;
@@ -94,4 +111,30 @@ int DeleteRemovedFromMessageTable(struct MessageTable * mt)
   return 1;
 }
 
+int WaitForSuccessIndicatorAtMessageTableItem(struct MessageTable *mt , unsigned int mt_id)
+{
+  if (mt==0) { fprintf(stderr,"WaitForSuccessIndicatorAtMessageTableItem Called with zero MessageTable\n"); return 0;}
+  if (mt->message_queue_current_length <= mt_id ) { error("WaitForSuccessIndicatorAtMessageTableItem mt_id out of bounds \n"); return 0; }
+
+  unsigned int our_incremental_value=0;
+  unsigned int done_waiting=0;
+  while (done_waiting)
+   {
+       if (our_incremental_value==mt->table[mt_id].header.incremental_value)
+       {
+         if (SIGNALMSGSUCCESS==mt->table[mt_id].header.operation_type)
+            {
+             RemFromMessageTableByIncrementalValue(mt,our_incremental_value);
+             return 1;
+            }  else
+         if (SIGNALMSGFAILURE==mt->table[mt_id].header.operation_type)
+            {
+             RemFromMessageTableByIncrementalValue(mt,our_incremental_value);
+             return 0;
+            }
+       }
+       usleep(10);
+   }
+  return 0;
+}
 

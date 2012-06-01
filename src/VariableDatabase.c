@@ -67,7 +67,6 @@ struct VariableShare * Create_VariableDatabase(char * sharename,char * IP,unsign
   vsh->jobs_loaded=0;
   vsh->total_jobs_done=0;
 
-  vsh->job_thread=0;
   vsh->refresh_thread=0;
   vsh->client_thread=0;
   vsh->server_thread=0;
@@ -93,9 +92,6 @@ int Destroy_VariableDatabase(struct VariableShare * vsh)
    if (vsh->this_address_space_is_master) { close(vsh->master.socket_to_client); vsh->master.socket_to_client=0; }
 
   //TODO CLOSE SOCKETS ETC PROPERLY
-    vsh->pause_job_thread=0;
-    vsh->stop_job_thread=1;
-
     vsh->pause_refresh_thread=0;
     vsh->stop_refresh_thread=1;
 
@@ -201,19 +197,24 @@ int DeleteVariable_Database(struct VariableShare * vsh,char * var_name)
   return 0;
 }
 
-unsigned int FindVariable_Database(struct VariableShare * vsh,char * var_name)
+struct failint FindVariable_Database(struct VariableShare * vsh,char * var_name)
 {
- if ( VariableShareOk(vsh) == 0 ) return 0;
+ struct failint retres={0};
+
+ if ( VariableShareOk(vsh) == 0 ) { retres.failed=1; return retres; }
 
  int i;
  for ( i=0; i<vsh->share.total_variables_shared; i++)
   {
      if ( strcmp(vsh->share.variables[i].ptr_name,var_name)==0 )
       {
-        return i+1;
+        retres.value=i;
+        return retres;
       }
   }
- return 0;
+
+ retres.failed=1;
+ return retres;
 }
 
 
@@ -225,13 +226,15 @@ int VariableIdExists(struct VariableShare * vsh,unsigned int var_id)
 
 int MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,char * variable_name,int clientsock)
 {
-   int var_id = FindVariable_Database(vsh,variable_name);
-   if ( var_id == 0 )
+
+   struct failint res=FindVariable_Database(vsh,variable_name);
+
+   if ( res.failed )
     {
       fprintf(stderr,"Variable %s not found , cannot be refreshed to local\n",variable_name);
     } else
     {
-      --var_id; // FindVariableDatabase returns +1 results ( to signal failure with 0 )
+      int var_id = res.value;
       fprintf(stderr,"Variable %s has been marked , as \"needs refresh\" \n",variable_name);
       vsh->share.variables[var_id].flag_needs_refresh_from_sock = clientsock;
       return 1;
@@ -302,9 +305,9 @@ int MakeSureVarReachedPeers(struct VariableShare *vsh,char * varname,unsigned in
 {
   fprintf(stderr,"MakeSureVarReachedPeers waiting for var %s \n",varname);
 
-  unsigned int var_id = FindVariable_Database(vsh,varname);
-  if (!var_id) { fprintf(stderr,"MakeSureVarReachedPeers called for non existing variable ( %s ) \n",varname); return 0; }
-  --var_id;
+  struct failint res = FindVariable_Database(vsh,varname);
+  if (res.failed) { fprintf(stderr,"MakeSureVarReachedPeers called for non existing variable ( %s ) \n",varname); return 0; }
+  unsigned int var_id  = res.value;
 
 
   if ( SignalUpdatesForAllLocalVariablesThatNeedIt(vsh) ) // <- this will make any variables that have just changed be set as flag_needs_refres_from_sock

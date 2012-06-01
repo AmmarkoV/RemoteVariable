@@ -31,7 +31,7 @@ unsigned long GetVariableHashForVar(struct VariableShare * vsh,unsigned int var_
 
 int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int permissions,volatile void * ptr,unsigned int ptr_size);
 int DeleteVariable_Database(struct VariableShare * vsh,char * var_name);
-unsigned int FindVariable_Database(struct VariableShare * vsh,char * var_name);
+struct failint FindVariable_Database(struct VariableShare * vsh,char * var_name);
 
 int  MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,char * variable_name,int clientsock);
 

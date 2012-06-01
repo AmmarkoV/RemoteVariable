@@ -35,9 +35,4 @@ int Job_SingalLocalVariableChanged(struct VariableShare * vsh,unsigned int our_v
 int ExecutePendingJobsForPeerID(struct VariableShare *vsh,unsigned int peer_id);
 int ExecutePendingJobs(struct VariableShare *vsh);
 
-
-void * JobExecutioner_Thread(void * ptr);
-void JobExecutioner_Thread_Pause(struct VariableShare * vsh);
-void JobExecutioner_Thread_Resume(struct VariableShare * vsh);
-int StartJobExecutioner(struct VariableShare * vsh);
 #endif // JOBTABLES_H_INCLUDED

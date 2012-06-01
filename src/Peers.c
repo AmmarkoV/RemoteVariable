@@ -78,14 +78,10 @@ int GetPeerIdBySock(struct VariableShare * vsh,int clientsock)
   return 0;
 }
 
-
-
 int RemPeerBySock(struct VariableShare * vsh,int clientsock)
 {
  return RemPeer(vsh,GetPeerIdBySock(vsh,clientsock));
 }
-
-
 
 int PeerNewPingValue(struct VariableShare * vsh,unsigned int peer_id,long ping_in_microseconds)
 {
