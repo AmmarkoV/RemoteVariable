@@ -52,7 +52,7 @@ void PrintError(unsigned int errornum)
 }
 
 
-int SendPacketAndPassToMT(int clientsock,struct MessageTable * mt,unsigned int item_num)
+int SendPacketPassedToMT(int clientsock,struct MessageTable * mt,unsigned int item_num)
 {
   if (mt->table[item_num].incoming)
    {
@@ -132,6 +132,7 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
   fcntl(peersock,F_SETFL,rest_perms | O_NONBLOCK);
 
 
+  unsigned int table_iterator=0;
   int data_received = 0;
   while (1)
   {
@@ -147,6 +148,19 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
          else
         { PrintError(data_received); break; }
     }
+
+    //First delete from message table messages pending removal
+    DeleteRemovedFromMessageTable(mt);
+
+    for ( table_iterator=0; table_iterator<mt->message_queue_current_length; table_iterator++)
+    {
+        if ( (!mt->table[table_iterator].remove)&&(!mt->table[table_iterator].incoming)&&(!mt->table[table_iterator].sent) )
+        {
+          if (!SendPacketPassedToMT(peersock,mt,table_iterator)) { fprintf(stderr,"Could not SendPacketPassedToMT for table num %u and socket %u \n",table_iterator,peersock); } else
+                                                                 { fprintf(stderr,"Success SendPacketPassedToMT for table num %u and socket %u \n",table_iterator,peersock); }
+        }
+    }
+
    /*------------------------------------------------- SEND PART -------------------------------------------------*/
   }
 

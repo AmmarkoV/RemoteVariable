@@ -70,3 +70,29 @@ int RemFromMessageTable(struct MessageTable * mt,unsigned int mt_id)
 
   return 1;
 }
+
+int DeleteRemovedFromMessageTable(struct MessageTable * mt)
+{
+   unsigned int mt_id=0;
+   for (mt_id=0; mt_id<mt->message_queue_current_length; mt_id++)
+   {
+     if (mt->table[mt_id].remove)
+     {
+       if (mt->table[mt_id].payload_local_malloc)
+        {
+          free(mt->table[mt_id].payload);
+          mt->table[mt_id].payload=0;
+        } else
+        {
+          mt->table[mt_id].payload=0;
+        }
+
+       mt->table[mt_id].payload_local_malloc=0;
+       mt->table[mt_id].header.payload_size=0;
+     }
+   }
+
+  return 1;
+}
+
+
