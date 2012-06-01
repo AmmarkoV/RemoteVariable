@@ -154,15 +154,26 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
                        DoneWithJob(vsh,job_id);
                        break;
       case WRITETO  :
-                       fprintf(stderr,"Simulating Execution of Write to peer : %u of variable %s with var id %u \n",peer,variable_name,var_id);
-                       DoneWithJob(vsh,job_id);
+                       fprintf(stderr,"Execution of Write to peer : %u of variable %s with var id %u \n",peer,variable_name,var_id);
+                       AutoRefreshVariable_Thread_Pause(vsh);
+
+
+                       if ( Request_WriteVariable(vsh,peer,var_id,peer_socket) )
+                        {
+                            DoneWithJob(vsh,job_id);
+                        }  else
+                        {
+                            fprintf(stderr,"Request of writing variable %u failed \n",var_id);
+                        }
+
+                       AutoRefreshVariable_Thread_Resume(vsh);
                        break;
       case READFROM :
                        fprintf(stderr,"Execution of Read from peer : %u of variable %s with var id %u \n",peer,variable_name,var_id);
                        AutoRefreshVariable_Thread_Pause(vsh);
 
 
-                       if ( Request_Variable(vsh,peer,var_id,peer_socket) )
+                       if ( Request_ReadVariable(vsh,peer,var_id,peer_socket) )
                         {
                             DoneWithJob(vsh,job_id);
                         }  else
@@ -178,7 +189,7 @@ int ExecuteJob(struct VariableShare *vsh, unsigned int job_id)
                            fprintf(stderr,"Execution of Singal Changed to peer : %u of variable %s with var id %u \n",peer,variable_name,var_id);
                            AutoRefreshVariable_Thread_Pause(vsh);
 
-                            if ( SignalChange_Variable(vsh,peer,var_id,peer_socket) )
+                            if ( Request_SignalChangeVariable(vsh,peer,var_id,peer_socket) )
                              {
                                 DoneWithJob(vsh,job_id);
                              } else

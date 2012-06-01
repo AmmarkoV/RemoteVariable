@@ -13,5 +13,6 @@ int RemFromMessageTableByIncrementalValue(struct MessageTable * mt,unsigned int 
 int DeleteRemovedFromMessageTable(struct MessageTable * mt);
 
 int WaitForSuccessIndicatorAtMessageTableItem(struct MessageTable *mt , unsigned int mt_id);
+int WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *mt , unsigned int mt_id,struct VariableShare *vsh ,unsigned int var_id);
 
 #endif // MESSAGETABLES_H_INCLUDED

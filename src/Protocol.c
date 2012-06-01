@@ -245,12 +245,23 @@ int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigne
   struct failint res=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,0);
   if (res.failed)
    {
-      fprintf(stderr,"Could not add Request_Variable to local MessageTable\n");
+      fprintf(stderr,"Could not add Request_Variable to local MessageTable STEP 1\n");
       return 0;
    }
 
 
-  WaitForSuccessIndicatorAtMessageTableItem(&vsh->peer_list[peer_id].message_queue,res.value);
+  WaitForVariableAndCopyItAtMessageTableItem(&vsh->peer_list[peer_id].message_queue,res.value,vsh,var_id);
+
+  header.operation_type=SIGNALMSGSUCCESS; // Only change message type the rest remains the same
+  header.var_id=var_id;
+  header.payload_size=0;
+  res=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,0);
+  if (res.failed)
+   {
+      fprintf(stderr,"Could not add Request_Variable to local MessageTable STEP 2\n");
+      return 0;
+   }
+
   return 1;
 }
 
@@ -264,11 +275,12 @@ int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,s
   struct failint res=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,vsh->share.variables[var_id].ptr);
   if (res.failed)
    {
-      fprintf(stderr,"Could not add AcceptRequest_Variable to local MessageTable\n");
+      fprintf(stderr,"Could not add AcceptRequest_ReadVariable to local MessageTable\n");
       return 0;
    }
 
-  header.operation_type=SIGNALMSGSUCCESS; // Only change message type the rest remains the same
+
+  WaitForSuccessIndicatorAtMessageTableItem(&vsh->peer_list[peer_id].message_queue,res.value);
 
   return 1;
 }
@@ -278,7 +290,7 @@ int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,s
     ------------------------------------------------------  ------------------------------------------------------
 */
 
-int SignalChange_Variable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,int peersock)
+int Request_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,int peersock)
 {
   ++vsh->peer_list[peer_id].incremental_value;
   struct PacketHeader header;
@@ -297,7 +309,7 @@ int SignalChange_Variable(struct VariableShare * vsh,unsigned int peer_id,unsign
   return WaitForSuccessIndicatorAtMessageTableItem(&vsh->peer_list[peer_id].message_queue,res.value);
 }
 
-int AcceptSignalChange_Variable(struct VariableShare * vsh,unsigned int peer_id,struct MessageTable * mt,unsigned int mt_id,int peersock)
+int AcceptRequest_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id,struct MessageTable * mt,unsigned int mt_id,int peersock)
 {
   struct PacketHeader header = mt->table[mt_id].header;
   header.operation_type=SIGNALMSGSUCCESS; // Only change message type the rest remains the same

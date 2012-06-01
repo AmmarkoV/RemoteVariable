@@ -160,9 +160,9 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
     mt_id=res.value;
     switch ( incoming_packet.operation_type )
     {
-      case READFROM: AcceptRequest_Variable(vsh,peer_id,mt,mt_id,peersock); break;
-      case WRITETO: break;
-      case SIGNALCHANGED: AcceptSignalChange_Variable(vsh,peer_id,mt,mt_id,peersock);  break;
+      case READFROM: AcceptRequest_ReadVariable(vsh,peer_id,mt,mt_id,peersock); break;
+      case WRITETO:  AcceptRequest_WriteVariable(vsh,peer_id,mt,mt_id,peersock); break;
+      case SIGNALCHANGED: AcceptRequest_SignalChangeVariable(vsh,peer_id,mt,mt_id,peersock);  break;
       default : fprintf(stderr,"Unhandled incoming packet operation ( %u ) \n",incoming_packet.operation_type);
     };
 

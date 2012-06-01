@@ -116,23 +116,64 @@ int WaitForSuccessIndicatorAtMessageTableItem(struct MessageTable *mt , unsigned
   if (mt==0) { fprintf(stderr,"WaitForSuccessIndicatorAtMessageTableItem Called with zero MessageTable\n"); return 0;}
   if (mt->message_queue_current_length <= mt_id ) { error("WaitForSuccessIndicatorAtMessageTableItem mt_id out of bounds \n"); return 0; }
 
-  unsigned int our_incremental_value=0;
+  unsigned int our_incremental_value=mt->table[mt_id].header.incremental_value;
   unsigned int done_waiting=0;
+  unsigned int mt_traverse=0;
   while (done_waiting)
    {
-       if (our_incremental_value==mt->table[mt_id].header.incremental_value)
+       if (our_incremental_value==mt->table[mt_traverse].header.incremental_value)
        {
-         if (SIGNALMSGSUCCESS==mt->table[mt_id].header.operation_type)
+         if (SIGNALMSGSUCCESS==mt->table[mt_traverse].header.operation_type)
             {
              RemFromMessageTableByIncrementalValue(mt,our_incremental_value);
              return 1;
             }  else
-         if (SIGNALMSGFAILURE==mt->table[mt_id].header.operation_type)
+         if (SIGNALMSGFAILURE==mt->table[mt_traverse].header.operation_type)
             {
              RemFromMessageTableByIncrementalValue(mt,our_incremental_value);
              return 0;
             }
        }
+
+       ++mt_traverse;
+
+       if (mt_traverse>=mt->message_queue_current_length) { mt_traverse=0; }
+       usleep(10);
+   }
+  return 0;
+}
+
+int WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *mt , unsigned int mt_id,struct VariableShare *vsh ,unsigned int var_id)
+{
+  if (mt==0) { fprintf(stderr,"WaitForVariableAndCopyItAtMessageTableItem Called with zero MessageTable\n"); return 0;}
+  if (mt->message_queue_current_length <= mt_id ) { error("WaitForVariableAndCopyItAtMessageTableItem mt_id out of bounds \n"); return 0; }
+
+  unsigned int our_incremental_value=0;
+  unsigned int done_waiting=0;
+  unsigned int mt_traverse=0;
+  while (done_waiting)
+   {
+       if (our_incremental_value==mt->table[mt_traverse].header.incremental_value)
+       {
+         if (RESP_WRITETO==mt->table[mt_traverse].header.operation_type)
+            {
+              if ( (var_id==mt->table[mt_traverse].header.var_id) || (vsh->share.variables[var_id].size_of_ptr!=mt->table[mt_traverse].header.payload_size) )
+              {
+                memcpy(vsh->share.variables[var_id].ptr,mt->table[mt_traverse].payload,vsh->share.variables[var_id].size_of_ptr);
+                RemFromMessageTableByIncrementalValue(mt,our_incremental_value);
+                return 1;
+              } else
+              {
+                fprintf(stderr,"Mixed or tampered RESP_WRITETO for var_id %u while waiting for var_id %u\n",mt->table[mt_traverse].header.var_id,var_id);
+                return 0;
+              }
+
+            }
+       }
+
+       ++mt_traverse;
+
+       if (mt_traverse>=mt->message_queue_current_length) { mt_traverse=0; }
        usleep(10);
    }
   return 0;

@@ -42,6 +42,7 @@ extern "C" {
 enum jobactions
 {
     NOACTION = 0 ,
+    RESP_WRITETO,
     WRITETO,
     READFROM,
     SIGNALCHANGED,
