@@ -46,9 +46,11 @@ void * RemoteVariableClient_Thread(void * ptr);
 int GenerateNewClientLoop(struct VariableShare * vsh,int clientsock,struct sockaddr_in client,unsigned int clientlen)
 {
    fprintf(stderr,"Server Thread : Client connected: %s\n", inet_ntoa(client.sin_addr));
-   unsigned int peer_id=AddPeer(vsh,inet_ntoa(client.sin_addr),0,clientsock);
-   if ( peer_id == 0 ) { error("Server Thread : Failed to add peer to list while @ GenerateNewClientLoop "); }
-   --peer_id; // Step down one value !
+
+   struct failint res=AddPeer(vsh,inet_ntoa(client.sin_addr),0,clientsock);
+   if ( res.failed ) { error("Server Thread : Failed to add peer to list while @ GenerateNewClientLoop "); }
+
+   unsigned int peer_id=res.value;
 
   vsh->peer_list[peer_id].peer_thread=0;
   vsh->peer_list[peer_id].pause_peer_thread=0;
@@ -178,9 +180,11 @@ StartRemoteVariableConnection(struct VariableShare * vsh)
     }
 
 
-   unsigned int peer_id = AddPeer(vsh,vsh->ip,vsh->port,vsh->master.socket_to_client); // peersock doesnt seem to be the right value to pass :S or it gets overflowed
-   if ( peer_id == 0 ) { error("Client Thread : Failed to add peer to list while @ RemoteVariableClient_Thread "); return 0; }
-   --peer_id; // Step down one value !
+
+   struct failint res = AddPeer(vsh,vsh->ip,vsh->port,vsh->master.socket_to_client); // peersock doesnt seem to be the right value to pass :S or it gets overflowed
+   if ( res.failed ) { error("Client Thread : Failed to add peer to list while @ RemoteVariableClient_Thread "); return 0; }
+
+   unsigned int peer_id=res.value;
 
 
    struct SocketAdapterToMessageTablesContext pass_to_thread;

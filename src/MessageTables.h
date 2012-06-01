@@ -6,7 +6,7 @@
 int AllocateMessageQueue(struct MessageTable *  mt,unsigned int total_messages);
 int FreeMessageQueue(struct MessageTable * mt);
 
-int AddToMessageTable(struct MessageTable * mt,unsigned int incoming,struct PacketHeader * header,void * payload);
+struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,unsigned int free_malloc_at_disposal,struct PacketHeader * header,void * payload);
 int RemFromMessageTable(struct MessageTable * mt,unsigned int mt_id);
 int DeleteRemovedFromMessageTable(struct MessageTable * mt);
 

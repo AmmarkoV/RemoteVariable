@@ -4,8 +4,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-int AddPeer(struct VariableShare * vsh,char * name,unsigned int port , int clientsock)
+struct failint AddPeer(struct VariableShare * vsh,char * name,unsigned int port , int clientsock)
 {
+  struct failint retres;
+  retres.failed=0;
+  retres.value=0;
+
+
   if (vsh->total_peers < RVS_MAX_PEERS)
    {
        unsigned int pos = vsh->total_peers;
@@ -20,9 +25,12 @@ int AddPeer(struct VariableShare * vsh,char * name,unsigned int port , int clien
        AllocateMessageQueue(&vsh->peer_list[pos].message_queue);
 
        ++vsh->total_peers;
-       return pos+1;
+       retres.value=pos;
+       return retres;
    }
-  return 0;
+
+  retres.failed=1;
+  return retres;
 }
 
 int SwapPeers(struct VariableShare * vsh,int peer_id1,int peer_id2)

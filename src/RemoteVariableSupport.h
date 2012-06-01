@@ -48,6 +48,11 @@ enum jobactions
     SYNC
 };
 
+struct failint
+{
+  unsigned char failed;
+  int value;
+};
 
 struct PacketHeader
 {

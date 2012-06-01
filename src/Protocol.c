@@ -189,7 +189,7 @@ int SignalChange_Variable(struct VariableShare * vsh,unsigned int peer_id,unsign
   return 0;
 }
 
-int AcceptSignalChange_Variable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,int peersock)
+int AcceptSignalChange_Variable(struct VariableShare * vsh,unsigned int peer_id,struct MessageTable * mt,unsigned int mt_id,int peersock)
 {
   return 0;
 }
@@ -204,7 +204,7 @@ int Request_Variable(struct VariableShare * vsh,unsigned int peer_id,unsigned in
   return 0;
 }
 
-int AcceptRequest_Variable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,int peersock)
+int AcceptRequest_Variable(struct VariableShare * vsh,unsigned int peer_id,struct MessageTable * mt,unsigned int mt_id,int peersock)
 {
   return 0;
 }

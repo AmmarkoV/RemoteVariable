@@ -52,45 +52,56 @@ void PrintError(unsigned int errornum)
 }
 
 
-int SendPacketPassedToMT(int clientsock,struct MessageTable * mt,unsigned int item_num)
+struct failint SendPacketPassedToMT(int clientsock,struct MessageTable * mt,unsigned int item_num)
 {
+  struct failint retres={0};
+
   if (mt->table[item_num].incoming)
    {
       fprintf(stderr,"Asked SendPacketAndPassToMT to send an incoming message ( %u ) , skipping operation\n");
-      return 0;
+      retres.failed=1;
+      return retres;
    }
 
   int opres=send(clientsock,&mt->table[item_num].header,sizeof(mt->table[item_num].header),0);
-  if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); return opres; }
+  if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; return retres; }
 
   if ( mt->table[item_num].header.payload_size > 0 )
    {
      opres=send(clientsock,&mt->table[item_num].payload,mt->table[item_num].header.payload_size,0);
-     if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); return opres; }
+     if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; return retres; }
    }
 
 
   mt->table[item_num].sent=1;
-  return opres;
+  retres.value=item_num;
+  return retres;
 }
 
-int RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt)
+struct failint RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt)
 {
+  struct failint retres={0};
+
   fprintf(stderr,"Trying RecvPacketAndPassToMT\n");
 
   struct PacketHeader header;
   int opres=recv(clientsock,&header,sizeof(header),MSG_WAITALL);
   if (opres<0) { fprintf(stderr,"Error complain %u \n",errno); } else
-  if (opres!=sizeof(header)) { fprintf(stderr,"Error complain incorrect number of bytes recieved %u \n",opres); } else
+  if (opres!=sizeof(header)) { fprintf(stderr,"Error complain incorrect number of bytes recieved %u \n",opres); }
+
+
 
   if ( header.payload_size > 0 )
    {
-    opres=recv(clientsock,&header,sizeof(header),MSG_WAITALL);
-    if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); return opres; }
+    void * payload = (void * ) malloc(header.payload_size);
+    opres=recv(clientsock,&payload,header.payload_size,MSG_WAITALL);
+    if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; return retres; }
+    return AddToMessageTable(mt,1,1,&header,payload);
    }
 
-  void * payload=(void*) malloc(header.payload_size);
-  return AddToMessageTable(mt,1,&header,payload);
+  fprintf(stderr,"RecvPacketAndPassToMT FAILED\n");
+  retres.failed=1;
+  return retres;
 }
 
 
@@ -105,6 +116,8 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
 
   struct PacketHeader incoming_packet;
   struct MessageTable * mt = &vsh->peer_list[peer_id].message_queue;
+  struct failint res;
+  unsigned int mt_id=0;
 
   fprintf(stderr,"SocketAdapterToMessageTable_Thread started , peer_id = %u , peer socket = %d , master = %u \n",peer_id,peersock,vsh->this_address_space_is_master);
 
@@ -139,7 +152,22 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
    /* ------------------------------------------------- RECEIVE PART ------------------------------------------------- */
    data_received = recv(peersock,&incoming_packet,sizeof(incoming_packet), MSG_DONTWAIT |MSG_PEEK);
 
-   if (data_received==sizeof(incoming_packet)) { RecvPacketAndPassToMT(peersock,mt); } else
+   if (data_received==sizeof(incoming_packet))
+   {
+    res=RecvPacketAndPassToMT(peersock,mt);
+    if (!res.failed)
+    {
+    mt_id=res.value;
+    switch ( incoming_packet.operation_type )
+    {
+      case READFROM: AcceptRequest_Variable(vsh,peer_id,mt,mt_id,peersock); break;
+      case WRITETO: break;
+      case SIGNALCHANGED: AcceptSignalChange_Variable(vsh,peer_id,mt,mt_id,peersock);  break;
+      default : fprintf(stderr,"Unhandled incoming packet operation ( %u ) \n",incoming_packet.operation_type);
+    };
+
+    }
+   } else
    if (data_received<0)
     {
       data_received = errno;
@@ -156,8 +184,9 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
     {
         if ( (!mt->table[table_iterator].remove)&&(!mt->table[table_iterator].incoming)&&(!mt->table[table_iterator].sent) )
         {
-          if (!SendPacketPassedToMT(peersock,mt,table_iterator)) { fprintf(stderr,"Could not SendPacketPassedToMT for table num %u and socket %u \n",table_iterator,peersock); } else
-                                                                 { fprintf(stderr,"Success SendPacketPassedToMT for table num %u and socket %u \n",table_iterator,peersock); }
+          res=SendPacketPassedToMT(peersock,mt,table_iterator);
+          if (res.failed) { fprintf(stderr,"Could not SendPacketPassedToMT for table num %u and socket %u \n",table_iterator,peersock); } else
+                          { fprintf(stderr,"Success SendPacketPassedToMT for table num %u and socket %u \n",table_iterator,peersock); }
         }
     }
 
