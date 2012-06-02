@@ -193,40 +193,12 @@ int Accept_Version_Handshake(struct VariableShare * vsh,int peersock)
 
 int Request_WriteVariable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,int peersock)
 {
- // ++vsh->peer_list[peer_id].incremental_value;
-  /*struct PacketHeader header;
-  header.incremental_value=vsh->peer_list[peer_id].incremental_value;
-  header.operation_type=READFROM;
-  header.var_id=var_id;
-  header.payload_size=0;
-
-  struct failint res=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,0);
-  if (res.failed)
-   {
-      fprintf(stderr,"Could not add Request_Variable to local MessageTable\n");
-      return 0;
-   }
-
-
-  WaitForSuccessIndicatorAtMessageTableItem(&vsh->peer_list[peer_id].message_queue,res.value);
-*/
   return 0;
 }
 
 int AcceptRequest_WriteVariable(struct VariableShare * vsh,unsigned int peer_id,struct MessageTable * mt,unsigned int mt_id,int peersock)
 {
-  /*struct PacketHeader header = mt->table[mt_id].header;
-  header.operation_type=SIGNALMSGSUCCESS; // Only change message type the rest remains the same
-
-  struct failint res=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,0);
-  if (res.failed)
-   {
-      fprintf(stderr,"Could not add AcceptRequest_Variable to local MessageTable\n");
-      return 0;
-   }
-WRITETO
-*/
-  return 1;
+  return 0;
 }
 
 /*

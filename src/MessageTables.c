@@ -102,12 +102,12 @@ struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,
   mt->table[mt_pos].payload_local_malloc=free_malloc_at_disposal;
   mt->table[mt_pos].payload=payload;
 
-  if (payload!=0)
+  if (mt->table[mt_pos].payload!=0)
    {
-       unsigned int * cur_val = (unsigned int *) payload;
-       fprintf(stderr,"Value of current payload is %u , size = %u ..\n",*cur_val,mt->table[mt_pos].header.payload_size);
+     fprintf(stderr,"Address of current payload is %p , size = %u ..\n",mt->table[mt_pos].payload,mt->table[mt_pos].header.payload_size);
    }
 
+  fprintf(stderr,"AddToMessageTable ended , new message pos %u\n",mt_pos);
   retres.value=mt_pos;
   return retres;
 }
@@ -193,7 +193,7 @@ int WaitForSuccessIndicatorAtMessageTableItem(struct MessageTable *mt , unsigned
   unsigned int our_incremental_value=mt->table[mt_id].header.incremental_value;
   unsigned int done_waiting=0;
   unsigned int mt_traverse=0;
-  fprintf(stderr,"WaitForSuccessIndicatorAtMessageTableItem mt_id=%u , mt_length = %u , our_inc_value = %u\n",mt_id,mt->message_queue_current_length,our_incremental_value);
+  fprintf(stderr,"WaitForSuccessIndicatorAtMessageTableItem ( waiting for SIGNALMSGSUCCESS or SIGNALMSGFAILURE ) mt_id=%u , mt_length = %u , our_inc_value = %u\n",mt_id,mt->message_queue_current_length,our_incremental_value);
 while (!done_waiting)
    {
      if(mt->message_queue_current_length>0)
@@ -211,11 +211,11 @@ while (!done_waiting)
              return 0;
             } else
             {
-              fprintf(stderr," Encountered : "); PrintMessageType(&mt->table[mt_traverse].header);
+            //  fprintf(stderr," Encountered : "); PrintMessageType(&mt->table[mt_traverse].header);
             }
        } else
        {
-           fprintf(stderr,"Dismissing group value %u , we have %u , total %u queued messages \n",mt->table[mt_traverse].header.incremental_value,our_incremental_value,mt->message_queue_current_length);
+          // fprintf(stderr,"Dismissing group value %u , we have %u , total %u queued messages \n",mt->table[mt_traverse].header.incremental_value,our_incremental_value,mt->message_queue_current_length);
        }
 
        ++mt_traverse;
@@ -238,21 +238,23 @@ int WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *mt , unsigne
   unsigned int our_incremental_value=mt->table[mt_id].header.incremental_value;
   unsigned int done_waiting=0;
   unsigned int mt_traverse=0;
-  fprintf(stderr,"WaitForVariableAndCopyItAtMessageTableItem mt_id=%u , mt_length = %u , our_inc_value = %u , var_id = %u\n",mt_id,mt->message_queue_current_length,our_incremental_value,var_id);
+  fprintf(stderr,"WaitForVariableAndCopyItAtMessageTableItem ( waiting for RESP_WRITETO ) mt_id=%u , mt_length = %u , our_inc_value = %u , var_id = %u\n",mt_id,mt->message_queue_current_length,our_incremental_value,var_id);
   while (!done_waiting)
    {
 
      if(mt->message_queue_current_length>0)
      {
-       if (our_incremental_value==mt->table[mt_traverse].header.incremental_value)
+       if  (RESP_WRITETO==mt->table[mt_traverse].header.operation_type)
        {
-         if (RESP_WRITETO==mt->table[mt_traverse].header.operation_type)
+         fprintf(stderr,"Found RESP_WRITETO , our inc_value %u header inc_value %u\n",our_incremental_value,mt->table[mt_id].header.incremental_value);
+         if (our_incremental_value==mt->table[mt_traverse].header.incremental_value)
             {
+              fprintf(stderr,"Found candidate inc value %u \n",our_incremental_value);
               if ( (var_id==mt->table[mt_traverse].header.var_id) || (vsh->share.variables[var_id].size_of_ptr!=mt->table[mt_traverse].header.payload_size) )
               {
 
                 unsigned int * old_val = (unsigned int *) vsh->share.variables[var_id].ptr;
-                fprintf(stderr,"Copying a fresh value for variable %u , was %u now will become %u\n",var_id,*old_val,mt->table[mt_traverse].header.var_id);
+                fprintf(stderr,"Copying a fresh value for variable %u , was %u now will become %u ( size %u ) \n",var_id,*old_val,mt->table[mt_traverse].header.var_id,vsh->share.variables[var_id].size_of_ptr);
                 memcpy(vsh->share.variables[var_id].ptr,mt->table[mt_traverse].payload,vsh->share.variables[var_id].size_of_ptr);
                 return 1;
               } else

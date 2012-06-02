@@ -91,6 +91,7 @@ struct failint SendPacketPassedToMT(int clientsock,struct MessageTable * mt,unsi
 
   if ( mt->table[item_num].header.payload_size > 0 )
    {
+     fprintf(stderr,"SendPacketPassedToMT sending for payload size %u \n",mt->table[item_num].header.payload_size);
      opres=send(clientsock,&mt->table[item_num].payload,mt->table[item_num].header.payload_size,MSG_WAITALL);
      if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; return retres; }
    }
@@ -101,7 +102,7 @@ struct failint SendPacketPassedToMT(int clientsock,struct MessageTable * mt,unsi
   retres.value=item_num;
   retres.failed=0;
 
-  fprintf(stderr,"SendPacketPassedToMT complete\n");
+  fprintf(stderr,"SendPacketPassedToMT complete ----------------\n");
   return retres;
 }
 
@@ -122,11 +123,14 @@ struct failint RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt)
 
   if ( header.payload_size > 0 )
    {
-    fprintf(stderr,"RecvPacketAndPassToMT with payload size %u \n",header.payload_size);
+    fprintf(stderr,"RecvPacketAndPassToMT waiting for payload size %u \n",header.payload_size);
     void * payload = (void * ) malloc(header.payload_size);
+    if (payload==0) { fprintf(stderr,"Error mallocing %u bytes \n ",header.payload_size); }
     opres=recv(clientsock,&payload,header.payload_size,MSG_WAITALL);
     if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; return retres; }
-    return AddToMessageTable(mt,1,1,&header,payload);
+    retres= AddToMessageTable(mt,1,1,&header,payload);
+    fprintf(stderr,"RecvPacketAndPassToMT complete with payload----------------\n");
+    return retres;
    } else
    {
      fprintf(stderr,"RecvPacketAndPassToMT with no payload\n");
@@ -134,7 +138,7 @@ struct failint RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt)
 
   retres= AddToMessageTable(mt,1,0,&header,0);
 
-  fprintf(stderr,"RecvPacketAndPassToMT complete\n");
+  fprintf(stderr,"RecvPacketAndPassToMT complete ----------------\n");
   return retres;
 }
 
