@@ -33,7 +33,7 @@ int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int
 int DeleteVariable_Database(struct VariableShare * vsh,char * var_name);
 struct failint FindVariable_Database(struct VariableShare * vsh,char * var_name);
 
-int  MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,char * variable_name,int clientsock);
+int  MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,unsigned int var_id,int clientsock);
 
 int CanWriteTo_VariableDatabase(struct VariableShare * vsh,unsigned int var_spot);
 int CanReadFrom_VariableDatabase(struct VariableShare * vsh,unsigned int var_spot);

@@ -262,7 +262,7 @@ int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigne
       fprintf(stderr,"Could not add Request_Variable to local MessageTable STEP 2\n");
       return 0;
    }
-
+  fprintf(stderr,"Request_ReadVariable ending successfully\n");
   return 1;
 }
 
@@ -271,7 +271,7 @@ int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,s
   fprintf(stderr,"AcceptRequest_ReadVariable called for peer_id %u ,  socket %u \n",peer_id,peersock);
   struct PacketHeader header = mt->table[mt_id].header;
   unsigned int var_id = header.var_id;
-  header.operation_type=WRITETO; // Only change message type the rest remains the same
+  header.operation_type=RESP_WRITETO; // Only change message type the rest remains the same
   header.payload_size = vsh->share.variables[var_id].size_of_ptr;
 
   struct failint res=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,vsh->share.variables[var_id].ptr);
@@ -283,7 +283,7 @@ int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,s
 
 
   WaitForSuccessIndicatorAtMessageTableItem(&vsh->peer_list[peer_id].message_queue,res.value);
-
+  fprintf(stderr,"AcceptRequest_ReadVariable ending successfully\n");
   return 1;
 }
 
@@ -317,8 +317,17 @@ int AcceptRequest_SignalChangeVariable(struct VariableShare * vsh,unsigned int p
 
   fprintf(stderr,"Todo check about var permissions here in case a SIGNALMSGFAILURE needs to be sent back\n");
 
+  if ( MarkVariableAsNeedsRefresh_VariableDatabase(vsh,header.var_id,peersock) )
+   {
+     fprintf(stderr,"Peer Signaled that variable %u changed \n",header.var_id);
+       header.operation_type=SIGNALMSGSUCCESS; // Only change message type the rest remains the same
+   } else
+   {
+     fprintf(stderr,"Error Peer Signaled that a variable that does not exist (%u) changed \n",header.var_id);
+       header.operation_type=SIGNALMSGFAILURE; // Only change message type the rest remains the same
+   }
 
-  header.operation_type=SIGNALMSGSUCCESS; // Only change message type the rest remains the same
+
   struct failint res=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,0);
   if (res.failed) { fprintf(stderr,"Could not add AcceptRequest_Variable to local MessageTable\n"); return 0; }
 

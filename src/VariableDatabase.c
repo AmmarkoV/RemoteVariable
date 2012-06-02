@@ -224,22 +224,12 @@ int VariableIdExists(struct VariableShare * vsh,unsigned int var_id)
   return 1;
 }
 
-int MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,char * variable_name,int clientsock)
+int MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,unsigned int var_id,int clientsock)
 {
-
-   struct failint res=FindVariable_Database(vsh,variable_name);
-
-   if ( res.failed )
-    {
-      fprintf(stderr,"Variable %s not found , cannot be refreshed to local\n",variable_name);
-    } else
-    {
-      int var_id = res.value;
-      fprintf(stderr,"Variable %s has been marked , as \"needs refresh\" \n",variable_name);
-      vsh->share.variables[var_id].flag_needs_refresh_from_sock = clientsock;
-      return 1;
-    }
-   return 0;
+   if (!VariableIdExists(vsh,var_id)) { fprintf(stderr,"Variable addressed ( %u ) by MarkVariableAsNeedsRefresh_VariableDatabase does not exist \n",var_id); return 0; }
+   fprintf(stderr,"Variable %u has been marked , as \"needs refresh\" \n",var_id);
+   vsh->share.variables[var_id].flag_needs_refresh_from_sock = clientsock;
+   return 1;
 }
 
 int IfLocalVariableChanged_SignalUpdateToJoblist(struct VariableShare * vsh,unsigned int var_id)

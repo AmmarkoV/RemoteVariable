@@ -85,12 +85,12 @@ struct failint SendPacketPassedToMT(int clientsock,struct MessageTable * mt,unsi
       return retres;
    }
 
-  int opres=send(clientsock,&mt->table[item_num].header,sizeof(mt->table[item_num].header),0);
+  int opres=send(clientsock,&mt->table[item_num].header,sizeof(mt->table[item_num].header),MSG_WAITALL);
   if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; return retres; }
 
   if ( mt->table[item_num].header.payload_size > 0 )
    {
-     opres=send(clientsock,&mt->table[item_num].payload,mt->table[item_num].header.payload_size,0);
+     opres=send(clientsock,&mt->table[item_num].payload,mt->table[item_num].header.payload_size,MSG_WAITALL);
      if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; return retres; }
    }
 
@@ -171,7 +171,6 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
 
   // Set socket to nonblocking mode..!
   int rest_perms = fcntl(peersock,F_GETFL,0);
-  fcntl(peersock,F_SETFL,rest_perms | O_NONBLOCK);
 
 
   unsigned int table_iterator=0;
@@ -179,7 +178,9 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
   while (1)
   {
    /* ------------------------------------------------- RECEIVE PART ------------------------------------------------- */
-   data_received = recv(peersock,&incoming_packet,sizeof(incoming_packet), MSG_DONTWAIT |MSG_PEEK);
+   fcntl(peersock,F_SETFL,rest_perms | O_NONBLOCK);
+     data_received = recv(peersock,&incoming_packet,sizeof(incoming_packet), MSG_DONTWAIT |MSG_PEEK);
+   fcntl(peersock,F_SETFL,rest_perms); // restore sockets to prior blocking state ( TODO: add de init code afterwards )
 
    if (data_received==sizeof(incoming_packet))
    {
@@ -239,7 +240,6 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
 
   }
 
-  fcntl(peersock,F_SETFL,rest_perms); // restore sockets to prior blocking state ( TODO: add de init code afterwards )
   RemPeerBySock(vsh,peersock);
 
 }

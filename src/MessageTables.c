@@ -121,8 +121,10 @@ int WaitForSuccessIndicatorAtMessageTableItem(struct MessageTable *mt , unsigned
   unsigned int our_incremental_value=mt->table[mt_id].header.incremental_value;
   unsigned int done_waiting=0;
   unsigned int mt_traverse=0;
-  while (done_waiting)
+  while (!done_waiting)
    {
+     if(mt->message_queue_current_length>0)
+     {
        if (our_incremental_value==mt->table[mt_traverse].header.incremental_value)
        {
          if (SIGNALMSGSUCCESS==mt->table[mt_traverse].header.operation_type)
@@ -138,7 +140,7 @@ int WaitForSuccessIndicatorAtMessageTableItem(struct MessageTable *mt , unsigned
        }
 
        ++mt_traverse;
-
+     }
        if (mt_traverse>=mt->message_queue_current_length) { mt_traverse=0; }
        usleep(10);
    }
@@ -158,14 +160,20 @@ int WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *mt , unsigne
   unsigned int our_incremental_value=0;
   unsigned int done_waiting=0;
   unsigned int mt_traverse=0;
-  while (done_waiting)
+  while (!done_waiting)
    {
+
+     if(mt->message_queue_current_length>0)
+     {
        if (our_incremental_value==mt->table[mt_traverse].header.incremental_value)
        {
          if (RESP_WRITETO==mt->table[mt_traverse].header.operation_type)
             {
               if ( (var_id==mt->table[mt_traverse].header.var_id) || (vsh->share.variables[var_id].size_of_ptr!=mt->table[mt_traverse].header.payload_size) )
               {
+
+                unsigned int old_val = vsh->share.variables[var_id].ptr;
+                fprintf(stderr,"Copying a fresh value for variable %u , was %u now will become %u\n",var_id,old_val,mt->table[mt_traverse].header.var_id);
                 memcpy(vsh->share.variables[var_id].ptr,mt->table[mt_traverse].payload,vsh->share.variables[var_id].size_of_ptr);
                 RemFromMessageTableByIncrementalValue(mt,our_incremental_value);
                 return 1;
@@ -179,7 +187,7 @@ int WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *mt , unsigne
        }
 
        ++mt_traverse;
-
+     }
        if (mt_traverse>=mt->message_queue_current_length) { mt_traverse=0; }
        usleep(10);
    }
