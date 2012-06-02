@@ -249,7 +249,7 @@ int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigne
   struct failint res=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,0);
   if (res.failed)
    {
-      fprintf(stderr,"Could not add Request_Variable to local MessageTable STEP 1\n");
+      fprintf(stderr,"ERROR : Could not add Request_Variable to local MessageTable STEP 1\n");
       return 0;
    }
 
@@ -266,8 +266,9 @@ int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigne
       RemFromMessageTableByIncrementalValue(&vsh->peer_list[peer_id].message_queue,header.incremental_value);
       return 0;
    }
-  fprintf(stderr,"Request_ReadVariable ending successfully\n");
+
   RemFromMessageTableByIncrementalValue(&vsh->peer_list[peer_id].message_queue,header.incremental_value);
+  fprintf(stderr,"Request_ReadVariable ending successfully\n");
   return 1;
 }
 
@@ -275,14 +276,13 @@ int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,s
 {
   struct PacketHeader header = mt->table[mt_id].header;
   vsh->peer_list[peer_id].incremental_value=header.incremental_value;
-  unsigned int var_id = header.var_id;
   header.operation_type=RESP_WRITETO; // Only change message type the rest remains the same
-  header.payload_size = vsh->share.variables[var_id].size_of_ptr;
+  header.payload_size = vsh->share.variables[header.var_id].size_of_ptr;
 
 
   fprintf(stderr,"AcceptRequest_ReadVariable called for peer_id %u ,  socket %u , incremental value %u  \n",peer_id,peersock,header.incremental_value);
 
-  struct failint res=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,vsh->share.variables[var_id].ptr);
+  struct failint res=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,vsh->share.variables[header.var_id].ptr);
   if (res.failed)
    {
       fprintf(stderr,"Could not add AcceptRequest_ReadVariable to local MessageTable\n");

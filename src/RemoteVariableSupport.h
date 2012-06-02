@@ -67,6 +67,7 @@ struct PacketHeader
 
 struct MessageTableItem
 {
+   unsigned char executed;
    unsigned char remove;
    unsigned char incoming;
    unsigned char sent;

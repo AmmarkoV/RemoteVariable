@@ -78,7 +78,7 @@ void PrintMessageType(struct PacketHeader *header)
 struct failint SendPacketPassedToMT(int clientsock,struct MessageTable * mt,unsigned int item_num)
 {
   struct failint retres={0};
-  fprintf(stderr,"Trying SendPacketPassedToMT\n");
+  fprintf(stderr,"Trying SendPacketPassedToMT , inc value %u >>>>>>>>>>>>>>>>>>>>>>\n",mt->table[item_num].header.incremental_value);
 
   if (mt->table[item_num].incoming)
    {
@@ -101,6 +101,8 @@ struct failint SendPacketPassedToMT(int clientsock,struct MessageTable * mt,unsi
   mt->table[item_num].sent=1;
   retres.value=item_num;
   retres.failed=0;
+
+  fprintf(stderr,"SendPacketPassedToMT complete\n");
   return retres;
 }
 
@@ -108,7 +110,7 @@ struct failint RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt)
 {
   struct failint retres={0};
 
-  fprintf(stderr,"Trying RecvPacketAndPassToMT\n");
+  fprintf(stderr,"Trying RecvPacketAndPassToMT <<<<<<<<<<<<<<<<<<<<<<<\n");
 
   struct PacketHeader header;
   int opres=recv(clientsock,&header,sizeof(header),MSG_WAITALL);
@@ -117,6 +119,7 @@ struct failint RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt)
 
 
   PrintMessageType(&header);
+  fprintf(stderr," inc value %u \n",header.incremental_value);
 
   if ( header.payload_size > 0 )
    {
@@ -130,7 +133,10 @@ struct failint RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt)
      fprintf(stderr,"RecvPacketAndPassToMT with no payload\n");
    }
 
-  return AddToMessageTable(mt,1,0,&header,0);
+  retres= AddToMessageTable(mt,1,0,&header,0);
+
+  fprintf(stderr,"RecvPacketAndPassToMT complete\n");
+  return retres;
 }
 
 
@@ -189,7 +195,7 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
    {
     res=RecvPacketAndPassToMT(peersock,mt);
     if (!res.failed)
-    {
+    {/*
       mt_id=res.value;
       switch ( incoming_packet.operation_type )
       {
@@ -202,7 +208,7 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
         case SIGNALMSGFAILURE : fprintf(stderr,"SIGNALMSGFAILURE received packet doesnt trigger New Protocol Request\n"); break;
         case SYNC : fprintf(stderr,"SYNC received packet doesnt trigger New Protocol Request\n"); break;
         default : fprintf(stderr,"Unhandled incoming packet operation ( %u ) \n",incoming_packet.operation_type); break;
-      };
+      };*/
     }
    } else
    if (data_received<0)
@@ -242,7 +248,7 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
   }
 
   RemPeerBySock(vsh,peersock);
-
+  return 0;
 }
 
 
@@ -264,9 +270,30 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
   while (1)
   {
 
+    for (mt_id=0; mt_id<mt->message_queue_current_length; mt_id++)
+    {
+      if (!mt->table[mt_id].executed)
+      {
+       switch ( mt->table[mt_id].header.operation_type )
+       {
+        case NOACTION : fprintf(stderr,"NOACTION received packet doesnt trigger New Protocol Request\n"); break;
+        case RESP_WRITETO : fprintf(stderr,"RESP_WRITETO received packet doesnt trigger New Protocol Request\n"); break;
+        case WRITETO:  AcceptRequest_WriteVariable(vsh,peer_id,mt,mt_id,peersock); break;
+        case READFROM: AcceptRequest_ReadVariable(vsh,peer_id,mt,mt_id,peersock); break;
+        case SIGNALCHANGED : AcceptRequest_SignalChangeVariable(vsh,peer_id,mt,mt_id,peersock); break;
+        case SIGNALMSGSUCCESS : fprintf(stderr,"SIGNALMSGSUCCESS received packet doesnt trigger New Protocol Request\n"); break;
+        case SIGNALMSGFAILURE : fprintf(stderr,"SIGNALMSGFAILURE received packet doesnt trigger New Protocol Request\n"); break;
+        case SYNC : fprintf(stderr,"SYNC received packet doesnt trigger New Protocol Request\n"); break;
+        default : fprintf(stderr,"Unhandled incoming packet operation ( %u ) \n",incoming_packet.operation_type); break;
+       };
+       mt->table[mt_id].executed=1;
+      }
+    }
+
     //Pass JobTables To message tables
     ExecutePendingJobsForPeerID(vsh,peer_id);
 
     usleep(100);
   }
+  return 0;
 }

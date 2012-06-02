@@ -7,6 +7,21 @@
 #include <stdlib.h>
 #include "SocketAdapterToMessageTables.h"
 
+
+int EmptyMTItem(struct MessageTableItem * mti)
+{
+  mti->header.incremental_value=0;
+  mti->header.operation_type=0;
+  mti->header.var_id=0;
+  mti->header.payload_size=0;
+  mti->remove=0;
+  mti->executed=0;
+  mti->incoming=0;
+  mti->sent=0;
+  mti->payload=0;
+  mti->payload_local_malloc=0;
+}
+
 int AllocateMessageQueue(struct MessageTable *  mt,unsigned int total_messages)
 {
    if (mt==0) { error("complain"); return 0; }
@@ -20,15 +35,7 @@ int AllocateMessageQueue(struct MessageTable *  mt,unsigned int total_messages)
    unsigned int i=0;
    for (i=0; i<total_messages; i++)
     {
-      mt->table[i].header.incremental_value=0;
-      mt->table[i].header.operation_type=0;
-      mt->table[i].header.var_id=0;
-      mt->table[i].header.payload_size=0;
-      mt->table[i].remove=0;
-      mt->table[i].incoming=0;
-      mt->table[i].sent=0;
-      mt->table[i].payload=0;
-      mt->table[i].payload_local_malloc=0;
+      EmptyMTItem(&mt->table[i]);
     }
 
    mt->message_queue_total_length=total_messages;
@@ -111,6 +118,14 @@ int RemFromMessageTable(struct MessageTable * mt,unsigned int mt_id)
      mt->table[mt_id].payload=0;
    }
 
+  int i=0;
+  for (i=mt_id; i<mt->message_queue_current_length; i++)
+   {
+     mt->table[mt_id]=mt->table[mt_id+1];
+   }
+   --mt->message_queue_current_length;
+   EmptyMTItem(&mt->table[mt->message_queue_current_length]);
+
   return 1;
 }
 
@@ -173,20 +188,22 @@ while (!done_waiting)
        {
          if (SIGNALMSGSUCCESS==mt->table[mt_traverse].header.operation_type)
             {
+             fprintf(stderr,"FOUND SIGNALMSGSUCCESS!\n");
              RemFromMessageTableByIncrementalValue(mt,our_incremental_value);
              return 1;
             }  else
          if (SIGNALMSGFAILURE==mt->table[mt_traverse].header.operation_type)
             {
+             fprintf(stderr,"FOUND SIGNALMSGFAILURE!\n");
              RemFromMessageTableByIncrementalValue(mt,our_incremental_value);
              return 0;
             } else
             {
-             // fprintf(stderr," Encountered : "); PrintMessageType(&mt->table[mt_traverse].header);
+              fprintf(stderr," Encountered : "); PrintMessageType(&mt->table[mt_traverse].header);
             }
        } else
        {
-           fprintf(stderr,"Dismissing group value %u , we have %u\n",mt->table[mt_traverse].header.incremental_value,our_incremental_value);
+           fprintf(stderr,"Dismissing group value %u , we have %u , total %u queued messages \n",mt->table[mt_traverse].header.incremental_value,our_incremental_value,mt->message_queue_current_length);
        }
 
        ++mt_traverse;
