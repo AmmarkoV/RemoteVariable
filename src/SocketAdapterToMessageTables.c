@@ -70,8 +70,7 @@ void PrintMessageType(struct PacketHeader *header)
              fprintf(stderr," Unknown message type %u \n",header->operation_type);
              break;
       };
-
-    fprintf(stderr,"\n");
+  fprintf(stderr," ");
 }
 
 

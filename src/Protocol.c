@@ -263,11 +263,9 @@ int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigne
   if (res.failed)
    {
       fprintf(stderr,"Could not add Request_Variable to local MessageTable STEP 2\n");
-      RemFromMessageTableByIncrementalValue(&vsh->peer_list[peer_id].message_queue,header.incremental_value);
       return 0;
    }
 
-  RemFromMessageTableByIncrementalValue(&vsh->peer_list[peer_id].message_queue,header.incremental_value);
   fprintf(stderr,"Request_ReadVariable ending successfully\n");
   return 1;
 }
@@ -345,7 +343,6 @@ int AcceptRequest_SignalChangeVariable(struct VariableShare * vsh,unsigned int p
   if (res.failed) { fprintf(stderr,"Could not add AcceptRequest_Variable to local MessageTable\n"); return 0; }
 
   fprintf(stderr,"Request_SignalChangeVariable ending successfully\n");
-  RemFromMessageTableByIncrementalValue(&vsh->peer_list[peer_id].message_queue,header.incremental_value);
   return 1;
 }
 

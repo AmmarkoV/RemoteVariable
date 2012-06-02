@@ -22,6 +22,16 @@ int EmptyMTItem(struct MessageTableItem * mti)
   mti->payload_local_malloc=0;
 }
 
+
+void PrintMessageTableItem(struct MessageTableItem * mti)
+{
+  fprintf(stderr,"MessageTableItem head.incval= %u , head.optype= %u , head.var_id= %u , head.pay_size=%u )",mti->header.incremental_value,mti->header.operation_type,mti->header.var_id,mti->header.payload_size);
+   PrintMessageType(&mti->header);
+   fprintf(stderr,"remove= %u , exec= %u , incoming= %u , sent=%u payload_localmalloc=%u , payload=%p)\n",
+             mti->remove,mti->executed,mti->incoming,mti->sent,mti->payload_local_malloc,mti->payload);
+}
+
+
 int AllocateMessageQueue(struct MessageTable *  mt,unsigned int total_messages)
 {
    if (mt==0) { error("complain"); return 0; }
@@ -106,6 +116,10 @@ struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,
 int RemFromMessageTable(struct MessageTable * mt,unsigned int mt_id)
 {
   if (mt->message_queue_current_length <= mt_id ) { error("complain here\n"); return 0; }
+  fprintf(stderr,"RemFromMessageTable -> mt_id %u \n",mt_id);
+  PrintMessageTableItem(&mt->table[mt_id]);
+
+
   mt->table[mt_id].remove=0;
   mt->table[mt_id].payload_local_malloc=0;
 
@@ -189,13 +203,11 @@ while (!done_waiting)
          if (SIGNALMSGSUCCESS==mt->table[mt_traverse].header.operation_type)
             {
              fprintf(stderr,"FOUND SIGNALMSGSUCCESS!\n");
-             RemFromMessageTableByIncrementalValue(mt,our_incremental_value);
              return 1;
             }  else
          if (SIGNALMSGFAILURE==mt->table[mt_traverse].header.operation_type)
             {
              fprintf(stderr,"FOUND SIGNALMSGFAILURE!\n");
-             RemFromMessageTableByIncrementalValue(mt,our_incremental_value);
              return 0;
             } else
             {
@@ -242,7 +254,6 @@ int WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *mt , unsigne
                 unsigned int * old_val = (unsigned int *) vsh->share.variables[var_id].ptr;
                 fprintf(stderr,"Copying a fresh value for variable %u , was %u now will become %u\n",var_id,*old_val,mt->table[mt_traverse].header.var_id);
                 memcpy(vsh->share.variables[var_id].ptr,mt->table[mt_traverse].payload,vsh->share.variables[var_id].size_of_ptr);
-                RemFromMessageTableByIncrementalValue(mt,our_incremental_value);
                 return 1;
               } else
               {
