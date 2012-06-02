@@ -193,7 +193,7 @@ int Accept_Version_Handshake(struct VariableShare * vsh,int peersock)
 
 int Request_WriteVariable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,int peersock)
 {
-  ++vsh->peer_list[peer_id].incremental_value;
+ // ++vsh->peer_list[peer_id].incremental_value;
   /*struct PacketHeader header;
   header.incremental_value=vsh->peer_list[peer_id].incremental_value;
   header.operation_type=READFROM;
@@ -270,6 +270,7 @@ int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,s
 {
   fprintf(stderr,"AcceptRequest_ReadVariable called for peer_id %u ,  socket %u \n",peer_id,peersock);
   struct PacketHeader header = mt->table[mt_id].header;
+  vsh->peer_list[peer_id].incremental_value=header.incremental_value;
   unsigned int var_id = header.var_id;
   header.operation_type=RESP_WRITETO; // Only change message type the rest remains the same
   header.payload_size = vsh->share.variables[var_id].size_of_ptr;
@@ -314,6 +315,7 @@ int AcceptRequest_SignalChangeVariable(struct VariableShare * vsh,unsigned int p
 {
   fprintf(stderr,"AcceptRequest_SignalChangeVariable called for peer_id %u ,  socket %u \n",peer_id,peersock);
   struct PacketHeader header = mt->table[mt_id].header;
+  vsh->peer_list[peer_id].incremental_value=header.incremental_value;
 
   fprintf(stderr,"Todo check about var permissions here in case a SIGNALMSGFAILURE needs to be sent back\n");
 

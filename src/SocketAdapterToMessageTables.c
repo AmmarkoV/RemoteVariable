@@ -7,6 +7,8 @@
 
 #include "MessageTables.h"
 #include "VariableDatabase.h"
+#include "Protocol.h"
+#include "Peers.h"
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -145,6 +147,7 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
   struct MessageTable * mt = &vsh->peer_list[peer_id].message_queue;
   struct failint res;
   unsigned int mt_id=0;
+  unsigned int table_iterator=0;
 
   fprintf(stderr,"SocketAdapterToMessageTable_Thread started , peer_id = %u , peer socket = %d , master = %u \n",peer_id,peersock,vsh->this_address_space_is_master);
 
@@ -173,7 +176,7 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
   int rest_perms = fcntl(peersock,F_GETFL,0);
 
 
-  unsigned int table_iterator=0;
+
   int data_received = 0;
   while (1)
   {
@@ -217,15 +220,9 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
         fprintf(stderr,"A part of a incoming packet just arrived , sized %u \n",data_received);
    }
 
-
-
-    //First delete from message table messages pending removal
-    DeleteRemovedFromMessageTable(mt);
-
-    //Pass JobTables To message tables
-    ExecutePendingJobsForPeerID(vsh,peer_id);
-
-   /*------------------------------------------------- SEND PART -------------------------------------------------*/
+ /*------------------------------------------------- SEND PART -------------------------------------------------*/
+   if (mt->message_queue_current_length>0)
+   {
     //if (mt->message_queue_current_length!=0) { fprintf(stderr,"Table iterator scanning %u messages \n",mt->message_queue_current_length); }
     for ( table_iterator=0; table_iterator< mt->message_queue_current_length; table_iterator++)
     {
@@ -236,10 +233,36 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
                           { fprintf(stderr,"Success SendPacketPassedToMT for table num %u and socket %u \n",table_iterator,peersock); }
         }
     }
-
+   }
 
   }
 
   RemPeerBySock(vsh,peersock);
 
+}
+
+
+
+void * JobAndMessageTableExecutor_Thread(void * ptr)
+{
+  struct SocketAdapterToMessageTablesContext * thread_context=(struct SocketAdapterToMessageTablesContext *) ptr;
+  struct VariableShare * vsh = thread_context->vsh;
+  unsigned int peer_id =  thread_context->peer_id;
+  int peersock = thread_context->peersock;
+  thread_context->keep_var_on_stack=0;
+
+  struct PacketHeader incoming_packet;
+  struct MessageTable * mt = &vsh->peer_list[peer_id].message_queue;
+  struct failint res;
+  unsigned int mt_id=0;
+  unsigned int table_iterator=0;
+
+  while (1)
+  {
+    //First delete from message table messages pending removal
+    DeleteRemovedFromMessageTable(mt);
+
+    //Pass JobTables To message tables
+    ExecutePendingJobsForPeerID(vsh,peer_id);
+  }
 }

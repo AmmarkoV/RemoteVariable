@@ -68,6 +68,10 @@ int GenerateNewClientLoop(struct VariableShare * vsh,int clientsock,struct socka
   int retres = pthread_create(&vsh->peer_list[peer_id].peer_thread,0,SocketAdapterToMessageTable_Thread,(void*) &pass_to_thread);
   if ( retres==0 ) { while (pass_to_thread.keep_var_on_stack) { usleep(10); } } // <- Keep PeerServerContext in stack for long enough :P
 
+  pass_to_thread.keep_var_on_stack = 1;
+  retres = pthread_create( &vsh->client_thread, 0 ,  JobAndMessageTableExecutor_Thread ,(void*) &pass_to_thread);
+  if ( retres==0 ) { while (pass_to_thread.keep_var_on_stack) { usleep(10); } } // <- Keep PeerServerContext in stack for long enough :P
+
   fprintf(stderr,"done\n");
 
   if (retres!=0) retres = 0; else
@@ -199,6 +203,13 @@ StartRemoteVariableConnection(struct VariableShare * vsh)
    vsh->stop_client_thread=0;
    int retres = pthread_create( &vsh->client_thread, 0 ,  SocketAdapterToMessageTable_Thread ,(void*) &pass_to_thread);
    if ( retres==0 ) { while (pass_to_thread.keep_var_on_stack) { usleep(10); } } // <- Keep PeerServerContext in stack for long enough :P
+
+   pass_to_thread.keep_var_on_stack = 1;
+   retres = pthread_create( &vsh->client_thread, 0 ,  JobAndMessageTableExecutor_Thread ,(void*) &pass_to_thread);
+   if ( retres==0 ) { while (pass_to_thread.keep_var_on_stack) { usleep(10); } } // <- Keep PeerServerContext in stack for long enough :P
+
+
+
 
    if (retres!=0) retres = 0; else
                   retres = 1;
