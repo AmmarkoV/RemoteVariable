@@ -235,13 +235,16 @@ WRITETO
 
 int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,int peersock)
 {
-  fprintf(stderr,"Request_ReadVariable called for peer_id %u , var_id %u , socket %u \n",peer_id,var_id,peersock);
   ++vsh->peer_list[peer_id].incremental_value;
   struct PacketHeader header;
   header.incremental_value=vsh->peer_list[peer_id].incremental_value;
   header.operation_type=READFROM;
   header.var_id=var_id;
   header.payload_size=0;
+
+  fprintf(stderr,"Request_ReadVariable called for peer_id %u , var_id %u , socket %u , incremental value %u  \n",peer_id,var_id,peersock,header.incremental_value);
+
+
 
   struct failint res=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,0);
   if (res.failed)
@@ -260,20 +263,24 @@ int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigne
   if (res.failed)
    {
       fprintf(stderr,"Could not add Request_Variable to local MessageTable STEP 2\n");
+      RemFromMessageTableByIncrementalValue(&vsh->peer_list[peer_id].message_queue,header.incremental_value);
       return 0;
    }
   fprintf(stderr,"Request_ReadVariable ending successfully\n");
+  RemFromMessageTableByIncrementalValue(&vsh->peer_list[peer_id].message_queue,header.incremental_value);
   return 1;
 }
 
 int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,struct MessageTable * mt,unsigned int mt_id,int peersock)
 {
-  fprintf(stderr,"AcceptRequest_ReadVariable called for peer_id %u ,  socket %u \n",peer_id,peersock);
   struct PacketHeader header = mt->table[mt_id].header;
   vsh->peer_list[peer_id].incremental_value=header.incremental_value;
   unsigned int var_id = header.var_id;
   header.operation_type=RESP_WRITETO; // Only change message type the rest remains the same
   header.payload_size = vsh->share.variables[var_id].size_of_ptr;
+
+
+  fprintf(stderr,"AcceptRequest_ReadVariable called for peer_id %u ,  socket %u , incremental value %u  \n",peer_id,peersock,header.incremental_value);
 
   struct failint res=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,vsh->share.variables[var_id].ptr);
   if (res.failed)
@@ -295,13 +302,15 @@ int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,s
 
 int Request_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,int peersock)
 {
-  fprintf(stderr,"Request_SignalChangeVariable called for peer_id %u , var_id %u , socket %u \n",peer_id,var_id,peersock);
   ++vsh->peer_list[peer_id].incremental_value;
   struct PacketHeader header;
   header.incremental_value=vsh->peer_list[peer_id].incremental_value;
   header.operation_type=SIGNALCHANGED;
   header.var_id=var_id;
   header.payload_size=0;
+
+  fprintf(stderr,"Request_SignalChangeVariable called for peer_id %u , var_id %u , socket %u , incremental value %u \n",peer_id,var_id,peersock,vsh->peer_list[peer_id].incremental_value);
+
 
   struct failint res=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,0);
   if (res.failed) { fprintf(stderr,"Could not add SignalChange_Variable to local MessageTable\n"); return 0; }
@@ -313,9 +322,11 @@ int Request_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id
 
 int AcceptRequest_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id,struct MessageTable * mt,unsigned int mt_id,int peersock)
 {
-  fprintf(stderr,"AcceptRequest_SignalChangeVariable called for peer_id %u ,  socket %u \n",peer_id,peersock);
   struct PacketHeader header = mt->table[mt_id].header;
   vsh->peer_list[peer_id].incremental_value=header.incremental_value;
+
+  fprintf(stderr,"AcceptRequest_SignalChangeVariable called for peer_id %u ,  socket %u , local incremental value , msg incremental value %u \n",peer_id,peersock,vsh->peer_list[peer_id].incremental_value,header.incremental_value);
+
 
   fprintf(stderr,"Todo check about var permissions here in case a SIGNALMSGFAILURE needs to be sent back\n");
 
@@ -334,6 +345,7 @@ int AcceptRequest_SignalChangeVariable(struct VariableShare * vsh,unsigned int p
   if (res.failed) { fprintf(stderr,"Could not add AcceptRequest_Variable to local MessageTable\n"); return 0; }
 
   fprintf(stderr,"Request_SignalChangeVariable ending successfully\n");
+  RemFromMessageTableByIncrementalValue(&vsh->peer_list[peer_id].message_queue,header.incremental_value);
   return 1;
 }
 

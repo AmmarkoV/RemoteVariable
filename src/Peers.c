@@ -1,4 +1,5 @@
 #include "Peers.h"
+#include "MessageTables.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,7 +23,7 @@ struct failint AddPeer(struct VariableShare * vsh,char * name,unsigned int port 
        vsh->peer_list[pos].peer_state=VSS_WAITING_FOR_HANDSHAKE;
        vsh->peer_list[pos].incremental_value=0;
 
-       AllocateMessageQueue(&vsh->peer_list[pos].message_queue);
+       AllocateMessageQueue(&vsh->peer_list[pos].message_queue,100);
 
        ++vsh->total_peers;
        retres.value=pos;

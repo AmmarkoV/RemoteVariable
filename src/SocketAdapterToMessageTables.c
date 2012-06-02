@@ -220,6 +220,10 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
         fprintf(stderr,"A part of a incoming packet just arrived , sized %u \n",data_received);
    }
 
+
+    //First delete from message table messages pending removal
+    DeleteRemovedFromMessageTable(mt);
+
  /*------------------------------------------------- SEND PART -------------------------------------------------*/
    if (mt->message_queue_current_length>0)
    {
@@ -259,10 +263,10 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
 
   while (1)
   {
-    //First delete from message table messages pending removal
-    DeleteRemovedFromMessageTable(mt);
 
     //Pass JobTables To message tables
     ExecutePendingJobsForPeerID(vsh,peer_id);
+
+    usleep(100);
   }
 }

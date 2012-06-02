@@ -16,6 +16,21 @@ int AllocateMessageQueue(struct MessageTable *  mt,unsigned int total_messages)
    mt->table = (struct MessageTableItem *) malloc( total_messages * sizeof(struct MessageTableItem) );
    if (mt->table==0) { error("Could not allocate memory for new Message Table!"); return 0; }
 
+
+   unsigned int i=0;
+   for (i=0; i<total_messages; i++)
+    {
+      mt->table[i].header.incremental_value=0;
+      mt->table[i].header.operation_type=0;
+      mt->table[i].header.var_id=0;
+      mt->table[i].header.payload_size=0;
+      mt->table[i].remove=0;
+      mt->table[i].incoming=0;
+      mt->table[i].sent=0;
+      mt->table[i].payload=0;
+      mt->table[i].payload_local_malloc=0;
+    }
+
    mt->message_queue_total_length=total_messages;
 
   return 1;
@@ -23,8 +38,17 @@ int AllocateMessageQueue(struct MessageTable *  mt,unsigned int total_messages)
 
 int FreeMessageQueue(struct MessageTable * mt)
 {
-    free(mt);
-    return 0;
+    int i=0;
+    for (i=0; i<mt->message_queue_current_length; i++)
+     {
+        if (mt->table[i].payload_local_malloc)
+         {
+           mt->table[i].payload_local_malloc=0;
+           free(mt->table[i].payload);
+           mt->table[i].payload=0;
+         }
+     }
+    return 1;
 }
 
 struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,unsigned int free_malloc_at_disposal,struct PacketHeader * header,void * payload)
@@ -44,6 +68,7 @@ struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,
   mt->table[mt_pos].header=*header;
   mt->table[mt_pos].remove=0;
   mt->table[mt_pos].incoming=incoming;
+  mt->table[mt_pos].sent=0;
 
   if (mt->table[mt_pos].payload!=0)
   {
