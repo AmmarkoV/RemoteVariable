@@ -266,11 +266,14 @@ int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigne
       return 0;
    }
 
+  //Wait for message to be sent
+  WaitForMessageTableItemToBeSent(&vsh->peer_list[peer_id].message_queue,res2.value);
+
+
   //The messages sent and received can now be removed..!
   SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].message_queue.table[res1.value]);
   SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].message_queue.table[res2.value]);
   SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].message_queue.table[resRESP.value]);
-  //fprintf(stderr,"Request_ReadVariable ending successfully\n");
   return 1;
 }
 
@@ -309,11 +312,12 @@ int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,s
    }
 
 
-  WaitForSuccessIndicatorAtMessageTableItem(&vsh->peer_list[peer_id].message_queue,res.value);
+  struct failint res2=WaitForSuccessIndicatorAtMessageTableItem(&vsh->peer_list[peer_id].message_queue,res.value);
 
   //The messages sent and received can now be removed..!
   SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].message_queue.table[mt_id]);
   SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].message_queue.table[res.value]);
+  SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].message_queue.table[res2.value]);
   return 1;
 }
 
@@ -385,9 +389,12 @@ int AcceptRequest_SignalChangeVariable(struct VariableShare * vsh,unsigned int p
        header.operation_type=SIGNALMSGFAILURE; // Only change message type the rest remains the same
    }
 
-  //We send the aforementioned signala nad gracefully exit
+  //We send the aforementioned signal and gracefully exit
   struct failint res=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,0);
   if (res.failed) { fprintf(stderr,"Could not add AcceptRequest_Variable to local MessageTable\n"); return 0; }
+
+  //Wait for message to be sent
+  WaitForMessageTableItemToBeSent(&vsh->peer_list[peer_id].message_queue,res.value);
 
   SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].message_queue.table[mt_id]);
   SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].message_queue.table[res.value]);

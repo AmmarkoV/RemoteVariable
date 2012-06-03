@@ -8,6 +8,40 @@
 #include "SocketAdapterToMessageTables.h"
 
 
+int WaitForMessageLockToClear(struct MessageTable * mt)
+{
+  if (mt==0) { fprintf(stderr,"WaitForMessageLockToClear skipped by null pointer \n"); return 0; }
+  unsigned int waitloops=0;
+  while (mt->locked)
+   {
+     usleep(1000);
+     ++waitloops;
+   }
+
+  if (waitloops) { fprintf(stderr,"WaitForMessageLockToClear waited for %u ms ( loops )\n",waitloops); }
+  return 1;
+}
+
+int LockMessageTable(struct MessageTable * mt)
+{
+  if (mt==0) { fprintf(stderr,"LockMessageTable skipped by null pointer \n"); return 0; }
+  if (mt->locked!=0) {
+                      fprintf(stderr,"LockMessageTable found locked variable ! , waiting for it to clear out\n");
+                      WaitForMessageLockToClear(mt);
+                    }
+  mt->locked=1;
+  return 1;
+}
+
+int UnlockMessageTable(struct MessageTable * mt)
+{
+  if (mt==0) { fprintf(stderr,"UnlockSocket skipped by null pointer \n"); return 0; }
+  mt->locked=0;
+  return 1;
+}
+
+
+
 void EmptyMTItem(struct MessageTableItem * mti,unsigned int ignore_payload)
 {
   if (mti==0) {fprintf(stderr,"EmptyMTIItem called with null parameter \n "); }
@@ -16,10 +50,9 @@ if (!ignore_payload)
 {
  if (mti->payload!=0)
   {
-    fprintf(stderr,"Found uninitialized pointer , this shouldnt be here ..\n");
     if (mti->payload_local_malloc)
      {
-       fprintf(stderr,"It is a local malloc so freeing it..\n");
+       fprintf(stderr,"EmptyMTIItem found a local malloc so freeing it..\n");
        free(mti->payload);
        mti->payload_local_malloc=0;
        mti->payload=0;
@@ -66,7 +99,10 @@ int AllocateMessageQueue(struct MessageTable *  mt,unsigned int total_messages)
 {
    if (mt==0) { error("complain"); return 0; }
 
-   mt->locked=1;
+   mt->locked=0; //New allocation so cleaning it up
+   LockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------
+
+
    mt->message_queue_current_length=0;
    mt->table = (struct MessageTableItem *) malloc( total_messages * sizeof(struct MessageTableItem) );
    if (mt->table==0) { error("Could not allocate memory for new Message Table!"); return 0; }
@@ -79,13 +115,16 @@ int AllocateMessageQueue(struct MessageTable *  mt,unsigned int total_messages)
     }
 
    mt->message_queue_total_length=total_messages;
-   mt->locked=0;
+
+   UnlockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------
 
   return 1;
 }
 
 int FreeMessageQueue(struct MessageTable * mt)
 {
+    LockMessageTable(mt); // LOCK PROTECTED OPERATION will never get unlocked :P
+
     int i=0;
     for (i=0; i<mt->message_queue_current_length; i++)
      {
@@ -104,6 +143,15 @@ int FreeMessageQueue(struct MessageTable * mt)
 
 struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,unsigned int free_malloc_at_disposal,struct PacketHeader * header,void * payload)
 {
+
+  struct failint retres={0};
+  retres.failed=0;
+  retres.value=0;
+  if (mt->message_queue_current_length >= mt->message_queue_total_length) { error("AddToMessageTable complain 1\n"); retres.failed=1; return retres; }
+
+
+  LockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------
+
   fprintf(stderr,"AddToMessageTable incoming = %u , freemalloc_atdispoal = %u , payload = %p , payload_size %u ",incoming,free_malloc_at_disposal,payload,header->payload_size);
   PrintMessageType(header);
   fprintf(stderr,"\n");
@@ -113,11 +161,6 @@ struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,
 
   EmptyMTItem(&mt->table[mt_pos],0); //<- completely clean spot
 
-  struct failint retres={0};
-  retres.failed=0;
-  retres.value=0;
-
-  if (mt->message_queue_current_length >= mt->message_queue_total_length) { error("AddToMessageTable complain 1\n"); retres.failed=1; return retres; }
 
   mt->table[mt_pos].header=*header;
   mt->table[mt_pos].incoming=incoming;
@@ -135,13 +178,20 @@ struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,
 
   //fprintf(stderr,"AddToMessageTable ended , new message pos %u\n",mt_pos);
   retres.value=mt_pos;
+
+  UnlockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------
+
   return retres;
 }
 
 
 int RemFromMessageTable(struct MessageTable * mt,unsigned int mt_id)
 {
+
   if (mt->message_queue_current_length <= mt_id ) { error("complain here\n"); return 0; }
+
+  LockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------
+
   fprintf(stderr,"RemFromMessageTable -> mt_id %u \n",mt_id);
   PrintMessageTableItem(&mt->table[mt_id],mt_id);
 
@@ -155,6 +205,7 @@ int RemFromMessageTable(struct MessageTable * mt,unsigned int mt_id)
    --mt->message_queue_current_length;
    EmptyMTItem(&mt->table[mt->message_queue_current_length],1); //ignore malloc cause it is a copy
 
+  UnlockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------
   return 1;
 }
 
@@ -309,3 +360,29 @@ struct failint WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *m
   return retres;
 }
 
+
+struct failint WaitForMessageTableItemToBeSent(struct MessageTable *mt , unsigned int mt_id)
+{
+  struct failint retres;
+  retres.failed=1; retres.value=1;
+
+  if (mt==0) { fprintf(stderr,"WaitForMessageTableItemToBeSent Called with zero MessageTable\n"); return retres;}
+  if (mt->message_queue_current_length <= mt_id ) { error("WaitForMessageTableItemToBeSent mt_id out of bounds \n"); return retres; }
+ unsigned int done_waiting=0;
+  unsigned int mt_traverse=0;
+  fprintf(stderr,"WaitForMessageTableItemToBeSent  for table item %u , waiting for sent flag \n",mt_id);
+  while (!done_waiting)
+   {
+       if ( mt->table[mt_id].sent )
+        {
+           retres.failed=0;
+           retres.value=mt_id;
+           return retres;
+        }
+
+       fprintf(stderr,".WS.");
+       usleep(5000);
+   }
+
+  return retres;
+}

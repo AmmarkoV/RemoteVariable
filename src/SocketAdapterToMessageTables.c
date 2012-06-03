@@ -154,7 +154,7 @@ struct failint RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt)
     unsigned int * payload_val=(unsigned int * ) payload;
     if(sockadap_msg())fprintf(stderr,"received payload seems to be carrying value %u \n",*payload_val);
 
-    retres= AddToMessageTable(mt,1,1,&header,payload);
+    retres = AddToMessageTable(mt,1,1,&header,payload);
     if(sockadap_msg())fprintf(stderr,"RecvPacketAndPassToMT complete with payload----------------\n");
     return retres;
    } else
@@ -162,7 +162,7 @@ struct failint RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt)
      if(sockadap_msg())fprintf(stderr,"RecvPacketAndPassToMT with no payload\n");
    }
 
-  retres= AddToMessageTable(mt,1,0,&header,0);
+  retres = AddToMessageTable(mt,1,0,&header,0);
 
   if(sockadap_msg()) fprintf(stderr,"RecvPacketAndPassToMT complete ----------------\n");
   return retres;

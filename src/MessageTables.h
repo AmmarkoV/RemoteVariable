@@ -19,5 +19,5 @@ int DeleteRemovedFromMessageTable(struct MessageTable * mt);
 
 struct failint  WaitForSuccessIndicatorAtMessageTableItem(struct MessageTable *mt , unsigned int mt_id);
 struct failint  WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *mt , unsigned int mt_id,struct VariableShare *vsh ,unsigned int var_id);
-
+struct failint WaitForMessageTableItemToBeSent(struct MessageTable *mt , unsigned int mt_id);
 #endif // MESSAGETABLES_H_INCLUDED
