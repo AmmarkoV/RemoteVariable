@@ -226,14 +226,14 @@ int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigne
   ++vsh->peer_list[peer_id].incremental_value;
 
   // We also want a new header to go with our message!
-  struct PacketHeader header;
+  struct PacketHeader header={0};
   header.incremental_value=vsh->peer_list[peer_id].incremental_value;
   header.operation_type=READFROM;
   header.var_id=var_id;
   header.payload_size=0;
 
   //Just some fprintf debugging
-  fprintf(stderr,"Request_ReadVariable called for peer_id %u , var_id %u , socket %u , incremental value %u  \n",peer_id,var_id,peersock,header.incremental_value);
+  if (protocol_msg()) fprintf(stderr,"Request_ReadVariable called for peer_id %u , var_id %u , socket %u , incremental value %u  \n",peer_id,var_id,peersock,header.incremental_value);
 
 
 
@@ -283,7 +283,7 @@ int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,s
   // Secondly this incremental_value is now the last for this client , if we make a new request it should have a different inc_value than this..
   vsh->peer_list[peer_id].incremental_value=header.incremental_value;
 
-  fprintf(stderr,"AcceptRequest_ReadVariable called for peer_id %u ,  socket %u , incremental value %u  \n",peer_id,peersock,header.incremental_value);
+  if (protocol_msg()) fprintf(stderr,"AcceptRequest_ReadVariable called for peer_id %u ,  socket %u , incremental value %u  \n",peer_id,peersock,header.incremental_value);
 
   //We received a READFROM request ( otherwise this function wouldnt have been triggered so lets respond to it )
   /* TODO HERE , HANDLE PERMISSIONS ETC*/
@@ -343,7 +343,7 @@ int Request_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id
   header.payload_size=0;
 
   //Just some fprintf debugging
-  fprintf(stderr,"Request_SignalChangeVariable called for peer_id %u , var_id %u , socket %u , incremental value %u \n",peer_id,var_id,peersock,vsh->peer_list[peer_id].incremental_value);
+  if (protocol_msg()) fprintf(stderr,"Request_SignalChangeVariable called for peer_id %u , var_id %u , socket %u , incremental value %u \n",peer_id,var_id,peersock,vsh->peer_list[peer_id].incremental_value);
 
   //We add the new message to the message table , it will get consumed by the SocketAdapterToMessageTables thread
   struct failint res=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,0);
@@ -368,7 +368,7 @@ int AcceptRequest_SignalChangeVariable(struct VariableShare * vsh,unsigned int p
   // Secondly this incremental_value is now the last for this client , if we make a new request it should have a different inc_value than this..
   vsh->peer_list[peer_id].incremental_value=header.incremental_value;
 
-  fprintf(stderr,"AcceptRequest_SignalChangeVariable called for peer_id %u ,  socket %u , local incremental value %u , msg incremental value %u \n",peer_id,peersock,vsh->peer_list[peer_id].incremental_value,header.incremental_value);
+  if (protocol_msg()) fprintf(stderr,"AcceptRequest_SignalChangeVariable called for peer_id %u ,  socket %u , local incremental value %u , msg incremental value %u \n",peer_id,peersock,vsh->peer_list[peer_id].incremental_value,header.incremental_value);
 
   //We received a READFROM request ( otherwise this function wouldnt have been triggered so lets respond to it )
   /* TODO HERE , HANDLE PERMISSIONS ETC*/

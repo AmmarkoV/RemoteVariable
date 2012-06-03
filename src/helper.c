@@ -49,6 +49,15 @@ void error(char * msg)
  return;
 }
 
+int protocol_msg()
+{
+ return 1;
+}
+
+int sockadap_msg()
+{
+ return 1;
+}
 int debug_msg()
 {
  return 1;

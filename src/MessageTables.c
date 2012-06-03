@@ -160,7 +160,7 @@ int RemFromMessageTable(struct MessageTable * mt,unsigned int mt_id)
 
 int SetMessageTableItemForRemoval(struct MessageTableItem * mti)
 {
-  if (mti!=0) { fprintf(stderr,"SetMessageTableItemForRemoval called with a zero MTI \n"); return 0; }
+  if (mti==0) { fprintf(stderr,"SetMessageTableItemForRemoval called with a zero MTI \n"); return 0; }
   mti->remove=1;
   return 1;
 }

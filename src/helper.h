@@ -23,6 +23,8 @@
 
 void under_construction_msg();
 void error(char * msg);
+int protocol_msg();
+int sockadap_msg();
 int debug_msg();
 void debug_say(char * msg);
 void debug_say_nocr(char * msg);

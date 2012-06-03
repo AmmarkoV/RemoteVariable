@@ -12,13 +12,14 @@ int wait_for_var_to_become_x(volatile int * var , unsigned int timeout , unsigne
   while ( (*var!= x )&&(time_waited<timeout) ) { usleep(1000);  ++time_waited; }
   if (*var==x) {  return 1;}
 
+  fprintf(stderr,"\n\nTIMEOUT WAITING FOR %u \n\n",x);
   return 0;
 }
 
 
 int main()
 {
-    unsigned int WAIT_TIME=20000;
+    unsigned int WAIT_TIME=10000;
     printf("REMOTE VARIABLES MASTER STARTUP!!!!!!!!!!!!! \n");
     struct VariableShare * vsh = Start_VariableSharing("SHARE2","127.0.0.1",12345,"password");
     if ( vsh == 0 )

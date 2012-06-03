@@ -80,7 +80,7 @@ struct failint SendPacketPassedToMT(int clientsock,struct MessageTable * mt,unsi
   struct failint retres={0};
   retres.value=0;
   retres.failed=0;
-  fprintf(stderr,"Trying SendPacketPassedToMT message number %u , inc value %u >>>>>>>>>>>>>>>>>>>>>>",item_num,mt->table[item_num].header.incremental_value);
+  if(sockadap_msg()) fprintf(stderr,"Trying SendPacketPassedToMT message number %u , inc value %u >>>>>>>>>>>>>>>>>>>>>>",item_num,mt->table[item_num].header.incremental_value);
   PrintMessageType(&mt->table[item_num].header);
   fprintf(stderr,"\n");
 
@@ -91,8 +91,11 @@ struct failint SendPacketPassedToMT(int clientsock,struct MessageTable * mt,unsi
       return retres;
    }
 
-  fprintf(stderr,"About to send the following : \n");
-  PrintMessageTableItem(&mt->table[item_num],item_num);
+  if(sockadap_msg())
+  {
+    fprintf(stderr,"About to send the following : \n");
+    PrintMessageTableItem(&mt->table[item_num],item_num);
+  }
 
   int opres=send(clientsock,&mt->table[item_num].header,sizeof(mt->table[item_num].header),MSG_WAITALL);
   if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; return retres; }
@@ -115,7 +118,7 @@ struct failint SendPacketPassedToMT(int clientsock,struct MessageTable * mt,unsi
   retres.value=item_num;
   retres.failed=0;
 
-  fprintf(stderr,"SendPacketPassedToMT complete ----------------\n");
+  if(sockadap_msg()) fprintf(stderr,"SendPacketPassedToMT complete ----------------\n");
   return retres;
 }
 
@@ -125,20 +128,23 @@ struct failint RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt)
   retres.value=0;
   retres.failed=0;
 
-  fprintf(stderr,"Trying RecvPacketAndPassToMT <<<<<<<<<<<<<<<<<<<<<<< ");
+  if(sockadap_msg()) fprintf(stderr,"Trying RecvPacketAndPassToMT <<<<<<<<<<<<<<<<<<<<<<< ");
 
   struct PacketHeader header;
   int opres=recv(clientsock,&header,sizeof(struct PacketHeader),MSG_WAITALL);
   if (opres<0) { fprintf(stderr,"Error RecvPacketAndPassToMT recv error %u \n",errno); retres.failed=1; return retres; } else
   if (opres!=sizeof(struct PacketHeader)) { fprintf(stderr,"Error RecvPacketAndPassToMT incorrect number of bytes recieved %u \n",opres); retres.failed=1; return retres; }
 
+  if(sockadap_msg())
+  {
+    PrintMessageType(&header);
+    fprintf(stderr," inc value %u \n",header.incremental_value);
+  }
 
-  PrintMessageType(&header);
-  fprintf(stderr," inc value %u \n",header.incremental_value);
 
   if ( header.payload_size > 0 )
    {
-    fprintf(stderr,"RecvPacketAndPassToMT waiting and mallocing for payload size %u \n",header.payload_size);
+    if(sockadap_msg())fprintf(stderr,"RecvPacketAndPassToMT waiting and mallocing for payload size %u \n",header.payload_size);
     void * payload = (void * ) malloc(header.payload_size);
     if (payload==0) { fprintf(stderr,"Error mallocing %u bytes \n ",header.payload_size); }
     opres=recv(clientsock,payload,header.payload_size,MSG_WAITALL);
@@ -146,19 +152,19 @@ struct failint RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt)
     if ( opres != header.payload_size ) { fprintf(stderr,"Payload was not fully received only %u of %u bytes \n",opres,header.payload_size); retres.failed=1; return retres; }
 
     unsigned int * payload_val=(unsigned int * ) payload;
-    fprintf(stderr,"received payload seems to be carrying value %u \n",*payload_val);
+    if(sockadap_msg())fprintf(stderr,"received payload seems to be carrying value %u \n",*payload_val);
 
     retres= AddToMessageTable(mt,1,1,&header,payload);
-    fprintf(stderr,"RecvPacketAndPassToMT complete with payload----------------\n");
+    if(sockadap_msg())fprintf(stderr,"RecvPacketAndPassToMT complete with payload----------------\n");
     return retres;
    } else
    {
-     fprintf(stderr,"RecvPacketAndPassToMT with no payload\n");
+     if(sockadap_msg())fprintf(stderr,"RecvPacketAndPassToMT with no payload\n");
    }
 
   retres= AddToMessageTable(mt,1,0,&header,0);
 
-  fprintf(stderr,"RecvPacketAndPassToMT complete ----------------\n");
+  if(sockadap_msg()) fprintf(stderr,"RecvPacketAndPassToMT complete ----------------\n");
   return retres;
 }
 
