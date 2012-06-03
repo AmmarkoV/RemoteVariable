@@ -265,7 +265,7 @@ int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigne
       return 0;
    }
 
-  fprintf(stderr,"Request_ReadVariable ending successfully\n");
+  //fprintf(stderr,"Request_ReadVariable ending successfully\n");
   return 1;
 }
 
@@ -282,7 +282,7 @@ int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,s
 
   //We received a READFROM request ( otherwise this function wouldnt have been triggered so lets respond to it )
   /* TODO HERE , HANDLE PERMISSIONS ETC*/
-  fprintf(stderr,"TODO HERE , HANDLE PERMISSIONS ETC\n");
+  //fprintf(stderr,"TODO HERE , HANDLE PERMISSIONS ETC\n");
 
   if (!VariableIdExists(vsh,header.var_id))
    {
@@ -305,7 +305,7 @@ int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,s
 
 
   WaitForSuccessIndicatorAtMessageTableItem(&vsh->peer_list[peer_id].message_queue,res.value);
-  fprintf(stderr,"AcceptRequest_ReadVariable ending successfully\n");
+  //fprintf(stderr,"AcceptRequest_ReadVariable ending successfully\n");
   return 1;
 }
 
@@ -343,7 +343,8 @@ int Request_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id
 
   //We wait for the success indicator recv and subsequent pass to our message table
   int opres=WaitForSuccessIndicatorAtMessageTableItem(&vsh->peer_list[peer_id].message_queue,res.value);
-  fprintf(stderr,"Request_SignalChangeVariable ending opres=%d",opres);
+
+  //fprintf(stderr,"Request_SignalChangeVariable ending opres=%d",opres);
   return opres;
 }
 
@@ -360,7 +361,7 @@ int AcceptRequest_SignalChangeVariable(struct VariableShare * vsh,unsigned int p
 
   //We received a READFROM request ( otherwise this function wouldnt have been triggered so lets respond to it )
   /* TODO HERE , HANDLE PERMISSIONS ETC*/
-  fprintf(stderr,"TODO HERE , HANDLE PERMISSIONS ETC\n");
+  //fprintf(stderr,"TODO HERE , HANDLE PERMISSIONS ETC\n");
 
   // If we manage to mark the variable as needing refresh from this socket we will emmit back a signalmsgsuccess , if not we will emmit a failure signal
   if ( MarkVariableAsNeedsRefresh_VariableDatabase(vsh,header.var_id,peersock) )
@@ -377,7 +378,7 @@ int AcceptRequest_SignalChangeVariable(struct VariableShare * vsh,unsigned int p
   struct failint res=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,0);
   if (res.failed) { fprintf(stderr,"Could not add AcceptRequest_Variable to local MessageTable\n"); return 0; }
 
-  fprintf(stderr,"Request_SignalChangeVariable ending successfully\n");
+  //fprintf(stderr,"Request_SignalChangeVariable ending successfully\n");
   return 1;
 }
 

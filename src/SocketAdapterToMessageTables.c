@@ -78,7 +78,11 @@ void PrintMessageType(struct PacketHeader *header)
 struct failint SendPacketPassedToMT(int clientsock,struct MessageTable * mt,unsigned int item_num)
 {
   struct failint retres={0};
-  fprintf(stderr,"Trying SendPacketPassedToMT message number %u , inc value %u >>>>>>>>>>>>>>>>>>>>>>\n",item_num,mt->table[item_num].header.incremental_value);
+  retres.value=0;
+  retres.failed=0;
+  fprintf(stderr,"Trying SendPacketPassedToMT message number %u , inc value %u >>>>>>>>>>>>>>>>>>>>>>",item_num,mt->table[item_num].header.incremental_value);
+  PrintMessageType(&mt->table[item_num].header);
+  fprintf(stderr,"\n");
 
   if (mt->table[item_num].incoming)
    {
@@ -87,17 +91,25 @@ struct failint SendPacketPassedToMT(int clientsock,struct MessageTable * mt,unsi
       return retres;
    }
 
+  fprintf(stderr,"About to send the following : \n");
+  PrintMessageTableItem(&mt->table[item_num],item_num);
+
   int opres=send(clientsock,&mt->table[item_num].header,sizeof(mt->table[item_num].header),MSG_WAITALL);
   if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; return retres; }
 
   if ( mt->table[item_num].header.payload_size > 0 )
    {
-     fprintf(stderr,"SendPacketPassedToMT sending for payload size %u \n",mt->table[item_num].header.payload_size);
+     unsigned int * payload_val = (unsigned int *) mt->table[item_num].payload;
+     fprintf(stderr,"SendPacketPassedToMT sending payload %p , payload_val %u , payload size %u \n",
+                   mt->table[item_num].payload,*payload_val,mt->table[item_num].header.payload_size);
+
      opres=send(clientsock,&mt->table[item_num].payload,mt->table[item_num].header.payload_size,MSG_WAITALL);
-     if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; return retres; }
+     if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; return retres; } else
+     if ( opres != mt->table[item_num].header.payload_size ) { fprintf(stderr,"Payload was not fully transmitted only %u of %u bytes \n",opres,mt->table[item_num].header.payload_size);
+                                                                retres.failed=1; return retres; }
+
    }
 
-  PrintMessageType(&mt->table[item_num].header);
 
   mt->table[item_num].sent=1;
   retres.value=item_num;
@@ -110,8 +122,10 @@ struct failint SendPacketPassedToMT(int clientsock,struct MessageTable * mt,unsi
 struct failint RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt)
 {
   struct failint retres={0};
+  retres.value=0;
+  retres.failed=0;
 
-  fprintf(stderr,"Trying RecvPacketAndPassToMT <<<<<<<<<<<<<<<<<<<<<<<\n");
+  fprintf(stderr,"Trying RecvPacketAndPassToMT <<<<<<<<<<<<<<<<<<<<<<< ");
 
   struct PacketHeader header;
   int opres=recv(clientsock,&header,sizeof(header),MSG_WAITALL);
@@ -124,10 +138,13 @@ struct failint RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt)
 
   if ( header.payload_size > 0 )
    {
-    fprintf(stderr,"RecvPacketAndPassToMT waiting for payload size %u \n",header.payload_size);
+    fprintf(stderr,"RecvPacketAndPassToMT waiting and mallocing for payload size %u \n",header.payload_size);
     void * payload = (void * ) malloc(header.payload_size);
     if (payload==0) { fprintf(stderr,"Error mallocing %u bytes \n ",header.payload_size); }
     opres=recv(clientsock,&payload,header.payload_size,MSG_WAITALL);
+
+    unsigned int * payload_val=(unsigned int * ) payload;
+    fprintf(stderr,"received payload seems to be carrying value %u \n",*payload_val);
     if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; return retres; }
     retres= AddToMessageTable(mt,1,1,&header,payload);
     fprintf(stderr,"RecvPacketAndPassToMT complete with payload----------------\n");
@@ -179,7 +196,7 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
                                                     return 0;}
    }
 
-  fprintf(stderr,"SocketAdapterToMessageTable_Thread done with handshakes , starting recv/send loop\n");
+  fprintf(stderr,"SocketAdapterToMessageTable_Thread done with handshakes , starting recv/send loop\n\n\n\n\n");
 
 
   // Set socket to nonblocking mode..!
@@ -198,7 +215,7 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
    if (data_received==sizeof(incoming_packet))
    {
     res=RecvPacketAndPassToMT(peersock,mt);
-    if (!res.failed) { fprintf(stderr,"Failed passing socket recv to message table\n"); }
+    if (res.failed) { fprintf(stderr,"Failed passing socket recv to message table\n"); }
    }
      else
    if (data_received<0)

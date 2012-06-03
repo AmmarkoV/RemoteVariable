@@ -8,9 +8,25 @@
 #include "SocketAdapterToMessageTables.h"
 
 
-void EmptyMTItem(struct MessageTableItem * mti)
+void EmptyMTItem(struct MessageTableItem * mti,unsigned int ignore_payload)
 {
   if (mti==0) {fprintf(stderr,"EmptyMTIItem called with null parameter \n "); }
+
+if (!ignore_payload)
+{
+ if (mti->payload!=0)
+  {
+    fprintf(stderr,"Found uninitialized pointer , this shouldnt be here ..\n");
+    if (mti->payload_local_malloc)
+     {
+       fprintf(stderr,"It is a local malloc so freeing it..\n");
+       free(mti->payload);
+       mti->payload_local_malloc=0;
+       mti->payload=0;
+     }
+  }
+}
+
   mti->header.incremental_value=0;
   mti->header.operation_type=0;
   mti->header.var_id=0;
@@ -24,12 +40,24 @@ void EmptyMTItem(struct MessageTableItem * mti)
 }
 
 
-void PrintMessageTableItem(struct MessageTableItem * mti)
+void PrintMessageTableItem(struct MessageTableItem * mti,unsigned int val)
 {
-  fprintf(stderr,"MessageTableItem head.incval= %u , head.optype= %u , head.var_id= %u , head.pay_size=%u )",mti->header.incremental_value,mti->header.operation_type,mti->header.var_id,mti->header.payload_size);
-   PrintMessageType(&mti->header);
-   fprintf(stderr,"remove= %u , exec= %u , incoming= %u , sent=%u payload_localmalloc=%u , payload=%p)\n",
-             mti->remove,mti->executed,mti->incoming,mti->sent,mti->payload_local_malloc,mti->payload);
+   fprintf(stderr,"MessageTableItem Printout (mti index %u) \n",val);
+   fprintf(stderr,"mti->header.incremental_value = %u\n",mti->header.incremental_value);
+   fprintf(stderr,"mti->header.operation_type = %u ",mti->header.operation_type); PrintMessageType(&mti->header);  fprintf(stderr,"\n");
+   fprintf(stderr,"mti->header.var_id = %u\n",mti->header.var_id);
+   fprintf(stderr,"mti->remove = %u\n",mti->remove);
+   fprintf(stderr,"mti->executed = %u\n",mti->executed);
+   fprintf(stderr,"mti->incoming = %u\n",mti->incoming);
+   fprintf(stderr,"mti->sent = %u\n",mti->sent);
+   fprintf(stderr,"mti->payload = %p\n",mti->payload);
+   if (mti->payload!=0)
+     {
+       unsigned int * payload_val = mti->payload;
+       fprintf(stderr,"mti->payload_val = %u\n",*payload_val);
+     }
+   fprintf(stderr,"mti->payload_size = %u\n",mti->header.payload_size);
+   fprintf(stderr,"mti->payload_local_malloc = %u\n",mti->payload_local_malloc);
 }
 
 
@@ -46,7 +74,7 @@ int AllocateMessageQueue(struct MessageTable *  mt,unsigned int total_messages)
    unsigned int i=0;
    for (i=0; i<total_messages; i++)
     {
-      EmptyMTItem(&mt->table[i]);
+      EmptyMTItem(&mt->table[i],1);
     }
 
    mt->message_queue_total_length=total_messages;
@@ -75,44 +103,36 @@ int FreeMessageQueue(struct MessageTable * mt)
 
 struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,unsigned int free_malloc_at_disposal,struct PacketHeader * header,void * payload)
 {
-  fprintf(stderr,"AddToMessageTable incoming = %u , freemalloc_atdispoal = %u , payload = %p , payload_size %u\n",incoming,free_malloc_at_disposal,payload,header->payload_size);
+  fprintf(stderr,"AddToMessageTable incoming = %u , freemalloc_atdispoal = %u , payload = %p , payload_size %u ",incoming,free_malloc_at_disposal,payload,header->payload_size);
   PrintMessageType(header);
+  fprintf(stderr,"\n");
 
-  struct failint retres;
+  unsigned int mt_pos = mt->message_queue_current_length;
+  ++mt->message_queue_current_length;
+
+  EmptyMTItem(&mt->table[mt_pos],0); //<- completely clean spot
+
+  struct failint retres={0};
   retres.failed=0;
   retres.value=0;
 
   if (mt->message_queue_current_length >= mt->message_queue_total_length) { error("AddToMessageTable complain 1\n"); retres.failed=1; return retres; }
 
-  unsigned int mt_pos = mt->message_queue_current_length;
-  ++mt->message_queue_current_length;
-
   mt->table[mt_pos].header=*header;
-  mt->table[mt_pos].remove=0;
   mt->table[mt_pos].incoming=incoming;
-  mt->table[mt_pos].sent=0;
-
-  if (mt->table[mt_pos].payload!=0)
-  {
-    fprintf(stderr,"Found uninitialized pointer , this shouldnt be here ..\n");
-    if (mt->table[mt_pos].payload_local_malloc)
-     {
-       fprintf(stderr,"It is a local malloc so freeing it..\n");
-       free(mt->table[mt_pos].payload);
-       mt->table[mt_pos].payload_local_malloc=0;
-       mt->table[mt_pos].payload=0;
-     }
-  }
 
   mt->table[mt_pos].payload_local_malloc=free_malloc_at_disposal;
   mt->table[mt_pos].payload=payload;
 
   if (mt->table[mt_pos].payload!=0)
    {
-     fprintf(stderr,"Address of current payload is %p , size = %u ..\n",mt->table[mt_pos].payload,mt->table[mt_pos].header.payload_size);
+     unsigned int * payload_val = (unsigned int *) payload;
+     fprintf(stderr,"Address of current payload is %p , value %u , size = %u ..\n",mt->table[mt_pos].payload,*payload_val,mt->table[mt_pos].header.payload_size);
    }
 
-  fprintf(stderr,"AddToMessageTable ended , new message pos %u\n",mt_pos);
+  PrintMessageTableItem(&mt->table[mt_pos],mt_pos);
+
+  //fprintf(stderr,"AddToMessageTable ended , new message pos %u\n",mt_pos);
   retres.value=mt_pos;
   return retres;
 }
@@ -122,20 +142,12 @@ int RemFromMessageTable(struct MessageTable * mt,unsigned int mt_id)
 {
   if (mt->message_queue_current_length <= mt_id ) { error("complain here\n"); return 0; }
   fprintf(stderr,"RemFromMessageTable -> mt_id %u \n",mt_id);
-  PrintMessageTableItem(&mt->table[mt_id]);
+  PrintMessageTableItem(&mt->table[mt_id],mt_id);
 
 
   mt->table[mt_id].remove=0;
   mt->table[mt_id].payload_local_malloc=0;
 
-  if (mt->table[mt_id].payload_local_malloc)
-   {
-     free(mt->table[mt_id].payload);
-     mt->table[mt_id].payload=0;
-   } else
-   {
-     mt->table[mt_id].payload=0;
-   }
 
   int i=0;
   for (i=mt_id; i<mt->message_queue_current_length; i++)
@@ -143,7 +155,8 @@ int RemFromMessageTable(struct MessageTable * mt,unsigned int mt_id)
      mt->table[mt_id]=mt->table[mt_id+1];
    }
    --mt->message_queue_current_length;
-   EmptyMTItem(&mt->table[mt->message_queue_current_length]);
+
+   EmptyMTItem(&mt->table[mt->message_queue_current_length],0);
 
   return 1;
 }
@@ -230,8 +243,8 @@ while (!done_waiting)
        usleep(5000);
    }
 
-  fprintf(stderr,"WaitForSuccessIndicatorAtMessageTableItem success\n");
-  return 1;
+  fprintf(stderr,"WaitForSuccessIndicatorAtMessageTableItem failed after timeout\n");
+  return 0;
 }
 
 int WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *mt , unsigned int mt_id,struct VariableShare *vsh ,unsigned int var_id)
@@ -260,8 +273,10 @@ int WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *mt , unsigne
               {
 
                 unsigned int * old_val = (unsigned int *) vsh->share.variables[var_id].ptr;
-                fprintf(stderr,"Copying a fresh value for variable %u , was %u now will become %u ( size %u ) \n",var_id,*old_val,mt->table[mt_traverse].header.var_id,vsh->share.variables[var_id].size_of_ptr);
-                memcpy(vsh->share.variables[var_id].ptr,mt->table[mt_traverse].payload,vsh->share.variables[var_id].size_of_ptr);
+                unsigned int * new_val = (unsigned int *) mt->table[mt_traverse].payload;
+                unsigned int ptr_size = vsh->share.variables[var_id].size_of_ptr;
+                fprintf(stderr,"!!!!!!!!!!!!!! Copying a fresh value for variable %u , was %u now will become %u ( size %u ) \n", var_id,  *old_val,  *new_val, ptr_size);
+                memcpy(old_val,new_val,ptr_size);
                 return 1;
               } else
               {
@@ -278,7 +293,8 @@ int WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *mt , unsigne
        fprintf(stderr,".VC.");
        usleep(5000);
    }
-  fprintf(stderr,"WaitForVariableAndCopyItAtMessageTableItem success\n");
-  return 1;
+
+  fprintf(stderr,"WaitForVariableAndCopyItAtMessageTableItem failed after timeout\n");
+  return 0;
 }
 

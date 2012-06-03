@@ -3,6 +3,8 @@
 
 #include "RemoteVariableSupport.h"
 
+void PrintMessageTableItem(struct MessageTableItem * mti,unsigned int val);
+
 int AllocateMessageQueue(struct MessageTable *  mt,unsigned int total_messages);
 int FreeMessageQueue(struct MessageTable * mt);
 
