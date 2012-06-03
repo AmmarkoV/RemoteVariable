@@ -36,7 +36,7 @@ int AllocateMessageQueue(struct MessageTable *  mt,unsigned int total_messages)
 {
    if (mt==0) { error("complain"); return 0; }
 
-   mt->locked=0;
+   mt->locked=1;
    mt->message_queue_current_length=0;
    mt->table = (struct MessageTableItem *) malloc( total_messages * sizeof(struct MessageTableItem) );
    if (mt->table==0) { error("Could not allocate memory for new Message Table!"); return 0; }
@@ -49,6 +49,7 @@ int AllocateMessageQueue(struct MessageTable *  mt,unsigned int total_messages)
     }
 
    mt->message_queue_total_length=total_messages;
+   mt->locked=0;
 
   return 1;
 }
@@ -65,7 +66,10 @@ int FreeMessageQueue(struct MessageTable * mt)
            mt->table[i].payload=0;
          }
      }
-    return 1;
+
+   free(mt->table);
+
+   return 1;
 }
 
 struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,unsigned int free_malloc_at_disposal,struct PacketHeader * header,void * payload)

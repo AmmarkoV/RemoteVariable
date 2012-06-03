@@ -77,7 +77,7 @@ void PrintMessageType(struct PacketHeader *header)
 struct failint SendPacketPassedToMT(int clientsock,struct MessageTable * mt,unsigned int item_num)
 {
   struct failint retres={0};
-  fprintf(stderr,"Trying SendPacketPassedToMT , inc value %u >>>>>>>>>>>>>>>>>>>>>>\n",mt->table[item_num].header.incremental_value);
+  fprintf(stderr,"Trying SendPacketPassedToMT message number %u , inc value %u >>>>>>>>>>>>>>>>>>>>>>\n",item_num,mt->table[item_num].header.incremental_value);
 
   if (mt->table[item_num].incoming)
    {

@@ -40,9 +40,6 @@ void * RemoteVariableServer_Thread(void * ptr);
 void * RemoteVariableClient_Thread(void * ptr);
 
 
-
-
-
 int GenerateNewClientLoop(struct VariableShare * vsh,int clientsock,struct sockaddr_in client,unsigned int clientlen)
 {
    fprintf(stderr,"Server Thread : Client connected: %s\n", inet_ntoa(client.sin_addr));
