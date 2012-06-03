@@ -188,9 +188,10 @@ struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,
 int RemFromMessageTable(struct MessageTable * mt,unsigned int mt_id)
 {
 
-  if (mt->message_queue_current_length <= mt_id ) { error("complain here\n"); return 0; }
+  if (mt->message_queue_current_length <= mt_id ) { error("RemFromMessageTable called for out of bounds mt_id \n"); return 0; }
 
   LockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------
+  mt->table[mt_id].remove=0;
 
   fprintf(stderr,"RemFromMessageTable -> mt_id %u \n",mt_id);
   PrintMessageTableItem(&mt->table[mt_id],mt_id);
@@ -236,6 +237,8 @@ int RemFromMessageTableByIncrementalValue(struct MessageTable * mt,unsigned int 
 
 int RemFromMessageTableWhereRemoveFlagExists(struct MessageTable * mt)
 {
+  if (mt->message_queue_current_length==0) {return 0;}
+
   unsigned int mt_id=0;
   unsigned int messages_removed=0;
 
@@ -246,6 +249,8 @@ int RemFromMessageTableWhereRemoveFlagExists(struct MessageTable * mt)
             if ( RemFromMessageTable(mt,mt_id) ) { ++messages_removed; }
          }
    }
+
+  if (messages_removed>0) fprintf(stderr,"RemFromMessageTableWhereRemoveFlagExists removed %u messages \n",messages_removed);
 
   return messages_removed;
 }

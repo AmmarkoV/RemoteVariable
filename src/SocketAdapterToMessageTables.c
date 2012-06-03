@@ -300,12 +300,14 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
       }
     }
 
-    //Pass JobTables To message tables
-    ExecutePendingJobsForPeerID(vsh,peer_id);
-
 
     //First delete from message table messages pending removal
     RemFromMessageTableWhereRemoveFlagExists(mt);
+
+
+    //Pass JobTables To message tables
+    ExecutePendingJobsForPeerID(vsh,peer_id);
+
 
 
     usleep(100);
