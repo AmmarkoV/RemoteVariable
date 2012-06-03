@@ -9,6 +9,7 @@
 #include "VariableDatabase.h"
 #include "Protocol.h"
 #include "Peers.h"
+#include "JobTables.h"
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -197,23 +198,9 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
    if (data_received==sizeof(incoming_packet))
    {
     res=RecvPacketAndPassToMT(peersock,mt);
-    if (!res.failed)
-    {/*
-      mt_id=res.value;
-      switch ( incoming_packet.operation_type )
-      {
-        case NOACTION : fprintf(stderr,"NOACTION received packet doesnt trigger New Protocol Request\n"); break;
-        case RESP_WRITETO : fprintf(stderr,"RESP_WRITETO received packet doesnt trigger New Protocol Request\n"); break;
-        case WRITETO:  AcceptRequest_WriteVariable(vsh,peer_id,mt,mt_id,peersock); break;
-        case READFROM: AcceptRequest_ReadVariable(vsh,peer_id,mt,mt_id,peersock); break;
-        case SIGNALCHANGED : AcceptRequest_SignalChangeVariable(vsh,peer_id,mt,mt_id,peersock); break;
-        case SIGNALMSGSUCCESS : fprintf(stderr,"SIGNALMSGSUCCESS received packet doesnt trigger New Protocol Request\n"); break;
-        case SIGNALMSGFAILURE : fprintf(stderr,"SIGNALMSGFAILURE received packet doesnt trigger New Protocol Request\n"); break;
-        case SYNC : fprintf(stderr,"SYNC received packet doesnt trigger New Protocol Request\n"); break;
-        default : fprintf(stderr,"Unhandled incoming packet operation ( %u ) \n",incoming_packet.operation_type); break;
-      };*/
-    }
-   } else
+    if (!res.failed) { fprintf(stderr,"Failed passing socket recv to message table\n"); }
+   }
+     else
    if (data_received<0)
    {
       data_received = errno;
@@ -222,8 +209,7 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
          else
         { PrintError(data_received); break; }
    } else
-    if (data_received==0)
-   { /*SILENCE */ }
+    if (data_received==0) { /* RADIO :P SILENCE */ }
       else
    {
         fprintf(stderr,"A part of a incoming packet just arrived , sized %u \n",data_received);
@@ -266,16 +252,14 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
 
   struct PacketHeader incoming_packet;
   struct MessageTable * mt = &vsh->peer_list[peer_id].message_queue;
-  struct failint res;
   unsigned int mt_id=0;
-  unsigned int table_iterator=0;
 
   while (1)
   {
 
     for (mt_id=0; mt_id<mt->message_queue_current_length; mt_id++)
     {
-      if (!mt->table[mt_id].executed)
+      if ( (!mt->table[mt_id].executed)&&(mt->table[mt_id].incoming) )
       {
        switch ( mt->table[mt_id].header.operation_type )
        {

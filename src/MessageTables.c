@@ -8,8 +8,9 @@
 #include "SocketAdapterToMessageTables.h"
 
 
-int EmptyMTItem(struct MessageTableItem * mti)
+void EmptyMTItem(struct MessageTableItem * mti)
 {
+  if (mti==0) {fprintf(stderr,"EmptyMTIItem called with null parameter \n "); }
   mti->header.incremental_value=0;
   mti->header.operation_type=0;
   mti->header.var_id=0;
@@ -225,7 +226,8 @@ while (!done_waiting)
        ++mt_traverse;
      }
        if (mt_traverse>=mt->message_queue_current_length) { mt_traverse=0; }
-       usleep(1000);
+       fprintf(stderr,".SI.");
+       usleep(5000);
    }
 
   fprintf(stderr,"WaitForSuccessIndicatorAtMessageTableItem success\n");
@@ -273,7 +275,8 @@ int WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *mt , unsigne
        ++mt_traverse;
      }
        if (mt_traverse>=mt->message_queue_current_length) { mt_traverse=0; }
-       usleep(1000);
+       fprintf(stderr,".VC.");
+       usleep(5000);
    }
   fprintf(stderr,"WaitForVariableAndCopyItAtMessageTableItem success\n");
   return 1;
