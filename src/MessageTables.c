@@ -145,10 +145,7 @@ int RemFromMessageTable(struct MessageTable * mt,unsigned int mt_id)
   fprintf(stderr,"RemFromMessageTable -> mt_id %u \n",mt_id);
   PrintMessageTableItem(&mt->table[mt_id],mt_id);
 
-
-  mt->table[mt_id].remove=0;
-  mt->table[mt_id].payload_local_malloc=0;
-
+  EmptyMTItem(&mt->table[mt_id],0);
 
   int i=0;
   for (i=mt_id; i<mt->message_queue_current_length; i++)
@@ -156,8 +153,7 @@ int RemFromMessageTable(struct MessageTable * mt,unsigned int mt_id)
      mt->table[mt_id]=mt->table[mt_id+1];
    }
    --mt->message_queue_current_length;
-
-   EmptyMTItem(&mt->table[mt->message_queue_current_length],0);
+   EmptyMTItem(&mt->table[mt->message_queue_current_length],1); //ignore malloc cause it is a copy
 
   return 1;
 }
@@ -186,29 +182,24 @@ int RemFromMessageTableByIncrementalValue(struct MessageTable * mt,unsigned int 
   return messages_removed;
 }
 
-int DeleteRemovedFromMessageTable(struct MessageTable * mt)
+
+int RemFromMessageTableWhereRemoveFlagExists(struct MessageTable * mt)
 {
-   unsigned int mt_id=0;
-   for (mt_id=0; mt_id<mt->message_queue_current_length; mt_id++)
+  unsigned int mt_id=0;
+  unsigned int messages_removed=0;
+
+  for (mt_id=0; mt_id<mt->message_queue_current_length; mt_id++)
    {
-     if (mt->table[mt_id].remove)
-     {
-       if (mt->table[mt_id].payload_local_malloc)
-        {
-          free(mt->table[mt_id].payload);
-          mt->table[mt_id].payload=0;
-        } else
-        {
-          mt->table[mt_id].payload=0;
-        }
-       fprintf(stderr,"Todo proper delete , swap remove respecting ordering etc..\n");
-       mt->table[mt_id].payload_local_malloc=0;
-       mt->table[mt_id].header.payload_size=0;
-     }
+     if ( mt->table[mt_id].remove )
+         {
+            if ( RemFromMessageTable(mt,mt_id) ) { ++messages_removed; }
+         }
    }
 
-  return 1;
+  return messages_removed;
 }
+
+
 
 struct failint WaitForSuccessIndicatorAtMessageTableItem(struct MessageTable *mt , unsigned int mt_id)
 {

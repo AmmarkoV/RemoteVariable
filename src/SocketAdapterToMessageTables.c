@@ -235,8 +235,6 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
    }
 
 
-    //First delete from message table messages pending removal
-    DeleteRemovedFromMessageTable(mt);
 
  /*------------------------------------------------- SEND PART -------------------------------------------------*/
    if (mt->message_queue_current_length>0)
@@ -293,12 +291,16 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
         default : fprintf(stderr,"Unhandled incoming packet operation ( %u ) \n",incoming_packet.operation_type); break;
        };
        mt->table[mt_id].executed=1;
-       mt->table[mt_id].remove=1;
       }
     }
 
     //Pass JobTables To message tables
     ExecutePendingJobsForPeerID(vsh,peer_id);
+
+
+    //First delete from message table messages pending removal
+    RemFromMessageTableWhereRemoveFlagExists(mt);
+
 
     usleep(100);
   }
