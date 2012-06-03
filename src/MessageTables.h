@@ -12,9 +12,11 @@ struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,
 int RemFromMessageTable(struct MessageTable * mt,unsigned int mt_id);
 int RemFromMessageTableByIncrementalValue(struct MessageTable * mt,unsigned int inc_val);
 
+int SetMessageTableItemForRemoval(struct MessageTableItem * mti);
+
 int DeleteRemovedFromMessageTable(struct MessageTable * mt);
 
-int WaitForSuccessIndicatorAtMessageTableItem(struct MessageTable *mt , unsigned int mt_id);
-int WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *mt , unsigned int mt_id,struct VariableShare *vsh ,unsigned int var_id);
+struct failint  WaitForSuccessIndicatorAtMessageTableItem(struct MessageTable *mt , unsigned int mt_id);
+struct failint  WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *mt , unsigned int mt_id,struct VariableShare *vsh ,unsigned int var_id);
 
 #endif // MESSAGETABLES_H_INCLUDED

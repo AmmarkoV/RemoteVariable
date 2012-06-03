@@ -293,6 +293,7 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
         default : fprintf(stderr,"Unhandled incoming packet operation ( %u ) \n",incoming_packet.operation_type); break;
        };
        mt->table[mt_id].executed=1;
+       mt->table[mt_id].remove=1;
       }
     }
 

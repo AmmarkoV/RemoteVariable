@@ -63,7 +63,7 @@ int main()
     for (i=1; i<100; i+=2)
     {
      if (!wait_for_var_to_become_x(&SHARED_VAR,WAIT_TIME,i)) { fprintf(stderr,"Master : Failed the test STEP%u , waiting for %u\n",i,i); return 1; }
-     DUMMY_VAR=rand()%10000;
+     //DUMMY_VAR=rand()%10000;
      fprintf(stderr,"TEST STEP %u\n",i+1);
      SHARED_VAR=i+1;
      printf("Master : Now we have changed the variable to %u , will wait until it becomes %u\n",i+1,i+2);
