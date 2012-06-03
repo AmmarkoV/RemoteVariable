@@ -103,7 +103,7 @@ struct failint SendPacketPassedToMT(int clientsock,struct MessageTable * mt,unsi
      fprintf(stderr,"SendPacketPassedToMT sending payload %p , payload_val %u , payload size %u \n",
                    mt->table[item_num].payload,*payload_val,mt->table[item_num].header.payload_size);
 
-     opres=send(clientsock,&mt->table[item_num].payload,mt->table[item_num].header.payload_size,MSG_WAITALL);
+     opres=send(clientsock,mt->table[item_num].payload,mt->table[item_num].header.payload_size,MSG_WAITALL);
      if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; return retres; } else
      if ( opres != mt->table[item_num].header.payload_size ) { fprintf(stderr,"Payload was not fully transmitted only %u of %u bytes \n",opres,mt->table[item_num].header.payload_size);
                                                                 retres.failed=1; return retres; }
@@ -128,9 +128,9 @@ struct failint RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt)
   fprintf(stderr,"Trying RecvPacketAndPassToMT <<<<<<<<<<<<<<<<<<<<<<< ");
 
   struct PacketHeader header;
-  int opres=recv(clientsock,&header,sizeof(header),MSG_WAITALL);
+  int opres=recv(clientsock,&header,sizeof(struct PacketHeader),MSG_WAITALL);
   if (opres<0) { fprintf(stderr,"Error RecvPacketAndPassToMT recv error %u \n",errno); retres.failed=1; return retres; } else
-  if (opres!=sizeof(header)) { fprintf(stderr,"Error RecvPacketAndPassToMT incorrect number of bytes recieved %u \n",opres); retres.failed=1; return retres; }
+  if (opres!=sizeof(struct PacketHeader)) { fprintf(stderr,"Error RecvPacketAndPassToMT incorrect number of bytes recieved %u \n",opres); retres.failed=1; return retres; }
 
 
   PrintMessageType(&header);
@@ -141,11 +141,13 @@ struct failint RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt)
     fprintf(stderr,"RecvPacketAndPassToMT waiting and mallocing for payload size %u \n",header.payload_size);
     void * payload = (void * ) malloc(header.payload_size);
     if (payload==0) { fprintf(stderr,"Error mallocing %u bytes \n ",header.payload_size); }
-    opres=recv(clientsock,&payload,header.payload_size,MSG_WAITALL);
+    opres=recv(clientsock,payload,header.payload_size,MSG_WAITALL);
+    if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; return retres; } else
+    if ( opres != header.payload_size ) { fprintf(stderr,"Payload was not fully received only %u of %u bytes \n",opres,header.payload_size); retres.failed=1; return retres; }
 
     unsigned int * payload_val=(unsigned int * ) payload;
     fprintf(stderr,"received payload seems to be carrying value %u \n",*payload_val);
-    if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; return retres; }
+
     retres= AddToMessageTable(mt,1,1,&header,payload);
     fprintf(stderr,"RecvPacketAndPassToMT complete with payload----------------\n");
     return retres;

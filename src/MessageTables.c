@@ -271,7 +271,6 @@ int WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *mt , unsigne
               fprintf(stderr,"Found candidate inc value %u \n",our_incremental_value);
               if ( (var_id==mt->table[mt_traverse].header.var_id) || (vsh->share.variables[var_id].size_of_ptr!=mt->table[mt_traverse].header.payload_size) )
               {
-
                 unsigned int * old_val = (unsigned int *) vsh->share.variables[var_id].ptr;
                 unsigned int * new_val = (unsigned int *) mt->table[mt_traverse].payload;
                 unsigned int ptr_size = vsh->share.variables[var_id].size_of_ptr;
