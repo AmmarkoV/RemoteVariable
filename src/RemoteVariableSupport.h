@@ -42,6 +42,12 @@ extern "C" {
 enum jobactions
 {
     NOACTION = 0 ,
+
+    INTERNAL_START_SIGNALCHANGED,
+    INTERNAL_START_READFROM,
+    INTERNAL_START_WRITETO,
+
+
     RESP_WRITETO,
     WRITETO,
     READFROM,

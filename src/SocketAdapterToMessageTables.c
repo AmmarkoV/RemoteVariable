@@ -287,6 +287,13 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
        switch ( mt->table[mt_id].header.operation_type )
        {
         case NOACTION : fprintf(stderr,"NOACTION received packet doesnt trigger New Protocol Request\n"); break;
+        //TODO : DITCH THE WHOLE JOBTABLES MECHANISM AND UTILIZE THE FOLLOWING 3 CALLS
+        case INTERNAL_START_SIGNALCHANGED : Request_SignalChangeVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock); mt->table[mt_id].remove=1; /*Internal messages must me marked remove here*/ break;
+        case INTERNAL_START_READFROM : Request_ReadVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock); mt->table[mt_id].remove=1; /*Internal messages must me marked remove here*/ break;
+        case INTERNAL_START_WRITETO : Request_WriteVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock); mt->table[mt_id].remove=1; /*Internal messages must me marked remove here*/ break;
+
+
+
         case RESP_WRITETO : fprintf(stderr,"RESP_WRITETO received packet doesnt trigger New Protocol Request\n"); break;
         case WRITETO:  AcceptRequest_WriteVariable(vsh,peer_id,mt,mt_id,peersock); break;
         case READFROM: AcceptRequest_ReadVariable(vsh,peer_id,mt,mt_id,peersock); break;
