@@ -47,6 +47,8 @@ void PrintError(unsigned int errornum)
                fprintf(stderr,"The socket is associated with a connection-oriented protocol and has not been connected (see connect(2) and accept(2)).\n"); break;
          case ENOTSOCK :
                fprintf(stderr,"The argument sockfd does not refer to a socket.\n"); break;
+         case ECONNRESET :
+               fprintf(stderr,"Connection reset by peer.\n"); break;
          default :
              fprintf(stderr," ERROR CODE %d \n",errornum);
              break;
@@ -186,7 +188,7 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
   thread_context->keep_var_on_stack=0;
 
   struct PacketHeader incoming_packet;
-  struct MessageTable * mt = &vsh->peer_list[peer_id].message_queue;
+  struct MessageTable * mt = &vsh->peer_list[peer_id].messages;
   struct failint res;
   unsigned int table_iterator=0;
 
@@ -222,10 +224,17 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
   while (1)
   {
    /* ------------------------------------------------- RECEIVE PART ------------------------------------------------- */
+   incoming_packet.incremental_value=0;
+   incoming_packet.operation_type=0;
+   incoming_packet.payload_size=0;
+   incoming_packet.var_id=0;
+
    fcntl(peersock,F_SETFL,rest_perms | O_NONBLOCK);
      data_received = recv(peersock,&incoming_packet,sizeof(incoming_packet), MSG_DONTWAIT |MSG_PEEK);
    fcntl(peersock,F_SETFL,rest_perms); // restore sockets to prior blocking state ( TODO: add de init code afterwards )
 
+   if (data_received==0) { /* RADIO :P SILENCE */ }
+      else
    if (data_received==sizeof(incoming_packet))
    {
     ++vsh->central_timer;
@@ -239,10 +248,8 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
       if (data_received == EWOULDBLOCK)
         {/*This actually isnt an error , if no messages are available at the socket and O_NONBLOCK is set on the socket's file descriptor, recv() shall fail and set errno to [EAGAIN] or [EWOULDBLOCK]*/ }
          else
-        { PrintError(data_received); break; }
+        { fprintf(stderr,"Receive (recv) thread encountered error , "); PrintError(data_received); break; }
    } else
-    if (data_received==0) { /* RADIO :P SILENCE */ }
-      else
    {
         fprintf(stderr,"A part of a incoming packet just arrived , sized %u \n",data_received);
    }
@@ -285,9 +292,10 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
   //We permit the var to be deallocated from the thread generator stack
   thread_context->keep_var_on_stack=0;
 
-  struct MessageTable * mt = &vsh->peer_list[peer_id].message_queue;
+  fprintf(stderr,"Started JobAndMessageTableExecutor_Thread for peer %u , internal_loop = %u",peer_id,internal_loop);
+
+  struct MessageTable * mt = &vsh->peer_list[peer_id].messages;
   unsigned int mt_id=0;
-  fprintf(stderr,"Started JobAndMessageTableExecutor_Thread , internal_loop = %u",internal_loop);
 
 
   while (1)
@@ -296,7 +304,8 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
     for (mt_id=0; mt_id<mt->message_queue_current_length; mt_id++)
     {
       if ( (!mt->table[mt_id].executed) &&
-            (mt->table[mt_id].incoming)
+            (mt->table[mt_id].incoming) &&
+            (!mt->table[mt_id].remove)
           )
       {
        //INTERNAL MESSAGING THREAD WORK

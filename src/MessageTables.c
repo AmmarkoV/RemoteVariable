@@ -151,7 +151,14 @@ struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,
   struct failint retres={0};
   retres.failed=0;
   retres.value=0;
-  if (mt->message_queue_current_length >= mt->message_queue_total_length) { error("AddToMessageTable complain 1\n"); retres.failed=1; return retres; }
+
+  if (mt->message_queue_current_length >= mt->message_queue_total_length)
+    {
+      error("AddToMessageTable cannot add new Message to table 1\n");
+      fprintf(stderr,"Message table can accomodate %u messages and it has already %u/%u\n",mt->message_queue_total_length,mt->message_queue_current_length,mt->message_queue_total_length);
+      retres.failed=1;
+      return retres;
+    }
 
 
   LockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------
@@ -193,7 +200,8 @@ int SwapItemsMessageTable(struct MessageTable * mt,unsigned int mt_id1,unsigned 
 
    if (mt_id1==mt_id2) { return 1;}
 
-   struct MessageTableItem temp=mt->table[mt_id1];
+   struct MessageTableItem temp;
+   temp=mt->table[mt_id1];
    mt->table[mt_id1]=mt->table[mt_id2];
    mt->table[mt_id2]=temp;
 
@@ -275,23 +283,22 @@ int SetMessageTableItemForRemoval(struct MessageTableItem * mti)
 
 int RemFromMessageTableWhereRemoveFlagExists(struct MessageTable * mt)
 {
+  if (mt==0) {return 0;}
+  if (mt->message_queue_total_length==0) {return 0;}
   if (mt->message_queue_current_length==0) {return 0;}
 
   unsigned int mt_id=0;
   unsigned int messages_removed=0;
 
 
- if (1) // PLAIN REMOVAL
-  {
-   for (mt_id=0; mt_id<mt->message_queue_current_length; mt_id++)
+   for (mt_id=0; mt_id < mt->message_queue_current_length; mt_id++)
      {
        if ( mt->table[mt_id].remove )
           {
              if ( RemFromMessageTable(mt,mt_id) ) { ++messages_removed; }
           }
      }
-  } else
-  {
+
     /*
     // FANCY LESS OVERHEAD REMOVAL :P
     // First message hardcoded removal
@@ -315,13 +322,22 @@ int RemFromMessageTableWhereRemoveFlagExists(struct MessageTable * mt)
     //Hardcoded last check
     if ( mt->table[0].remove ) { if ( RemFromMessageTable(mt,0) ) { ++messages_removed; } }
     */
-  }
+
 
   if (messages_removed>0) fprintf(stderr,"RemFromMessageTableWhereRemoveFlagExists removed %u messages \n",messages_removed);
 
   return messages_removed;
 }
 
+
+unsigned int WaitForMessageTableItemToBeSent(struct MessageTableItem * mti)
+{
+  while (!mti->sent)
+   {
+     usleep(10); fprintf(stderr,".WS.");
+   }
+   return 1;
+}
 
 
 struct failint WaitForSuccessIndicatorAtMessageTableItem(struct MessageTable *mt , unsigned int mt_id)
@@ -439,31 +455,5 @@ struct failint WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *m
    }
 
   fprintf(stderr,"WaitForVariableAndCopyItAtMessageTableItem failed after timeout\n");
-  return retres;
-}
-
-
-struct failint WaitForMessageTableItemToBeSent(struct MessageTable *mt , unsigned int mt_id)
-{
-  struct failint retres;
-  retres.failed=1; retres.value=1;
-
-  if (mt==0) { fprintf(stderr,"WaitForMessageTableItemToBeSent Called with zero MessageTable\n"); return retres;}
-  if (mt->message_queue_current_length <= mt_id ) { error("WaitForMessageTableItemToBeSent mt_id out of bounds \n"); return retres; }
- unsigned int done_waiting=0;
-  fprintf(stderr,"WaitForMessageTableItemToBeSent  for table item %u , waiting for sent flag \n",mt_id);
-  while (!done_waiting)
-   {
-       if ( mt->table[mt_id].sent )
-        {
-           retres.failed=0;
-           retres.value=mt_id;
-           return retres;
-        }
-
-       fprintf(stderr,".WS.");
-       usleep(100);
-   }
-
   return retres;
 }

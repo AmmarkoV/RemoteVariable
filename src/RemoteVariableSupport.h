@@ -87,9 +87,22 @@ struct MessageTableItem
 struct MessageTable
 {
     unsigned int locked;
-    struct MessageTableItem * table;
     unsigned int message_queue_total_length;
     unsigned int message_queue_current_length;
+
+    struct MessageTableItem * table;
+
+    pthread_t sendrecv_thread;
+    unsigned int pause_sendrecv_thread;
+    unsigned int stop_sendrecv_thread;
+
+    pthread_t internal_messageproc_thread;
+    unsigned int pause_internal_messageproc_thread;
+    unsigned int stop_internal_messageproc_thread;
+
+    pthread_t external_messageproc_thread;
+    unsigned int pause_external_messageproc_thread;
+    unsigned int stop_external_messageproc_thread;
 };
 
 
@@ -149,7 +162,7 @@ struct SharePeer
     unsigned int pause_peer_thread;
     unsigned int stop_peer_thread;
 
-    struct MessageTable message_queue;
+    struct MessageTable messages;
 
     struct ShareList share;
 };

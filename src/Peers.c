@@ -23,7 +23,7 @@ struct failint AddPeer(struct VariableShare * vsh,char * name,unsigned int port 
        vsh->peer_list[pos].peer_state=VSS_WAITING_FOR_HANDSHAKE;
        vsh->peer_list[pos].incremental_value=0;
 
-       AllocateMessageQueue(&vsh->peer_list[pos].message_queue,100);
+       AllocateMessageQueue(&vsh->peer_list[pos].messages,100);
 
        ++vsh->total_peers;
        retres.value=pos;
@@ -52,7 +52,7 @@ int SwapPeers(struct VariableShare * vsh,int peer_id1,int peer_id2)
 
 int RemPeer(struct VariableShare * vsh,int peer_id)
 {
-  FreeMessageQueue(&vsh->peer_list[peer_id].message_queue);
+  FreeMessageQueue(&vsh->peer_list[peer_id].messages);
 
  if ( (vsh->total_peers==1)&&(peer_id==0)) { vsh->total_peers=0; return 1; }
  if ( (vsh->total_peers>1) )

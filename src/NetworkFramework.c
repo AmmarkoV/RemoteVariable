@@ -62,18 +62,18 @@ int GenerateNewClientLoop(struct VariableShare * vsh,int clientsock,struct socka
   pass_to_thread.stop_switch=&vsh->peer_list[peer_id].stop_peer_thread;
 
   fprintf(stderr,"Server Thread : Server is ready to spawn a new dedicated thread for the client .. ");
-  int retres = pthread_create(&vsh->peer_list[peer_id].peer_thread,0,SocketAdapterToMessageTable_Thread,(void*) &pass_to_thread);
+  int retres = pthread_create(&vsh->peer_list[peer_id].messages.sendrecv_thread ,0,SocketAdapterToMessageTable_Thread,(void*) &pass_to_thread);
   if ( retres==0 ) { while (pass_to_thread.keep_var_on_stack) { usleep(10); } } // <- Keep PeerServerContext in stack for long enough :P
 
   pass_to_thread.type_of_thread=1;
   pass_to_thread.keep_var_on_stack = 1;
-  retres = pthread_create( &vsh->client_thread, 0 ,  JobAndMessageTableExecutor_Thread ,(void*) &pass_to_thread);
+  retres = pthread_create(&vsh->peer_list[peer_id].messages.internal_messageproc_thread, 0 ,  JobAndMessageTableExecutor_Thread ,(void*) &pass_to_thread);
   if ( retres==0 ) { while (pass_to_thread.keep_var_on_stack) { usleep(10); } } // <- Keep PeerServerContext in stack for long enough :P
 
 
    pass_to_thread.type_of_thread=2;
    pass_to_thread.keep_var_on_stack = 1;
-   retres = pthread_create( &vsh->client_thread, 0 ,  JobAndMessageTableExecutor_Thread ,(void*) &pass_to_thread);
+   retres = pthread_create(&vsh->peer_list[peer_id].messages.external_messageproc_thread, 0 ,  JobAndMessageTableExecutor_Thread ,(void*) &pass_to_thread);
    if ( retres==0 ) { while (pass_to_thread.keep_var_on_stack) { usleep(10); } } // <- Keep PeerServerContext in stack for long enough :P
 
 
@@ -207,18 +207,18 @@ StartRemoteVariableConnection(struct VariableShare * vsh)
 
    vsh->pause_client_thread=0;
    vsh->stop_client_thread=0;
-   int retres = pthread_create( &vsh->client_thread, 0 ,  SocketAdapterToMessageTable_Thread ,(void*) &pass_to_thread);
+   int retres = pthread_create(&vsh->peer_list[peer_id].messages.sendrecv_thread , 0 ,  SocketAdapterToMessageTable_Thread ,(void*) &pass_to_thread);
    if ( retres==0 ) { while (pass_to_thread.keep_var_on_stack) { usleep(10); } } // <- Keep PeerServerContext in stack for long enough :P
 
    pass_to_thread.type_of_thread=1;
    pass_to_thread.keep_var_on_stack = 1;
-   retres = pthread_create( &vsh->client_thread, 0 ,  JobAndMessageTableExecutor_Thread ,(void*) &pass_to_thread);
+   retres = pthread_create(&vsh->peer_list[peer_id].messages.internal_messageproc_thread , 0 ,  JobAndMessageTableExecutor_Thread ,(void*) &pass_to_thread);
    if ( retres==0 ) { while (pass_to_thread.keep_var_on_stack) { usleep(10); } } // <- Keep PeerServerContext in stack for long enough :P
 
 
    pass_to_thread.type_of_thread=2;
    pass_to_thread.keep_var_on_stack = 1;
-   retres = pthread_create( &vsh->client_thread, 0 ,  JobAndMessageTableExecutor_Thread ,(void*) &pass_to_thread);
+   retres = pthread_create(&vsh->peer_list[peer_id].messages.external_messageproc_thread , 0 ,  JobAndMessageTableExecutor_Thread ,(void*) &pass_to_thread);
    if ( retres==0 ) { while (pass_to_thread.keep_var_on_stack) { usleep(10); } } // <- Keep PeerServerContext in stack for long enough :P
 
 

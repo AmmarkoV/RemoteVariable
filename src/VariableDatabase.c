@@ -248,7 +248,7 @@ int IfLocalVariableChanged_SignalUpdateToJoblist(struct VariableShare * vsh,unsi
          for (i=0; i< vsh->total_peers; i++)
          {
            fprintf(stderr,"Singaling LocalVariableChanged broadcasting to peer number %u \n",i);
-           internal_msg=AddToMessageTable(&vsh->peer_list[i].message_queue,1,0,&header,0,vsh->central_timer);
+           internal_msg=AddToMessageTable(&vsh->peer_list[i].messages,1,0,&header,0,vsh->central_timer);
 
            if (!internal_msg.failed) { ++sent_to; }
          }
@@ -298,7 +298,7 @@ int RefreshAllVariablesThatNeedIt(struct VariableShare *vsh)
            if (peer_find.failed) { fprintf(stderr,"ERROR Resolving from socket to peer id!\n"); return 0; }
 
            fprintf(stderr,"Singaling LocalVariableChanged broadcasting to peer number %u \n",i);
-           internal_msg=AddToMessageTable(&vsh->peer_list[peer_find.value].message_queue,1,0,&header,0,vsh->central_timer);
+           internal_msg=AddToMessageTable(&vsh->peer_list[peer_find.value].messages,1,0,&header,0,vsh->central_timer);
 
            if (!internal_msg.failed) { vsh->share.variables[i].flag_needs_refresh_from_sock=0; /* We trust that the "add job" will do its job :P*/ }
 
