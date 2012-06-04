@@ -185,6 +185,56 @@ struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,
   return retres;
 }
 
+int SwapItemsMessageTable(struct MessageTable * mt,unsigned int mt_id1,unsigned int mt_id2)
+{
+  if ( (mt->message_queue_current_length <= mt_id1 )||
+        (mt->message_queue_current_length <= mt_id2 ) )
+         { error("SwapItemsMessageTable called for out of bounds mt_id1 or mt_id2 \n"); return 0; }
+
+   if (mt_id1==mt_id2) { return 1;}
+
+   struct MessageTableItem temp=mt->table[mt_id1];
+   mt->table[mt_id1]=mt->table[mt_id2];
+   mt->table[mt_id2]=temp;
+
+   return 1;
+}
+
+
+
+int RemFromMessageTableKeepOrder(struct MessageTable * mt,unsigned int mt_id)
+{
+
+  if (mt->message_queue_current_length <= mt_id ) { error("RemFromMessageTable called for out of bounds mt_id \n"); return 0; }
+
+  LockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------
+
+
+  // PRINT THE REM MESSAGE TABLE OPERATION
+  fprintf(stderr,"RemFromMessageTableKeepOrder -> mt_id %u of %u - type ",mt_id,mt->message_queue_current_length); PrintMessageType(&mt->table[mt_id].header);
+  fprintf(stderr," group %u \n",mt->table[mt_id].header.incremental_value);
+
+
+  EmptyMTItem(&mt->table[mt_id],0); // we want to deallocate any mallocs that happen to be local ( 0 second arg )
+
+  if (mt_id<mt->message_queue_current_length-1)
+  {
+   int i=0;
+   for (i=mt_id; i<mt->message_queue_current_length; i++)
+   {
+     mt->table[i]=mt->table[i+1]; // This "bug" took me 2 days to find out :P , this line was mt->table[mt_id]=mt->table[mt_id+1];
+   }
+   EmptyMTItem(&mt->table[mt->message_queue_current_length-1],1); //ignore malloc cause it is a copy
+  }
+
+
+  --mt->message_queue_current_length;
+
+  UnlockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------
+
+  return 1;
+}
+
 
 int RemFromMessageTable(struct MessageTable * mt,unsigned int mt_id)
 {
@@ -194,29 +244,26 @@ int RemFromMessageTable(struct MessageTable * mt,unsigned int mt_id)
   LockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------
 
 
-  fprintf(stderr,"RemFromMessageTable -> mt_id %u of %u - type ",mt_id,mt->message_queue_current_length);
-  PrintMessageType(&mt->table[mt_id].header);
+  // PRINT THE REM MESSAGE TABLE OPERATION
+  fprintf(stderr,"RemFromMessageTable using the old swaparoo TM -> mt_id %u of %u - type ",mt_id,mt->message_queue_current_length); PrintMessageType(&mt->table[mt_id].header);
   fprintf(stderr," group %u \n",mt->table[mt_id].header.incremental_value);
 
 
   EmptyMTItem(&mt->table[mt_id],0); // we want to deallocate any mallocs that happen to be local ( 0 second arg )
-
   if (mt->message_queue_current_length>1)
-  {
-   int i=0;
-   for (i=mt_id; i<mt->message_queue_current_length; i++)
    {
-     mt->table[mt_id]=mt->table[mt_id+1];
+      SwapItemsMessageTable(mt,mt_id,mt->message_queue_current_length-1);
    }
-   EmptyMTItem(&mt->table[mt->message_queue_current_length-1],1); //ignore malloc cause it is a copy
-  }
 
 
-   --mt->message_queue_current_length;
+
+  --mt->message_queue_current_length;
 
   UnlockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------
+
   return 1;
 }
+
 
 int SetMessageTableItemForRemoval(struct MessageTableItem * mti)
 {

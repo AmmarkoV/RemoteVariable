@@ -102,8 +102,7 @@ struct failint SendPacketPassedToMT(int clientsock,struct MessageTable * mt,unsi
   if ( mt->table[item_num].header.payload_size > 0 )
    {
      unsigned int * payload_val = (unsigned int *) mt->table[item_num].payload;
-     fprintf(stderr,"SendPacketPassedToMT sending payload %p , payload_val %u , payload size %u \n",
-                   mt->table[item_num].payload,*payload_val,mt->table[item_num].header.payload_size);
+     fprintf(stderr,"SendPacketPassedToMT sending payload %p , payload_val %u , payload size %u \n", mt->table[item_num].payload,*payload_val,mt->table[item_num].header.payload_size);
 
      opres=send(clientsock,mt->table[item_num].payload,mt->table[item_num].header.payload_size,MSG_WAITALL);
      if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; return retres; } else
@@ -112,12 +111,19 @@ struct failint SendPacketPassedToMT(int clientsock,struct MessageTable * mt,unsi
 
    }
 
+  //This message will trigger will travel to the peer with the send operation but its role is not finished here
+  //It will start a protocol action so we set it NOT for removal and NOT executed
+  mt->table[item_num].executed=0;
+  mt->table[item_num].remove=0;
 
+  //Rest of initialization..
   mt->table[item_num].sent=1;
-  retres.value=item_num;
-  retres.failed=0;
+
 
   if(sockadap_msg()) fprintf(stderr,"SendPacketPassedToMT complete ----------------\n");
+
+  retres.value=item_num;
+  retres.failed=0;
   return retres;
 }
 
@@ -331,7 +337,7 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
     RemFromMessageTableWhereRemoveFlagExists(mt);
 
 
-    usleep(1000);
+    usleep(500);
   }
   return 0;
 }
