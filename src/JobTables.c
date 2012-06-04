@@ -50,8 +50,6 @@ int AddJob(struct VariableShare * vsh,unsigned int our_varid,unsigned int sockpe
     if (operation_type==NOACTION)       fprintf(stderr," NOACTION ");
 
 
-    fprintf(stderr," @ %u\n",vsh->central_timer);
-
     ++vsh->jobs_loaded;
     fprintf(stderr,"Total jobs are now %u\n",vsh->jobs_loaded);
 
@@ -128,7 +126,6 @@ int Job_SingalLocalVariableChanged(struct VariableShare * vsh,unsigned int our_v
    for (i=0; i< vsh->total_peers; i++)
     {
       fprintf(stderr,"Job_SingalLocalVariableChanged broadcasting to peer number %u \n",i);
-      fprintf(stderr,"Is this correct ? \n");
       sent_to+=AddJob(vsh,our_varid,vsh->peer_list[i].socket_to_client,SIGNALCHANGED);
     }
 
@@ -249,3 +246,5 @@ int ExecutePendingJobs(struct VariableShare *vsh)
     }
   return successfull_jobs;
 }
+
+

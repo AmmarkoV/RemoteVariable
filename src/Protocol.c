@@ -238,8 +238,8 @@ int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigne
 
 
   //We add the new message to the message table , it will get consumed by the SocketAdapterToMessageTables thread
-  struct failint res1=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,0);
-  if (res1.failed)
+  struct failint msg1=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,0);
+  if (msg1.failed)
    {
       fprintf(stderr,"ERROR : Could not add Request_Variable to local MessageTable STEP 1\n");
       return 0;
@@ -247,8 +247,8 @@ int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigne
 
 
   //We wait for the success indicator recv and subsequent pass to our message table
-  struct failint resRESP=WaitForVariableAndCopyItAtMessageTableItem(&vsh->peer_list[peer_id].message_queue,res1.value,vsh,var_id);
-  if ( resRESP.failed )
+  struct failint msg2=WaitForVariableAndCopyItAtMessageTableItem(&vsh->peer_list[peer_id].message_queue,msg1.value,vsh,var_id);
+  if ( msg2.failed )
     {
         header.operation_type=SIGNALMSGFAILURE; // Only change message type the rest remains the same
     } else
@@ -259,21 +259,21 @@ int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigne
   //We remove payloads ,etc and sent a positive or negative confirmation to end the protocol handshake
   header.var_id=var_id;
   header.payload_size=0;
-  struct failint res2=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,0);
-  if (res2.failed)
+  struct failint msg3=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,0);
+  if (msg3.failed)
    {
       fprintf(stderr,"Could not add Request_Variable to local MessageTable STEP 2\n");
       return 0;
    }
 
   //Wait for message to be sent
-  WaitForMessageTableItemToBeSent(&vsh->peer_list[peer_id].message_queue,res2.value);
+  WaitForMessageTableItemToBeSent(&vsh->peer_list[peer_id].message_queue,msg3.value);
 
 
   //The messages sent and received can now be removed..!
-  SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].message_queue.table[res1.value]);
-  SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].message_queue.table[res2.value]);
-  SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].message_queue.table[resRESP.value]);
+  SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].message_queue.table[msg1.value]);
+  SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].message_queue.table[msg2.value]);
+  SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].message_queue.table[msg3.value]);
   return 1;
 }
 
@@ -304,20 +304,20 @@ int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,s
   header.payload_size = vsh->share.variables[header.var_id].size_of_ptr;
 
   //Sending RESP_WRITETO back to the peer along with the payload..!
-  struct failint res=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,vsh->share.variables[header.var_id].ptr);
-  if (res.failed)
+  struct failint msg1=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,vsh->share.variables[header.var_id].ptr);
+  if (msg1.failed)
    {
       fprintf(stderr,"Could not add AcceptRequest_ReadVariable to local MessageTable\n");
       return 0;
    }
 
 
-  struct failint res2=WaitForSuccessIndicatorAtMessageTableItem(&vsh->peer_list[peer_id].message_queue,res.value);
+  struct failint msg2=WaitForSuccessIndicatorAtMessageTableItem(&vsh->peer_list[peer_id].message_queue,msg1.value);
 
   //The messages sent and received can now be removed..!
   SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].message_queue.table[mt_id]);
-  SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].message_queue.table[res.value]);
-  SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].message_queue.table[res2.value]);
+  SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].message_queue.table[msg1.value]);
+  SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].message_queue.table[msg2.value]);
   return 1;
 }
 
@@ -350,17 +350,17 @@ int Request_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id
   if (protocol_msg()) fprintf(stderr,"Request_SignalChangeVariable called for peer_id %u , var_id %u , socket %u , incremental value %u \n",peer_id,var_id,peersock,vsh->peer_list[peer_id].incremental_value);
 
   //We add the new message to the message table , it will get consumed by the SocketAdapterToMessageTables thread
-  struct failint res=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,0);
-  if (res.failed) { fprintf(stderr,"Could not add SignalChange_Variable to local MessageTable\n"); return 0; }
+  struct failint msg1=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,0);
+  if (msg1.failed) { fprintf(stderr,"Could not add SignalChange_Variable to local MessageTable\n"); return 0; }
 
   //We wait for the success indicator recv and subsequent pass to our message table
-  struct failint resRESP=WaitForSuccessIndicatorAtMessageTableItem(&vsh->peer_list[peer_id].message_queue,res.value);
+  struct failint msg2=WaitForSuccessIndicatorAtMessageTableItem(&vsh->peer_list[peer_id].message_queue,msg1.value);
 
 
   //The messages sent and received can now be removed..!
-  SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].message_queue.table[res.value]);
-  SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].message_queue.table[resRESP.value]);
-  return (!resRESP.failed);
+  SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].message_queue.table[msg1.value]);
+  SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].message_queue.table[msg2.value]);
+  return (!msg2.failed);
 }
 
 int AcceptRequest_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id,struct MessageTable * mt,unsigned int mt_id,int peersock)
@@ -390,14 +390,14 @@ int AcceptRequest_SignalChangeVariable(struct VariableShare * vsh,unsigned int p
    }
 
   //We send the aforementioned signal and gracefully exit
-  struct failint res=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,0);
-  if (res.failed) { fprintf(stderr,"Could not add AcceptRequest_Variable to local MessageTable\n"); return 0; }
+  struct failint msg1=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,0);
+  if (msg1.failed) { fprintf(stderr,"Could not add AcceptRequest_Variable to local MessageTable\n"); return 0; }
 
   //Wait for message to be sent
-  WaitForMessageTableItemToBeSent(&vsh->peer_list[peer_id].message_queue,res.value);
+  WaitForMessageTableItemToBeSent(&vsh->peer_list[peer_id].message_queue,msg1.value);
 
   SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].message_queue.table[mt_id]);
-  SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].message_queue.table[res.value]);
+  SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].message_queue.table[msg1.value]);
   return 1;
 }
 

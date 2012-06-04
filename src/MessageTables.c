@@ -18,7 +18,7 @@ int WaitForMessageLockToClear(struct MessageTable * mt)
      ++waitloops;
    }
 
-  if (waitloops) { fprintf(stderr,"WaitForMessageLockToClear waited for %u ms ( loops )\n",waitloops); }
+  if (waitloops>0) { fprintf(stderr,"WaitForMessageLockToClear waited for %u ms ( loops )\n",waitloops); }
   return 1;
 }
 
@@ -54,8 +54,6 @@ if (!ignore_payload)
      {
        fprintf(stderr,"EmptyMTIItem found a local malloc so freeing it..\n");
        free(mti->payload);
-       mti->payload_local_malloc=0;
-       mti->payload=0;
      }
   }
 }
@@ -111,7 +109,9 @@ int AllocateMessageQueue(struct MessageTable *  mt,unsigned int total_messages)
    unsigned int i=0;
    for (i=0; i<total_messages; i++)
     {
-      EmptyMTItem(&mt->table[i],1);
+      mt->table[i].payload=0;
+      mt->table[i].payload_local_malloc=0;
+      EmptyMTItem(&mt->table[i],1); // we ignore the payload because it has random garbage initially
     }
 
    mt->message_queue_total_length=total_messages;
@@ -154,9 +154,9 @@ struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,
 
   fprintf(stderr,"AddToMessageTable incoming = %u , freemalloc_atdispoal = %u , payload = %p , payload_size %u ",incoming,free_malloc_at_disposal,payload,header->payload_size);
   PrintMessageType(header); fprintf(stderr," group = %u\n",header->incremental_value);
+  //usleep(200);
 
-
-  //TODO APPARENTLY THE TIMING ON THIS CALL HAS SOME IMPORTANCE!
+  //TODO APPARENTLY THE TIMING ON THIS CALL HAS SOME IMPORTANCE ( RACE CONDITION )!
   unsigned int mt_pos = mt->message_queue_current_length;
   ++mt->message_queue_current_length;
 
@@ -195,14 +195,14 @@ int RemFromMessageTable(struct MessageTable * mt,unsigned int mt_id)
   if (mt->message_queue_current_length <= mt_id ) { error("RemFromMessageTable called for out of bounds mt_id \n"); return 0; }
 
   LockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------
-  mt->table[mt_id].remove=0;
+
 
   fprintf(stderr,"RemFromMessageTable -> mt_id %u of %u - type ",mt_id,mt->message_queue_current_length);
   PrintMessageType(&mt->table[mt_id].header);
   fprintf(stderr,"\n");
 
 
-  EmptyMTItem(&mt->table[mt_id],0);
+  EmptyMTItem(&mt->table[mt_id],0); // we want to deallocate any mallocs that happen to be local ( 0 second arg )
 
   if (mt->message_queue_current_length>1)
   {
@@ -349,8 +349,18 @@ struct failint WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *m
                 unsigned int * old_val = (unsigned int *) vsh->share.variables[var_id].ptr;
                 unsigned int * new_val = (unsigned int *) mt->table[mt_traverse].payload;
                 unsigned int ptr_size = vsh->share.variables[var_id].size_of_ptr;
-                fprintf(stderr,"!!!!!!!!!!!!!! Copying a fresh value for variable %u , was %u now will become %u ( size %u ) \n", var_id,  *old_val,  *new_val, ptr_size);
+                fprintf(stderr,"!!!!!!!!!!--> Copying a fresh value for variable %u , was %u now will become %u ( size %u ) \n", var_id,  *old_val,  *new_val, ptr_size);
                 memcpy(old_val,new_val,ptr_size);
+
+                /*
+                Memory can be deallocated at this point since the message has been copied , this however is not very stable :S
+                if (mt->table[mt_traverse].payload_local_malloc)
+                 {
+                   free(mt->table[mt_traverse].payload);
+                 }
+                   mt->table[mt_traverse].payload=0;
+                   mt->table[mt_traverse].payload_local_malloc=0; */
+
 
                 retres.failed=0;
                 retres.value=mt_traverse;
@@ -397,7 +407,7 @@ struct failint WaitForMessageTableItemToBeSent(struct MessageTable *mt , unsigne
         }
 
        fprintf(stderr,".WS.");
-       usleep(5000);
+       usleep(1000);
    }
 
   return retres;
