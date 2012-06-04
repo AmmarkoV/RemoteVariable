@@ -62,6 +62,7 @@ if (!ignore_payload)
   mti->header.operation_type=0;
   mti->header.var_id=0;
   mti->header.payload_size=0;
+  mti->time=0;
   mti->remove=0;
   mti->executed=0;
   mti->incoming=0;
@@ -78,6 +79,7 @@ void PrintMessageTableItem(struct MessageTableItem * mti,unsigned int val)
    fprintf(stderr,"mti->header.incremental_value = %u\n",mti->header.incremental_value);
    fprintf(stderr,"mti->header.operation_type = %u ",mti->header.operation_type); PrintMessageType(&mti->header);  fprintf(stderr,"\n");
    fprintf(stderr,"mti->header.var_id = %u\n",mti->header.var_id);
+   fprintf(stderr,"mti->time = %u\n",mti->time);
    fprintf(stderr,"mti->remove = %u\n",mti->remove);
    fprintf(stderr,"mti->executed = %u\n",mti->executed);
    fprintf(stderr,"mti->incoming = %u\n",mti->incoming);
@@ -141,7 +143,7 @@ int FreeMessageQueue(struct MessageTable * mt)
    return 1;
 }
 
-struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,unsigned int free_malloc_at_disposal,struct PacketHeader * header,void * payload)
+struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,unsigned int free_malloc_at_disposal,struct PacketHeader * header,void * payload,unsigned int msg_timer)
 {
 
   struct failint retres={0};
@@ -153,7 +155,7 @@ struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,
   LockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------
 
   fprintf(stderr,"AddToMessageTable incoming = %u , freemalloc_atdispoal = %u , payload = %p , payload_size %u ",incoming,free_malloc_at_disposal,payload,header->payload_size);
-  PrintMessageType(header); fprintf(stderr," group = %u\n",header->incremental_value);
+  PrintMessageType(header); fprintf(stderr," group = %u time = %u \n",header->incremental_value,msg_timer);
   //usleep(200);
 
   //TODO APPARENTLY THE TIMING ON THIS CALL HAS SOME IMPORTANCE ( RACE CONDITION )!
@@ -167,20 +169,13 @@ struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,
 
   mt->table[mt_pos].header=*header;
   mt->table[mt_pos].incoming=incoming;
+  mt->table[mt_pos].time=msg_timer;
 
   mt->table[mt_pos].payload_local_malloc=free_malloc_at_disposal;
   mt->table[mt_pos].payload=payload;
 
- /*
-  if (mt->table[mt_pos].payload!=0)
-   {
-     unsigned int * payload_val = (unsigned int *) payload;
-     fprintf(stderr,"Address of current payload is %p , value %u , size = %u ..\n",mt->table[mt_pos].payload,*payload_val,mt->table[mt_pos].header.payload_size);
-   }*/
-
   PrintMessageTableItem(&mt->table[mt_pos],mt_pos);
 
-  //fprintf(stderr,"AddToMessageTable ended , new message pos %u\n",mt_pos);
   retres.value=mt_pos;
 
   UnlockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------

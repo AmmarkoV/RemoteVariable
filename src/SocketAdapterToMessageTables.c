@@ -121,7 +121,7 @@ struct failint SendPacketPassedToMT(int clientsock,struct MessageTable * mt,unsi
   return retres;
 }
 
-struct failint RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt)
+struct failint RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt,unsigned int msg_timer)
 {
   struct failint retres={0};
   retres.value=0;
@@ -153,7 +153,7 @@ struct failint RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt)
     unsigned int * payload_val=(unsigned int * ) payload;
     if(sockadap_msg())fprintf(stderr,"received payload seems to be carrying value %u \n",*payload_val);
 
-    retres = AddToMessageTable(mt,1,1,&header,payload);
+    retres = AddToMessageTable(mt,1,1,&header,payload,msg_timer);
     if(sockadap_msg())fprintf(stderr,"RecvPacketAndPassToMT complete with payload----------------\n");
     return retres;
    } else
@@ -161,7 +161,7 @@ struct failint RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt)
      if(sockadap_msg())fprintf(stderr,"RecvPacketAndPassToMT with no payload\n");
    }
 
-  retres = AddToMessageTable(mt,1,0,&header,0);
+  retres = AddToMessageTable(mt,1,0,&header,0,msg_timer);
 
   if(sockadap_msg()) fprintf(stderr,"RecvPacketAndPassToMT complete ----------------\n");
   return retres;
@@ -220,7 +220,8 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
 
    if (data_received==sizeof(incoming_packet))
    {
-    res=RecvPacketAndPassToMT(peersock,mt);
+    ++vsh->central_timer;
+    res=RecvPacketAndPassToMT(peersock,mt,vsh->central_timer);
     if (res.failed) { fprintf(stderr,"Failed passing socket recv to message table\n"); }
    }
      else
@@ -248,6 +249,7 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
     {
         if ( (!mt->table[table_iterator].remove)&&(!mt->table[table_iterator].incoming)&&(!mt->table[table_iterator].sent) )
         {
+          ++vsh->central_timer;
           res=SendPacketPassedToMT(peersock,mt,table_iterator);
           if (res.failed) { fprintf(stderr,"Could not SendPacketPassedToMT for table num %u and socket %u \n",table_iterator,peersock); } else
                           { fprintf(stderr,"Success SendPacketPassedToMT for table num %u and socket %u \n",table_iterator,peersock); }
@@ -255,6 +257,7 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
     }
    }
 
+   usleep(100);
   }
 
   RemPeerBySock(vsh,peersock);
@@ -310,12 +313,7 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
     RemFromMessageTableWhereRemoveFlagExists(mt);
 
 
-    //Pass JobTables To message tables
-//    ExecutePendingJobsForPeerID(vsh,peer_id);
-
-
-
-    usleep(100);
+    usleep(1000);
   }
   return 0;
 }

@@ -73,13 +73,14 @@ struct PacketHeader
 
 struct MessageTableItem
 {
+   unsigned int time;
    unsigned char executed;
    unsigned char remove;
    unsigned char incoming;
    unsigned char sent;
    struct PacketHeader header;
-   void * payload;
    unsigned char payload_local_malloc;
+   void * payload;
 };
 
 
@@ -153,19 +154,6 @@ struct SharePeer
     struct ShareList share;
 };
 
-struct ShareJob
-{
-     unsigned char status;
-
-     unsigned int local_var_id;
-     unsigned int remote_peer_socket;
-     unsigned int remote_peer_id;
-
-     char action; // 0 no action , 1 = write to , 2 = read from , 3 = check if it is the same on the other end
-
-     unsigned int time;
-};
-
 
 enum VariableShareStates
 {
@@ -202,10 +190,6 @@ struct VariableShare
 
     char ip[RVS_MAX_SHARE_IP_CHARS];
     unsigned int port;
-
-    struct ShareJob job_list[RVS_MAX_JOBS_PENDING];
-    unsigned int jobs_loaded;
-    unsigned int total_jobs_done;
 
     struct SharePeer master;
     struct SharePeer peer_list[RVS_MAX_PEERS];

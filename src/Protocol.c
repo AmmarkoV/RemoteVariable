@@ -240,7 +240,7 @@ int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigne
 
 
   //We add the new message to the message table , it will get consumed by the SocketAdapterToMessageTables thread
-  struct failint msg1=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,0);
+  struct failint msg1=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,0,vsh->central_timer);
   if (msg1.failed)
    {
       fprintf(stderr,"ERROR : Could not add Request_Variable to local MessageTable STEP 1\n");
@@ -261,7 +261,7 @@ int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigne
   //We remove payloads ,etc and sent a positive or negative confirmation to end the protocol handshake
   header.var_id=var_id;
   header.payload_size=0;
-  struct failint msg3=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,0);
+  struct failint msg3=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,0,vsh->central_timer);
   if (msg3.failed)
    {
       fprintf(stderr,"Could not add Request_Variable to local MessageTable STEP 2\n");
@@ -306,7 +306,7 @@ int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,s
   header.payload_size = vsh->share.variables[header.var_id].size_of_ptr;
 
   //Sending RESP_WRITETO back to the peer along with the payload..!
-  struct failint msg1=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,vsh->share.variables[header.var_id].ptr);
+  struct failint msg1=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,vsh->share.variables[header.var_id].ptr,vsh->central_timer);
   if (msg1.failed)
    {
       fprintf(stderr,"Could not add AcceptRequest_ReadVariable to local MessageTable\n");
@@ -352,7 +352,7 @@ int Request_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id
   if (protocol_msg()) fprintf(stderr,"Request_SignalChangeVariable called for peer_id %u , var_id %u , socket %u , incremental value %u \n",peer_id,var_id,peersock,vsh->peer_list[peer_id].incremental_value);
 
   //We add the new message to the message table , it will get consumed by the SocketAdapterToMessageTables thread
-  struct failint msg1=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,0);
+  struct failint msg1=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,0,vsh->central_timer);
   if (msg1.failed) { fprintf(stderr,"Could not add SignalChange_Variable to local MessageTable\n"); return 0; }
 
   //We wait for the success indicator recv and subsequent pass to our message table
@@ -392,7 +392,7 @@ int AcceptRequest_SignalChangeVariable(struct VariableShare * vsh,unsigned int p
    }
 
   //We send the aforementioned signal and gracefully exit
-  struct failint msg1=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,0);
+  struct failint msg1=AddToMessageTable(&vsh->peer_list[peer_id].message_queue,0,0,&header,0,vsh->central_timer);
   if (msg1.failed) { fprintf(stderr,"Could not add AcceptRequest_Variable to local MessageTable\n"); return 0; }
 
   //Wait for message to be sent

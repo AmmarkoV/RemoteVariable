@@ -58,15 +58,6 @@ struct VariableShare * Create_VariableDatabase(char * sharename,char * IP,unsign
 
   vsh->total_peers=0;
 
-/*
-  unsigned int i=0;
-  for (i=0; i<RVS_MAX_JOBS_PENDING; i++)
-   {
-      vsh->jobs_list[i]
-   }*/
-
-  vsh->jobs_loaded=0;
-  vsh->total_jobs_done=0;
 
   vsh->refresh_thread=0;
   vsh->client_thread=0;
@@ -258,7 +249,7 @@ int IfLocalVariableChanged_SignalUpdateToJoblist(struct VariableShare * vsh,unsi
          for (i=0; i< vsh->total_peers; i++)
          {
            fprintf(stderr,"Singaling LocalVariableChanged broadcasting to peer number %u \n",i);
-           internal_msg=AddToMessageTable(&vsh->peer_list[i].message_queue,1,0,&header,0);
+           internal_msg=AddToMessageTable(&vsh->peer_list[i].message_queue,1,0,&header,0,vsh->central_timer);
 
            if (!internal_msg.failed) { ++sent_to; }
          }
@@ -310,18 +301,10 @@ int RefreshAllVariablesThatNeedIt(struct VariableShare *vsh)
            if (peer_find.failed) { fprintf(stderr,"ERROR Resolving from socket to peer id!\n"); return 0; }
 
            fprintf(stderr,"Singaling LocalVariableChanged broadcasting to peer number %u \n",i);
-           internal_msg=AddToMessageTable(&vsh->peer_list[peer_find.value].message_queue,1,0,&header,0);
+           internal_msg=AddToMessageTable(&vsh->peer_list[peer_find.value].message_queue,1,0,&header,0,vsh->central_timer);
 
            if (!internal_msg.failed) { vsh->share.variables[i].flag_needs_refresh_from_sock=0; /* We trust that the "add job" will do its job :P*/ }
-           /*if ( AddJob(vsh,i,vsh->share.variables[i].flag_needs_refresh_from_sock ,READFROM) )
-             {
-               ++added_jobs;
-               fprintf(stderr,"Carrying on after job adding\n");
-               vsh->share.variables[i].flag_needs_refresh_from_sock=0; // We trust that the "add job" will do its job :P
-             } else
-             {
-               fprintf(stderr,"Could not add job\n");
-             }*/
+
         }
    }
 
@@ -347,8 +330,7 @@ int MakeSureVarReachedPeers(struct VariableShare *vsh,char * varname,unsigned in
   {
 
       if ( (vsh->share.variables[var_id].this_hash_transmission_count == vsh->total_peers ) &&
-           (vsh->share.variables[var_id].flag_needs_refresh_from_sock==0) &&
-          ( vsh->jobs_loaded == 0 ))
+           (vsh->share.variables[var_id].flag_needs_refresh_from_sock==0)  /*add message table counter here maybe*/)
 
                           { return 1; }
 
