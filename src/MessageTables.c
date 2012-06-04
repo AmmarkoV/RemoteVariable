@@ -252,7 +252,7 @@ int RemFromMessageTableWhereRemoveFlagExists(struct MessageTable * mt)
   if (mt->message_queue_current_length==1)
    {
      if ( mt->table[0].remove ) { if ( RemFromMessageTable(mt,0) ) { ++messages_removed; } }
-     fprintf(stderr,"Hardcoded single message removed %u msgs",messages_removed);
+     if (messages_removed) { fprintf(stderr,"Hardcoded single message removed %u msgs",messages_removed); }
      return messages_removed;
    }
 

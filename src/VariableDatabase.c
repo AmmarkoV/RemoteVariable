@@ -58,7 +58,6 @@ struct VariableShare * Create_VariableDatabase(char * sharename,char * IP,unsign
 
   vsh->total_peers=0;
 
-
   vsh->refresh_thread=0;
   vsh->client_thread=0;
   vsh->server_thread=0;
@@ -253,8 +252,6 @@ int IfLocalVariableChanged_SignalUpdateToJoblist(struct VariableShare * vsh,unsi
 
            if (!internal_msg.failed) { ++sent_to; }
          }
-
-
 
       return 1;
     }

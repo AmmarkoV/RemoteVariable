@@ -175,6 +175,8 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
   struct VariableShare * vsh = thread_context->vsh;
   unsigned int peer_id =  thread_context->peer_id;
   int peersock = thread_context->peersock;
+
+  //We permit the var to be deallocated from the thread generator stack
   thread_context->keep_var_on_stack=0;
 
   struct PacketHeader incoming_packet;
@@ -272,11 +274,15 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
   struct VariableShare * vsh = thread_context->vsh;
   unsigned int peer_id =  thread_context->peer_id;
   int peersock = thread_context->peersock;
+  unsigned int internal_loop = thread_context->type_of_thread;
+
+  //We permit the var to be deallocated from the thread generator stack
   thread_context->keep_var_on_stack=0;
 
-  struct PacketHeader incoming_packet;
   struct MessageTable * mt = &vsh->peer_list[peer_id].message_queue;
   unsigned int mt_id=0;
+  fprintf(stderr,"Started JobAndMessageTableExecutor_Thread , internal_loop = %u",internal_loop);
+
 
   while (1)
   {
@@ -285,26 +291,36 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
     {
       if ( (!mt->table[mt_id].executed)&&(mt->table[mt_id].incoming) )
       {
-       switch ( mt->table[mt_id].header.operation_type )
+       //INTERNAL MESSAGING THREAD WORK
+       if ( (internal_loop==0) || (internal_loop==1) ) // This is an internal message only processing thread
        {
-        case NOACTION : fprintf(stderr,"NOACTION received packet doesnt trigger New Protocol Request\n"); break;
-        //TODO : DITCH THE WHOLE JOBTABLES MECHANISM AND UTILIZE THE FOLLOWING 3 CALLS
-        case INTERNAL_START_SIGNALCHANGED : Request_SignalChangeVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock); mt->table[mt_id].remove=1; /*Internal messages must me marked remove here*/ break;
-        case INTERNAL_START_READFROM : Request_ReadVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock); mt->table[mt_id].remove=1; /*Internal messages must me marked remove here*/ break;
-        case INTERNAL_START_WRITETO : Request_WriteVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock); mt->table[mt_id].remove=1; /*Internal messages must me marked remove here*/ break;
+          switch ( mt->table[mt_id].header.operation_type )
+         {
+          case NOACTION : fprintf(stderr,"NOACTION received packet doesnt trigger New Protocol Request\n"); break;
+          case INTERNAL_START_SIGNALCHANGED : Request_SignalChangeVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock); mt->table[mt_id].remove=1;  mt->table[mt_id].executed=1; /*Internal messages must me marked remove here*/ break;
+          case INTERNAL_START_READFROM : Request_ReadVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock); mt->table[mt_id].remove=1;   mt->table[mt_id].executed=1;/*Internal messages must me marked remove here*/ break;
+          case INTERNAL_START_WRITETO : Request_WriteVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock); mt->table[mt_id].remove=1;  mt->table[mt_id].executed=1; /*Internal messages must me marked remove here*/ break;
+         };
 
+       }
 
+       //EXTERNAL MESSAGING THREAD WORK
+       if ( (internal_loop==0) || (internal_loop==2) ) // This is an external message only processing thread
+       {
 
-        case RESP_WRITETO : fprintf(stderr,"RESP_WRITETO received packet doesnt trigger New Protocol Request\n"); break;
-        case WRITETO:  AcceptRequest_WriteVariable(vsh,peer_id,mt,mt_id,peersock); break;
-        case READFROM: AcceptRequest_ReadVariable(vsh,peer_id,mt,mt_id,peersock); break;
-        case SIGNALCHANGED : AcceptRequest_SignalChangeVariable(vsh,peer_id,mt,mt_id,peersock); break;
-        case SIGNALMSGSUCCESS : fprintf(stderr,"SIGNALMSGSUCCESS received packet doesnt trigger New Protocol Request\n"); break;
-        case SIGNALMSGFAILURE : fprintf(stderr,"SIGNALMSGFAILURE received packet doesnt trigger New Protocol Request\n"); break;
-        case SYNC : fprintf(stderr,"SYNC received packet doesnt trigger New Protocol Request\n"); break;
-        default : fprintf(stderr,"Unhandled incoming packet operation ( %u ) \n",incoming_packet.operation_type); break;
-       };
-       mt->table[mt_id].executed=1;
+         switch ( mt->table[mt_id].header.operation_type )
+         {
+          case NOACTION : fprintf(stderr,"NOACTION received packet doesnt trigger New Protocol Request\n"); break;
+          case RESP_WRITETO : fprintf(stderr,"RESP_WRITETO received packet doesnt trigger New Protocol Request\n"); break;
+          case WRITETO:  AcceptRequest_WriteVariable(vsh,peer_id,mt,mt_id,peersock); mt->table[mt_id].executed=1; break;
+          case READFROM: AcceptRequest_ReadVariable(vsh,peer_id,mt,mt_id,peersock); mt->table[mt_id].executed=1; break;
+          case SIGNALCHANGED : AcceptRequest_SignalChangeVariable(vsh,peer_id,mt,mt_id,peersock); mt->table[mt_id].executed=1; break;
+          case SIGNALMSGSUCCESS : fprintf(stderr,"SIGNALMSGSUCCESS received packet doesnt trigger New Protocol Request\n"); break;
+          case SIGNALMSGFAILURE : fprintf(stderr,"SIGNALMSGFAILURE received packet doesnt trigger New Protocol Request\n"); break;
+          case SYNC : fprintf(stderr,"SYNC received packet doesnt trigger New Protocol Request\n"); break;
+         };
+
+       }
       }
     }
 

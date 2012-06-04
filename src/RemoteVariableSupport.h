@@ -229,6 +229,7 @@ struct SocketAdapterToMessageTablesContext
    struct VariableShare * vsh;
    unsigned int peer_id;
    int peersock;
+   unsigned int type_of_thread;
    unsigned int keep_var_on_stack;
    unsigned int * pause_switch;
    unsigned int * stop_switch;
