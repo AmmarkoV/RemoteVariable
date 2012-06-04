@@ -44,15 +44,15 @@ int GenerateNewClientLoop(struct VariableShare * vsh,int clientsock,struct socka
    fprintf(stderr,"Server Thread : Client connected: %s\n", inet_ntoa(client.sin_addr));
 
    struct failint res=AddPeer(vsh,inet_ntoa(client.sin_addr),0,clientsock);
-   if ( res.failed ) { error("Server Thread : Failed to add peer to list while @ GenerateNewClientLoop "); }
+   if ( res.failed ) { error("Server Thread : Failed to add peer to list while @ GenerateNewClientLoop "); return 0; }
 
-   unsigned int peer_id=res.value;
+  unsigned int peer_id=res.value;
 
   vsh->peer_list[peer_id].peer_thread=0;
   vsh->peer_list[peer_id].pause_peer_thread=0;
   vsh->peer_list[peer_id].stop_peer_thread=0;
 
-  struct SocketAdapterToMessageTablesContext pass_to_thread;
+  struct SocketAdapterToMessageTablesContext pass_to_thread={0};
   pass_to_thread.vsh=vsh;
   pass_to_thread.peer_id = peer_id;
   pass_to_thread.peersock = clientsock;
@@ -196,7 +196,7 @@ StartRemoteVariableConnection(struct VariableShare * vsh)
    unsigned int peer_id=res.value;
 
 
-   struct SocketAdapterToMessageTablesContext pass_to_thread;
+   struct SocketAdapterToMessageTablesContext pass_to_thread={0};
    pass_to_thread.vsh=vsh;
    pass_to_thread.peer_id = peer_id;
    pass_to_thread.peersock = vsh->master.socket_to_client;

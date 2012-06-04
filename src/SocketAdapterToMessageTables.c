@@ -137,7 +137,7 @@ struct failint RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt,uns
 
   if(sockadap_msg()) fprintf(stderr,"Trying RecvPacketAndPassToMT <<<<<<<<<<<<<<<<<<<<<<< ");
 
-  struct PacketHeader header;
+  struct PacketHeader header={0};
   int opres=recv(clientsock,&header,sizeof(struct PacketHeader),MSG_WAITALL);
   if (opres<0) { fprintf(stderr,"Error RecvPacketAndPassToMT recv error %u \n",errno); retres.failed=1; return retres; } else
   if (opres!=sizeof(struct PacketHeader)) { fprintf(stderr,"Error RecvPacketAndPassToMT incorrect number of bytes recieved %u \n",opres); retres.failed=1; return retres; }
@@ -218,11 +218,35 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
   // Set socket to nonblocking mode..!
   int rest_perms = fcntl(peersock,F_GETFL,0);
 
-
+  //Allow MessageProc Threads to wake up!
+  mt->pause_internal_messageproc_thread=0;
+  mt->pause_external_messageproc_thread=0;
 
   int data_received = 0;
-  while (1)
+  while (! mt->stop_sendrecv_thread)
   {
+
+
+
+     /* PAUSE PART ------------------------------------------------------------------------*/
+      if ( vsh->peer_list[peer_id].messages.pause_sendrecv_thread == 1 )
+       { //We just received a Pause request..
+         vsh->peer_list[peer_id].messages.pause_sendrecv_thread=2; // We signal we got it
+         unsigned int wait_time=0;
+         while( vsh->peer_list[peer_id].messages.pause_sendrecv_thread > 0 )
+           {
+             usleep(100);
+             if (wait_time>100) { fprintf(stderr,".RS."); }
+             ++wait_time;
+           }
+       }
+     /* PAUSE PART ------------------------------------------------------------------------*/
+
+
+
+
+
+
    /* ------------------------------------------------- RECEIVE PART ------------------------------------------------- */
    incoming_packet.incremental_value=0;
    incoming_packet.operation_type=0;
@@ -260,6 +284,7 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
    if (mt->message_queue_current_length>0)
    {
     //if (mt->message_queue_current_length!=0) { fprintf(stderr,"Table iterator scanning %u messages \n",mt->message_queue_current_length); }
+
     for ( table_iterator=0; table_iterator< mt->message_queue_current_length; table_iterator++)
     {
         if ( (!mt->table[table_iterator].remove)&&(!mt->table[table_iterator].incoming)&&(!mt->table[table_iterator].sent) )
@@ -270,6 +295,7 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
                           { fprintf(stderr,"Success SendPacketPassedToMT for table num %u and socket %u \n",table_iterator,peersock); }
         }
     }
+
    }
 
    usleep(100);
@@ -288,17 +314,27 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
   unsigned int peer_id =  thread_context->peer_id;
   int peersock = thread_context->peersock;
   unsigned int internal_loop = thread_context->type_of_thread;
+  struct MessageTable * mt = &vsh->peer_list[peer_id].messages;
+  if ((mt==0)||(mt->table==0)) { fprintf(stderr," Serious Error MessageTable doesnt seem to be allocated\n\ "); return 0; }
+
+  unsigned int * stop_switch=0;
+  unsigned int * pause_switch=0;
+  if (internal_loop==1) {stop_switch=&mt->stop_internal_messageproc_thread;
+                         pause_switch=&mt->pause_internal_messageproc_thread; }
+                          else
+                        {stop_switch=&mt->stop_external_messageproc_thread;
+                         pause_switch=&mt->pause_external_messageproc_thread; }
 
   //We permit the var to be deallocated from the thread generator stack
   thread_context->keep_var_on_stack=0;
 
   fprintf(stderr,"Started JobAndMessageTableExecutor_Thread for peer %u , internal_loop = %u",peer_id,internal_loop);
 
-  struct MessageTable * mt = &vsh->peer_list[peer_id].messages;
+  while (*pause_switch) { fprintf(stderr,".INIT."); usleep(100); }
+
+
   unsigned int mt_id=0;
-
-
-  while (1)
+  while (! *stop_switch)
   {
 
     for (mt_id=0; mt_id<mt->message_queue_current_length; mt_id++)
@@ -343,8 +379,25 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
 
 
     //First delete from message table messages pending removal
-    RemFromMessageTableWhereRemoveFlagExists(mt);
+    if ( (internal_loop==0) || (internal_loop==2) )
+       { // Only external or global thread removes messages to make things simpler..
 
+         // We will also pause the SEND/RECV thread in order to keep them from accessing the messagetable structure
+         vsh->peer_list[peer_id].messages.pause_sendrecv_thread=1;
+         unsigned int wait_time=0;
+         while (vsh->peer_list[peer_id].messages.pause_sendrecv_thread!=2)
+         {
+           usleep(100);
+           if (wait_time>100) fprintf(stderr,".REM.");
+           ++wait_time;
+         }
+
+         //Right now we are the only thread that has access to the MessageTable Structure
+         RemFromMessageTableWhereRemoveFlagExists(mt);
+         //Ok , we have removed the trash , now to resume functionality..
+
+         vsh->peer_list[peer_id].messages.pause_sendrecv_thread=0;
+       }
 
     usleep(500);
   }

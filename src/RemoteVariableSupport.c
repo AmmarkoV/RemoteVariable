@@ -83,10 +83,20 @@ struct VariableShare * ConnectToRemote_VariableSharing(char * sharename,char * I
 */
 int Stop_VariableSharing(struct VariableShare * vsh)
 {
+
+    unsigned int loaded_peers=vsh->total_peers,i=0;
+    for (i=0; i<loaded_peers; i++)
+     {
+       RemPeer(vsh,i);
+     }
+
     vsh->global_state=VSS_UNITIALIZED;
     vsh->stop_server_thread=1;
     vsh->stop_client_thread=1;
     vsh->stop_refresh_thread=1;
+
+    usleep(1000);
+
 
     return Destroy_VariableDatabase(vsh);
 }
