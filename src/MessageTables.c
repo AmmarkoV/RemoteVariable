@@ -153,11 +153,14 @@ struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,
   LockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------
 
   fprintf(stderr,"AddToMessageTable incoming = %u , freemalloc_atdispoal = %u , payload = %p , payload_size %u ",incoming,free_malloc_at_disposal,payload,header->payload_size);
-  PrintMessageType(header);
-  fprintf(stderr,"\n");
+  PrintMessageType(header); fprintf(stderr," group = %u\n",header->incremental_value);
 
+
+  //TODO APPARENTLY THE TIMING ON THIS CALL HAS SOME IMPORTANCE!
   unsigned int mt_pos = mt->message_queue_current_length;
   ++mt->message_queue_current_length;
+
+
 
   EmptyMTItem(&mt->table[mt_pos],0); //<- completely clean spot
 
@@ -168,11 +171,12 @@ struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,
   mt->table[mt_pos].payload_local_malloc=free_malloc_at_disposal;
   mt->table[mt_pos].payload=payload;
 
+ /*
   if (mt->table[mt_pos].payload!=0)
    {
      unsigned int * payload_val = (unsigned int *) payload;
      fprintf(stderr,"Address of current payload is %p , value %u , size = %u ..\n",mt->table[mt_pos].payload,*payload_val,mt->table[mt_pos].header.payload_size);
-   }
+   }*/
 
   PrintMessageTableItem(&mt->table[mt_pos],mt_pos);
 
@@ -193,18 +197,25 @@ int RemFromMessageTable(struct MessageTable * mt,unsigned int mt_id)
   LockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------
   mt->table[mt_id].remove=0;
 
-  fprintf(stderr,"RemFromMessageTable -> mt_id %u \n",mt_id);
-  PrintMessageTableItem(&mt->table[mt_id],mt_id);
+  fprintf(stderr,"RemFromMessageTable -> mt_id %u of %u - type ",mt_id,mt->message_queue_current_length);
+  PrintMessageType(&mt->table[mt_id].header);
+  fprintf(stderr,"\n");
+
 
   EmptyMTItem(&mt->table[mt_id],0);
 
-  int i=0;
-  for (i=mt_id; i<mt->message_queue_current_length; i++)
+  if (mt->message_queue_current_length>1)
+  {
+   int i=0;
+   for (i=mt_id; i<mt->message_queue_current_length; i++)
    {
      mt->table[mt_id]=mt->table[mt_id+1];
    }
+   EmptyMTItem(&mt->table[mt->message_queue_current_length-1],1); //ignore malloc cause it is a copy
+  }
+
+
    --mt->message_queue_current_length;
-   EmptyMTItem(&mt->table[mt->message_queue_current_length],1); //ignore malloc cause it is a copy
 
   UnlockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------
   return 1;
@@ -329,10 +340,10 @@ struct failint WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *m
      {
        if  (RESP_WRITETO==mt->table[mt_traverse].header.operation_type)
        {
-         fprintf(stderr,"Found RESP_WRITETO , our inc_value %u header inc_value %u\n",our_incremental_value,mt->table[mt_id].header.incremental_value);
+        // fprintf(stderr,"Found RESP_WRITETO , our inc_value %u header inc_value %u\n",our_incremental_value,mt->table[mt_id].header.incremental_value);
          if (our_incremental_value==mt->table[mt_traverse].header.incremental_value)
             {
-              fprintf(stderr,"Found candidate inc value %u \n",our_incremental_value);
+              //fprintf(stderr,"Found candidate inc value %u \n",our_incremental_value);
               if ( (var_id==mt->table[mt_traverse].header.var_id) || (vsh->share.variables[var_id].size_of_ptr!=mt->table[mt_traverse].header.payload_size) )
               {
                 unsigned int * old_val = (unsigned int *) vsh->share.variables[var_id].ptr;
