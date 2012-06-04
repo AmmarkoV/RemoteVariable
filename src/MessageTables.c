@@ -104,6 +104,7 @@ int AllocateMessageQueue(struct MessageTable *  mt,unsigned int total_messages)
 
 
    mt->message_queue_current_length=0;
+   mt->message_queue_total_length=0;
    mt->table = (struct MessageTableItem *) malloc( total_messages * sizeof(struct MessageTableItem) );
    if (mt->table==0) { error("Could not allocate memory for new Message Table!"); return 0; }
 
@@ -111,6 +112,7 @@ int AllocateMessageQueue(struct MessageTable *  mt,unsigned int total_messages)
    unsigned int i=0;
    for (i=0; i<total_messages; i++)
     {
+      mt->table[i].header.payload_size=0;
       mt->table[i].payload=0;
       mt->table[i].payload_local_malloc=0;
       EmptyMTItem(&mt->table[i],1); // we ignore the payload because it has random garbage initially
@@ -224,23 +226,6 @@ int SetMessageTableItemForRemoval(struct MessageTableItem * mti)
 }
 
 
-int RemFromMessageTableByIncrementalValue(struct MessageTable * mt,unsigned int inc_val)
-{
-  unsigned int mt_id=0;
-  unsigned int messages_removed=0;
-
-  for (mt_id=0; mt_id<mt->message_queue_current_length; mt_id++)
-   {
-     if ( mt->table[mt_id].header.incremental_value == inc_val )
-         {
-            if ( RemFromMessageTable(mt,mt_id) ) { ++messages_removed; }
-         }
-   }
-
-  return messages_removed;
-}
-
-
 int RemFromMessageTableWhereRemoveFlagExists(struct MessageTable * mt)
 {
   if (mt->message_queue_current_length==0) {return 0;}
@@ -248,27 +233,42 @@ int RemFromMessageTableWhereRemoveFlagExists(struct MessageTable * mt)
   unsigned int mt_id=0;
   unsigned int messages_removed=0;
 
-  // First message hardcoded removal
-  if (mt->message_queue_current_length==1)
-   {
-     if ( mt->table[0].remove ) { if ( RemFromMessageTable(mt,0) ) { ++messages_removed; } }
-     if (messages_removed) { fprintf(stderr,"Hardcoded single message removed %u msgs",messages_removed); }
-     return messages_removed;
-   }
+
+ if (1) // PLAIN REMOVAL
+  {
+   for (mt_id=0; mt_id<mt->message_queue_current_length; mt_id++)
+     {
+       if ( mt->table[mt_id].remove )
+          {
+             if ( RemFromMessageTable(mt,mt_id) ) { ++messages_removed; }
+          }
+     }
+  } else
+  {
+    /*
+    // FANCY LESS OVERHEAD REMOVAL :P
+    // First message hardcoded removal
+    if (mt->message_queue_current_length==1)
+     {
+        if ( mt->table[0].remove ) { if ( RemFromMessageTable(mt,0) ) { ++messages_removed; } }
+        if (messages_removed) { fprintf(stderr,"Hardcoded single message removed %u msgs",messages_removed); }
+       return messages_removed;
+     }
 
 
+    // If we have more than one messages The rest of the messages starting from the last till the second one!
+    for (mt_id=mt->message_queue_current_length-1; mt_id>0; mt_id--)
+     {
+       if ( mt->table[mt_id].remove )
+          {
+             if ( RemFromMessageTable(mt,mt_id) ) { ++messages_removed; }
+          }
+     }
 
-  // If we have more than one messages The rest of the messages starting from the last till the second one!
-  for (mt_id=mt->message_queue_current_length-1; mt_id>0; mt_id--)
-   {
-     if ( mt->table[mt_id].remove )
-         {
-            if ( RemFromMessageTable(mt,mt_id) ) { ++messages_removed; }
-         }
-   }
-  //Hardcoded last check
-  if ( mt->table[0].remove ) { if ( RemFromMessageTable(mt,0) ) { ++messages_removed; } }
-
+    //Hardcoded last check
+    if ( mt->table[0].remove ) { if ( RemFromMessageTable(mt,0) ) { ++messages_removed; } }
+    */
+  }
 
   if (messages_removed>0) fprintf(stderr,"RemFromMessageTableWhereRemoveFlagExists removed %u messages \n",messages_removed);
 
@@ -321,7 +321,7 @@ while (!done_waiting)
      }
        if (mt_traverse>=mt->message_queue_current_length) { mt_traverse=0; }
        fprintf(stderr,".SI.");
-       usleep(5000);
+       usleep(100);
    }
 
   fprintf(stderr,"WaitForSuccessIndicatorAtMessageTableItem failed after timeout\n");
@@ -388,7 +388,7 @@ struct failint WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *m
      }
        if (mt_traverse>=mt->message_queue_current_length) { mt_traverse=0; }
        fprintf(stderr,".VC.");
-       usleep(5000);
+       usleep(100);
    }
 
   fprintf(stderr,"WaitForVariableAndCopyItAtMessageTableItem failed after timeout\n");
@@ -415,7 +415,7 @@ struct failint WaitForMessageTableItemToBeSent(struct MessageTable *mt , unsigne
         }
 
        fprintf(stderr,".WS.");
-       usleep(1000);
+       usleep(100);
    }
 
   return retres;

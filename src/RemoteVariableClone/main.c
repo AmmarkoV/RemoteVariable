@@ -20,7 +20,7 @@ int wait_for_var_to_become_x(volatile int * var , unsigned int timeout , unsigne
 
 int main()
 {
-    unsigned int WAIT_TIME=10000;
+    unsigned int WAIT_TIME=20000;
     printf("REMOTE VARIABLES CLIENT STARTUP !!!!!!!!!!!!! \n");
     struct VariableShare * vsh = ConnectToRemote_VariableSharing("SHARE2","127.0.0.1",12345,"password");
     if ( vsh == 0 )

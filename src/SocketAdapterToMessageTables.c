@@ -289,14 +289,16 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
 
     for (mt_id=0; mt_id<mt->message_queue_current_length; mt_id++)
     {
-      if ( (!mt->table[mt_id].executed)&&(mt->table[mt_id].incoming) )
+      if ( (!mt->table[mt_id].executed) &&
+            (mt->table[mt_id].incoming)
+          )
       {
        //INTERNAL MESSAGING THREAD WORK
        if ( (internal_loop==0) || (internal_loop==1) ) // This is an internal message only processing thread
        {
           switch ( mt->table[mt_id].header.operation_type )
          {
-          case NOACTION : fprintf(stderr,"NOACTION received packet doesnt trigger New Protocol Request\n"); break;
+          case NOACTION : fprintf(stderr,"NOACTION doesnt trigger @ Internal Message Processing Thread\n"); break;
           case INTERNAL_START_SIGNALCHANGED : Request_SignalChangeVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock); mt->table[mt_id].remove=1;  mt->table[mt_id].executed=1; /*Internal messages must me marked remove here*/ break;
           case INTERNAL_START_READFROM : Request_ReadVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock); mt->table[mt_id].remove=1;   mt->table[mt_id].executed=1;/*Internal messages must me marked remove here*/ break;
           case INTERNAL_START_WRITETO : Request_WriteVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock); mt->table[mt_id].remove=1;  mt->table[mt_id].executed=1; /*Internal messages must me marked remove here*/ break;
@@ -310,7 +312,7 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
 
          switch ( mt->table[mt_id].header.operation_type )
          {
-          case NOACTION : fprintf(stderr,"NOACTION received packet doesnt trigger New Protocol Request\n"); break;
+          case NOACTION : fprintf(stderr,"NOACTION doesnt trigger @ External Message Processing Thread\n"); break;
           case RESP_WRITETO : fprintf(stderr,"RESP_WRITETO received packet doesnt trigger New Protocol Request\n"); break;
           case WRITETO:  AcceptRequest_WriteVariable(vsh,peer_id,mt,mt_id,peersock); mt->table[mt_id].executed=1; break;
           case READFROM: AcceptRequest_ReadVariable(vsh,peer_id,mt,mt_id,peersock); mt->table[mt_id].executed=1; break;
