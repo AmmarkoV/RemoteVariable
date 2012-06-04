@@ -86,7 +86,7 @@ struct failint SendPacketPassedToMT(int clientsock,struct MessageTable * mt,unsi
 
   if (mt->table[item_num].incoming)
    {
-      fprintf(stderr,"Asked SendPacketAndPassToMT to send an incoming message ( %u ) , skipping operation\n");
+      fprintf(stderr,"Asked SendPacketAndPassToMT to send an incoming message ( %u ) , skipping operation\n",item_num);
       retres.failed=1;
       return retres;
    }
@@ -181,7 +181,6 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
   struct PacketHeader incoming_packet;
   struct MessageTable * mt = &vsh->peer_list[peer_id].message_queue;
   struct failint res;
-  unsigned int mt_id=0;
   unsigned int table_iterator=0;
 
   fprintf(stderr,"SocketAdapterToMessageTable_Thread started , peer_id = %u , peer socket = %d , master = %u \n",peer_id,peersock,vsh->this_address_space_is_master);

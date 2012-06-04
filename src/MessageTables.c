@@ -199,7 +199,7 @@ int RemFromMessageTable(struct MessageTable * mt,unsigned int mt_id)
 
   fprintf(stderr,"RemFromMessageTable -> mt_id %u of %u - type ",mt_id,mt->message_queue_current_length);
   PrintMessageType(&mt->table[mt_id].header);
-  fprintf(stderr,"\n");
+  fprintf(stderr," group %u \n",mt->table[mt_id].header.incremental_value);
 
 
   EmptyMTItem(&mt->table[mt_id],0); // we want to deallocate any mallocs that happen to be local ( 0 second arg )
@@ -253,13 +253,27 @@ int RemFromMessageTableWhereRemoveFlagExists(struct MessageTable * mt)
   unsigned int mt_id=0;
   unsigned int messages_removed=0;
 
-  for (mt_id=0; mt_id<mt->message_queue_current_length; mt_id++)
+  // First message hardcoded removal
+  if (mt->message_queue_current_length==1)
+   {
+     if ( mt->table[0].remove ) { if ( RemFromMessageTable(mt,0) ) { ++messages_removed; } }
+     fprintf(stderr,"Hardcoded single message removed %u msgs",messages_removed);
+     return messages_removed;
+   }
+
+
+
+  // If we have more than one messages The rest of the messages starting from the last till the second one!
+  for (mt_id=mt->message_queue_current_length-1; mt_id>0; mt_id--)
    {
      if ( mt->table[mt_id].remove )
          {
             if ( RemFromMessageTable(mt,mt_id) ) { ++messages_removed; }
          }
    }
+  //Hardcoded last check
+  if ( mt->table[0].remove ) { if ( RemFromMessageTable(mt,0) ) { ++messages_removed; } }
+
 
   if (messages_removed>0) fprintf(stderr,"RemFromMessageTableWhereRemoveFlagExists removed %u messages \n",messages_removed);
 
@@ -395,7 +409,6 @@ struct failint WaitForMessageTableItemToBeSent(struct MessageTable *mt , unsigne
   if (mt==0) { fprintf(stderr,"WaitForMessageTableItemToBeSent Called with zero MessageTable\n"); return retres;}
   if (mt->message_queue_current_length <= mt_id ) { error("WaitForMessageTableItemToBeSent mt_id out of bounds \n"); return retres; }
  unsigned int done_waiting=0;
-  unsigned int mt_traverse=0;
   fprintf(stderr,"WaitForMessageTableItemToBeSent  for table item %u , waiting for sent flag \n",mt_id);
   while (!done_waiting)
    {

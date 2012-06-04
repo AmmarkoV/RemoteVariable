@@ -107,6 +107,7 @@ int Start_Version_Handshake(struct VariableShare * vsh,int peersock)
 
   memset (message,0,6);
   int opres=recv(peersock,message,4,MSG_WAITALL);
+  if (opres<0) { fprintf(stderr,"Error %u while Start_Version_Handshake while recv!! \n",errno); return 0; }
   fprintf(stderr,"recv `%s`\n",message);
   if (strncmp(message,"HI!!",4)!=0) { error("Error at connect handshaking : Did not receive HELLO "); return 0; }
 
@@ -144,11 +145,13 @@ int Accept_Version_Handshake(struct VariableShare * vsh,int peersock)
 
   // 1ST MESSAGE SENT
   int opres=send(peersock,"HI!!",4,MSG_WAITALL);
+  if (opres<0) { fprintf(stderr,"Error %u while Accept_Version_Handshake sending HI!! \n",errno); return 0; }
   fprintf(stderr,"send `HI!!`\n");
 
   //THIS MESSAGE RECEIVES THE VERSION OF THE PEER
   memset (message,0,6);
   opres=recv(peersock,message,5,MSG_WAITALL);
+  if (opres<0) { fprintf(stderr,"Error %u while Accept_Version_Handshake recv !! \n",errno); return 0; }
   fprintf(stderr,"recv `%s`\n",message);
   if (strncmp(message,"VER=",4)!=0) { error("Error at connect handshaking : Did not receive version string "); return 0;} else
   if (message[4]!=RVS_PROTOCOL_VERSION ) { fprintf(stderr,"Error at connect handshaking : Incorrect version for peer ( got %c we have %c ) ",message[4],RVS_PROTOCOL_VERSION); return 0;}
