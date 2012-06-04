@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include "VariableDatabase.h"
 #include "NetworkFramework.h"
-#include "JobTables.h"
 #include "Peers.h"
 #include "helper.h"
 #include "Protocol.h"

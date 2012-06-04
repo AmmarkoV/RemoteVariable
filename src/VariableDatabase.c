@@ -23,7 +23,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "HashFunctions.h"
-#include "JobTables.h"
+#include "MessageTables.h"
+#include "Peers.h"
 
 int VariableShareOk(struct VariableShare * vsh)
 {
@@ -242,7 +243,27 @@ int IfLocalVariableChanged_SignalUpdateToJoblist(struct VariableShare * vsh,unsi
       fprintf(stderr,"Variable Changed Hash for variable %u , values %u to %u !\n",var_id,(unsigned int) newhash,(unsigned int) vsh->share.variables[var_id].hash );
       vsh->share.variables[var_id].hash=newhash; /*We keep the new hash as the current hash :)*/
       vsh->share.variables[var_id].this_hash_transmission_count=0;
-      Job_SingalLocalVariableChanged(vsh,var_id); // <- This call creates a job to signal the change..!
+
+      // JobTables.c is depreceated Job_SingalLocalVariableChanged(vsh,var_id); // <- This call creates a job to signal the change..!
+         unsigned int sent_to=0;
+         unsigned int i=0;
+         struct failint internal_msg;
+
+           struct PacketHeader header={0};
+           header.incremental_value=0;
+           header.operation_type=INTERNAL_START_SIGNALCHANGED;
+           header.var_id=var_id;
+           header.payload_size=0;
+
+         for (i=0; i< vsh->total_peers; i++)
+         {
+           fprintf(stderr,"Singaling LocalVariableChanged broadcasting to peer number %u \n",i);
+           internal_msg=AddToMessageTable(&vsh->peer_list[i].message_queue,1,0,&header,0);
+
+           if (!internal_msg.failed) { ++sent_to; }
+         }
+
+
 
       return 1;
     }
@@ -275,7 +296,24 @@ int RefreshAllVariablesThatNeedIt(struct VariableShare *vsh)
       if ( vsh->share.variables[i].flag_needs_refresh_from_sock > 0 )
         {
            fprintf(stderr,"Detected that a variable (%u) needs refresh , and automatically adding a job to receive it\n",i);
-           if ( AddJob(vsh,i,vsh->share.variables[i].flag_needs_refresh_from_sock ,READFROM) )
+
+
+           struct failint internal_msg={0};
+           struct failint peer_find={0};
+
+           struct PacketHeader header={0};
+           header.incremental_value=0;
+           header.operation_type=INTERNAL_START_READFROM;
+           header.var_id=i;
+           header.payload_size=0;
+           peer_find = GetPeerIdBySock(vsh,vsh->share.variables[i].flag_needs_refresh_from_sock);
+           if (peer_find.failed) { fprintf(stderr,"ERROR Resolving from socket to peer id!\n"); return 0; }
+
+           fprintf(stderr,"Singaling LocalVariableChanged broadcasting to peer number %u \n",i);
+           internal_msg=AddToMessageTable(&vsh->peer_list[peer_find.value].message_queue,1,0,&header,0);
+
+           if (!internal_msg.failed) { vsh->share.variables[i].flag_needs_refresh_from_sock=0; /* We trust that the "add job" will do its job :P*/ }
+           /*if ( AddJob(vsh,i,vsh->share.variables[i].flag_needs_refresh_from_sock ,READFROM) )
              {
                ++added_jobs;
                fprintf(stderr,"Carrying on after job adding\n");
@@ -283,7 +321,7 @@ int RefreshAllVariablesThatNeedIt(struct VariableShare *vsh)
              } else
              {
                fprintf(stderr,"Could not add job\n");
-             }
+             }*/
         }
    }
 

@@ -26,7 +26,6 @@
 #include "RemoteVariableSupport.h"
 #include "NetworkFramework.h"
 #include "VariableDatabase.h"
-#include "JobTables.h"
 
 
 /* #Start_VariableSharing#

@@ -65,23 +65,32 @@ int RemPeer(struct VariableShare * vsh,int peer_id)
  return 0;
 }
 
-int GetPeerIdBySock(struct VariableShare * vsh,int clientsock)
+struct failint GetPeerIdBySock(struct VariableShare * vsh,int clientsock)
 {
+  struct failint retres={0};
+  retres.failed=1;
+  retres.value=0;
+
   unsigned int i=0;
   while ( i < vsh->total_peers )
    {
       if (vsh->peer_list[i].socket_to_client == clientsock )
        {
-           return 1+i;
+           retres.failed=0;
+           retres.value=i;
+           return retres;
        }
       ++i;
    }
-  return 0;
+  return retres;
 }
 
 int RemPeerBySock(struct VariableShare * vsh,int clientsock)
 {
- return RemPeer(vsh,GetPeerIdBySock(vsh,clientsock));
+  struct failint peer_find=GetPeerIdBySock(vsh,clientsock);
+  if (peer_find.failed) { error("Peerfind error at rempeerbysock"); }
+
+ return RemPeer(vsh,peer_find.value);
 }
 
 int PeerNewPingValue(struct VariableShare * vsh,unsigned int peer_id,long ping_in_microseconds)

@@ -40,7 +40,6 @@ enum RequestTypeEnum
 };
 
 
-int GetPeerIdBySock(struct VariableShare * vsh,int clientsock);
 
 int StartRemoteVariableServer(struct VariableShare * vsh);
 

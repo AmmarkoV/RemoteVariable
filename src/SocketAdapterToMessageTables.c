@@ -9,7 +9,6 @@
 #include "VariableDatabase.h"
 #include "Protocol.h"
 #include "Peers.h"
-#include "JobTables.h"
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -312,7 +311,7 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
 
 
     //Pass JobTables To message tables
-    ExecutePendingJobsForPeerID(vsh,peer_id);
+//    ExecutePendingJobsForPeerID(vsh,peer_id);
 
 
 
