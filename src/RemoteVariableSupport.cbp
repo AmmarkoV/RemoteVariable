@@ -44,6 +44,10 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="HashFunctions.h" />
+		<Unit filename="InternalTester.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="InternalTester.h" />
 		<Unit filename="MessageTables.c">
 			<Option compilerVar="CC" />
 		</Unit>

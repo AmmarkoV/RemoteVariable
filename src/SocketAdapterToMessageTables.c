@@ -219,7 +219,7 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
                                                     return 0;}
    }
 
-  fprintf(stderr,"SocketAdapterToMessageTable_Thread done with handshakes , starting recv/send loop\n\n\n\n\n");
+  fprintf(stderr,"SocketAdapterToMessageTable_Thread done with handshakes , starting recv/send loop with a %u pause val\n\n\n\n\n",vsh->peer_list[peer_id].messages.pause_sendrecv_thread);
 
 
   // Set socket to nonblocking mode..!
@@ -230,23 +230,26 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
   mt->pause_external_messageproc_thread=0;
 
   int data_received = 0;
+
+
+
   while (! mt->stop_sendrecv_thread)
   {
 
 
 
      /* PAUSE PART ------------------------------------------------------------------------*/
-      if ( vsh->peer_list[peer_id].messages.pause_sendrecv_thread >= 1 )
+  /*    if ( vsh->peer_list[peer_id].messages.pause_sendrecv_thread >= 1 )
        { //We just received a Pause request..
          vsh->peer_list[peer_id].messages.pause_sendrecv_thread=2; // We signal we got it
          unsigned int wait_time=0;
-         while( vsh->peer_list[peer_id].messages.pause_sendrecv_thread > 0 )
+         while( vsh->peer_list[peer_id].messages.pause_sendrecv_thread != 0 )
            {
              usleep(100);
              if (wait_time>100) { fprintf(stderr,".RS."); }
              ++wait_time;
            }
-       }
+       }*/
      /* PAUSE PART ------------------------------------------------------------------------*/
 
 
@@ -393,6 +396,7 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
        { // Only external or global thread removes messages to make things simpler..
 
          // We will also pause the SEND/RECV thread in order to keep them from accessing the messagetable structure
+         /*
          *sendrcv_pause_switch=1;
          unsigned int wait_time=0;
          while (*sendrcv_pause_switch!=2)
@@ -401,12 +405,12 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
            if (wait_time>100) fprintf(stderr,".REM.");
            ++wait_time;
          }
-
+*/
          //Right now we are the only thread that has access to the MessageTable Structure
          RemFromMessageTableWhereRemoveFlagExists(mt);
          //Ok , we have removed the trash , now to resume functionality..
 
-         *sendrcv_pause_switch=0;
+       //  *sendrcv_pause_switch=0;
        }
 
     usleep(500);
