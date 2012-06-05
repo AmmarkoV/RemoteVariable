@@ -30,6 +30,12 @@ int main()
       }
 
     srand(time(0));
+    if (!RemoteVariableSupport_InternalTest())
+      {
+        fprintf(stderr,"Client : Failed preliminary internal test\n");
+        return 1;
+      }
+
 
 
     static volatile int DUMMY_VAR=0;

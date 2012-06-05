@@ -73,7 +73,7 @@ if (!ignore_payload)
 
 
 void PrintMessageTableItem(struct MessageTableItem * mti,unsigned int val)
-{
+{  return;
    fprintf(stderr,"MessageTableItem Printout (mti index %u) \n",val);
    fprintf(stderr,"mti->header.incremental_value = %u\n",mti->header.incremental_value);
    fprintf(stderr,"mti->header.operation_type = %u ",mti->header.operation_type); PrintMessageType(&mti->header);  fprintf(stderr,"\n");

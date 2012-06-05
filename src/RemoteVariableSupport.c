@@ -24,6 +24,7 @@
 #include <string.h>
 #include "helper.h"
 #include "RemoteVariableSupport.h"
+#include "InternalTester.h"
 #include "NetworkFramework.h"
 #include "VariableDatabase.h"
 
@@ -103,6 +104,10 @@ int Stop_VariableSharing(struct VariableShare * vsh)
 
 
 
+int RemoteVariableSupport_InternalTest()
+{
+  return PerformInternalTest();
+}
 
 int PeersActive_VariableShare(struct VariableShare * vsh)
 {

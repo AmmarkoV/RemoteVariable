@@ -254,6 +254,7 @@ struct VariableShare * Start_VariableSharing(char * sharename,char * bindaddress
 struct VariableShare * ConnectToRemote_VariableSharing(char * sharename,char * IP,unsigned int port,char * password);
 int Stop_VariableSharing(struct VariableShare * vsh);
 int PeersActive_VariableShare(struct VariableShare * vsh);
+int RemoteVariableSupport_InternalTest();
 int Add_VariableToSharingList(struct VariableShare * vsh,char * variable_name,unsigned int permissions,volatile void * ptr,unsigned int ptr_size);
 int Delete_VariableFromSharingList(struct VariableShare * vsh,char * variable_name);
 int Refresh_LocalVariable(struct VariableShare * vsh,char * variable_name);

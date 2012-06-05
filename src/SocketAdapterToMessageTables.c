@@ -236,7 +236,7 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
 
 
      /* PAUSE PART ------------------------------------------------------------------------*/
-      if ( vsh->peer_list[peer_id].messages.pause_sendrecv_thread == 1 )
+      if ( vsh->peer_list[peer_id].messages.pause_sendrecv_thread >= 1 )
        { //We just received a Pause request..
          vsh->peer_list[peer_id].messages.pause_sendrecv_thread=2; // We signal we got it
          unsigned int wait_time=0;
@@ -324,6 +324,8 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
   struct MessageTable * mt = &vsh->peer_list[peer_id].messages;
   if ((mt==0)||(mt->table==0)) { fprintf(stderr," Serious Error MessageTable doesnt seem to be allocated\n\ "); return 0; }
 
+  unsigned int * sendrcv_pause_switch=&vsh->peer_list[peer_id].messages.pause_sendrecv_thread;
+
   unsigned int * stop_switch=0;
   unsigned int * pause_switch=0;
   if (internal_loop==1) {stop_switch=&mt->stop_internal_messageproc_thread;
@@ -340,12 +342,9 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
   while (*pause_switch) { fprintf(stderr,".INIT."); usleep(100); }
 
 
-  if (internal_loop==2) {return 0; }
-  if (internal_loop==1) { internal_loop=0; } // Use only one global process loop
-
 
   unsigned int mt_id=0;
-  while (! *stop_switch)
+  while (! (*stop_switch) )
   {
 
     for (mt_id=0; mt_id<mt->message_queue_current_length; mt_id++)
@@ -362,8 +361,8 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
          {
           case NOACTION : fprintf(stderr,"NOACTION doesnt trigger @ Internal Message Processing Thread\n"); break;
           case INTERNAL_START_SIGNALCHANGED : Request_SignalChangeVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock); mt->table[mt_id].remove=1;  mt->table[mt_id].executed=1; /*Internal messages must me marked remove here*/ break;
-          case INTERNAL_START_READFROM : Request_ReadVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock); mt->table[mt_id].remove=1;   mt->table[mt_id].executed=1;/*Internal messages must me marked remove here*/ break;
-          case INTERNAL_START_WRITETO : Request_WriteVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock); mt->table[mt_id].remove=1;  mt->table[mt_id].executed=1; /*Internal messages must me marked remove here*/ break;
+          case INTERNAL_START_READFROM :      Request_ReadVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock);         mt->table[mt_id].remove=1;  mt->table[mt_id].executed=1;/*Internal messages must me marked remove here*/ break;
+          case INTERNAL_START_WRITETO :       Request_WriteVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock);        mt->table[mt_id].remove=1;  mt->table[mt_id].executed=1; /*Internal messages must me marked remove here*/ break;
          };
 
        }
@@ -394,9 +393,9 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
        { // Only external or global thread removes messages to make things simpler..
 
          // We will also pause the SEND/RECV thread in order to keep them from accessing the messagetable structure
-         vsh->peer_list[peer_id].messages.pause_sendrecv_thread=1;
+         *sendrcv_pause_switch=1;
          unsigned int wait_time=0;
-         while (vsh->peer_list[peer_id].messages.pause_sendrecv_thread!=2)
+         while (*sendrcv_pause_switch!=2)
          {
            usleep(100);
            if (wait_time>100) fprintf(stderr,".REM.");
@@ -407,7 +406,7 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
          RemFromMessageTableWhereRemoveFlagExists(mt);
          //Ok , we have removed the trash , now to resume functionality..
 
-         vsh->peer_list[peer_id].messages.pause_sendrecv_thread=0;
+         *sendrcv_pause_switch=0;
        }
 
     usleep(500);

@@ -30,6 +30,13 @@ int main()
 
     srand(time(0));
 
+    if (!RemoteVariableSupport_InternalTest())
+      {
+        fprintf(stderr,"Master : Failed preliminary internal test\n");
+        return 1;
+      }
+
+
     // We start up with a Variable with the value 666 , we expect the client program to alter it to 1 after it successfully connects
     static volatile int DUMMY_VAR=0;
     static volatile int SHARED_VAR=0;
@@ -40,9 +47,10 @@ int main()
      }
    if ( ! Add_VariableToSharingList(vsh,"DUMMY_VAR",7,&DUMMY_VAR,sizeof(DUMMY_VAR)) )
       {
-        fprintf(stderr,"Client : Error Adding DUMMY_VAR Shared Variable , cannot continue\n");
+        fprintf(stderr,"Master : Error Adding DUMMY_VAR Shared Variable , cannot continue\n");
         return 1;
       }
+
 
 
    fprintf(stderr,"Master : Waiting for a peer to startup test..\n");
