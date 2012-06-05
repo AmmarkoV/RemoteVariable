@@ -87,7 +87,9 @@ struct MessageTableItem
 
 struct MessageTable
 {
-    unsigned int locked;
+    pthread_mutex_t lock;
+    pthread_mutex_t remlock;
+
     unsigned int message_queue_total_length;
     unsigned int message_queue_current_length;
 

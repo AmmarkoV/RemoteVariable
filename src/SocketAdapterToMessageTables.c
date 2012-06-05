@@ -231,31 +231,10 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
 
   int data_received = 0;
 
-
-
   while (! mt->stop_sendrecv_thread)
   {
 
-
-
-     /* PAUSE PART ------------------------------------------------------------------------*/
-  /*    if ( vsh->peer_list[peer_id].messages.pause_sendrecv_thread >= 1 )
-       { //We just received a Pause request..
-         vsh->peer_list[peer_id].messages.pause_sendrecv_thread=2; // We signal we got it
-         unsigned int wait_time=0;
-         while( vsh->peer_list[peer_id].messages.pause_sendrecv_thread != 0 )
-           {
-             usleep(100);
-             if (wait_time>100) { fprintf(stderr,".RS."); }
-             ++wait_time;
-           }
-       }*/
-     /* PAUSE PART ------------------------------------------------------------------------*/
-
-
-
-
-
+   pthread_mutex_lock (&mt->remlock); // LOCK PROTECTED OPERATION -------------------------------------------
 
    /* ------------------------------------------------- RECEIVE PART ------------------------------------------------- */
    incoming_packet.incremental_value=0;
@@ -293,8 +272,6 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
  /*------------------------------------------------- SEND PART -------------------------------------------------*/
    if (mt->message_queue_current_length>0)
    {
-    //if (mt->message_queue_current_length!=0) { fprintf(stderr,"Table iterator scanning %u messages \n",mt->message_queue_current_length); }
-
     for ( table_iterator=0; table_iterator< mt->message_queue_current_length; table_iterator++)
     {
         if ( (!mt->table[table_iterator].remove)&&(!mt->table[table_iterator].incoming)&&(!mt->table[table_iterator].sent) )
@@ -308,6 +285,7 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
 
    }
 
+    pthread_mutex_unlock (&mt->remlock); // LOCK PROTECTED OPERATION -------------------------------------------
    usleep(100);
   }
 
@@ -396,21 +374,15 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
        { // Only external or global thread removes messages to make things simpler..
 
          // We will also pause the SEND/RECV thread in order to keep them from accessing the messagetable structure
-         /*
-         *sendrcv_pause_switch=1;
-         unsigned int wait_time=0;
-         while (*sendrcv_pause_switch!=2)
-         {
-           usleep(100);
-           if (wait_time>100) fprintf(stderr,".REM.");
-           ++wait_time;
-         }
-*/
-         //Right now we are the only thread that has access to the MessageTable Structure
-         RemFromMessageTableWhereRemoveFlagExists(mt);
-         //Ok , we have removed the trash , now to resume functionality..
 
-       //  *sendrcv_pause_switch=0;
+      //   pthread_mutex_lock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
+          pthread_mutex_lock (&mt->remlock); // LOCK PROTECTED OPERATION -------------------------------------------
+         //Right now we are the only thread that has access to the MessageTable Structure
+          RemFromMessageTableWhereRemoveFlagExists(mt);
+          //Ok , we have removed the trash , now to resume functionality..
+         pthread_mutex_unlock (&mt->remlock); // LOCK PROTECTED OPERATION -------------------------------------------
+      //  pthread_mutex_unlock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
+
        }
 
     usleep(500);

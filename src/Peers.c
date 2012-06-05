@@ -23,6 +23,9 @@ struct failint AddPeer(struct VariableShare * vsh,char * name,unsigned int port 
        vsh->peer_list[pos].peer_state=VSS_WAITING_FOR_HANDSHAKE;
        vsh->peer_list[pos].incremental_value=0;
 
+       pthread_mutex_init(&vsh->peer_list[pos].messages.lock, 0); //New allocation so cleaning up mutex
+       pthread_mutex_init(&vsh->peer_list[pos].messages.remlock, 0); //New allocation so cleaning up mutex
+
        AllocateMessageQueue(&vsh->peer_list[pos].messages,100);
 
        ++vsh->total_peers;
@@ -53,6 +56,9 @@ int SwapPeers(struct VariableShare * vsh,int peer_id1,int peer_id2)
 int RemPeer(struct VariableShare * vsh,int peer_id)
 {
   FreeMessageQueue(&vsh->peer_list[peer_id].messages);
+
+  pthread_mutex_destroy(&vsh->peer_list[peer_id].messages.lock);
+  pthread_mutex_destroy(&vsh->peer_list[peer_id].messages.remlock);
 
  if ( (vsh->total_peers==1)&&(peer_id==0)) { vsh->total_peers=0; return 1; }
  if ( (vsh->total_peers>1) )

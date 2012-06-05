@@ -8,38 +8,6 @@
 #include "SocketAdapterToMessageTables.h"
 
 
-int WaitForMessageLockToClear(struct MessageTable * mt)
-{
-  if (mt==0) { fprintf(stderr,"WaitForMessageLockToClear skipped by null pointer \n"); return 0; }
-  unsigned int waitloops=0;
-  while (mt->locked)
-   {
-     usleep(1000);
-     ++waitloops;
-   }
-
-  if (waitloops>0) { fprintf(stderr,"WaitForMessageLockToClear waited for %u ms ( loops )\n",waitloops); }
-  return 1;
-}
-
-int LockMessageTable(struct MessageTable * mt)
-{
-  if (mt==0) { fprintf(stderr,"LockMessageTable skipped by null pointer \n"); return 0; }
-  if (mt->locked!=0) {
-                      fprintf(stderr,"LockMessageTable found locked variable ! , waiting for it to clear out\n");
-                      WaitForMessageLockToClear(mt);
-                    }
-  mt->locked=1;
-  return 1;
-}
-
-int UnlockMessageTable(struct MessageTable * mt)
-{
-  if (mt==0) { fprintf(stderr,"UnlockSocket skipped by null pointer \n"); return 0; }
-  mt->locked=0;
-  return 1;
-}
-
 
 
 void EmptyMTItem(struct MessageTableItem * mti,unsigned int ignore_payload)
@@ -98,8 +66,7 @@ int AllocateMessageQueue(struct MessageTable *  mt,unsigned int total_messages)
 {
    if (mt==0) { error("AllocateMessageQueue called with a zero message table"); return 0; }
 
-   mt->locked=0; //New allocation so cleaning it up
-   LockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------
+   pthread_mutex_lock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
 
     mt->sendrecv_thread=0;
     mt->pause_sendrecv_thread=0;
@@ -131,7 +98,7 @@ int AllocateMessageQueue(struct MessageTable *  mt,unsigned int total_messages)
 
    mt->message_queue_total_length=total_messages;
 
-   UnlockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------
+   pthread_mutex_unlock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
 
   return 1;
 }
@@ -172,7 +139,7 @@ struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,
   retres.failed=0;
   retres.value=0;
 
-  LockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------
+   pthread_mutex_lock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
 
   if (mt->message_queue_current_length >= mt->message_queue_total_length)
     {
@@ -208,7 +175,7 @@ struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,
 
   retres.value=mt_pos;
 
-  UnlockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------
+   pthread_mutex_unlock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
 
   return retres;
 }
@@ -283,7 +250,7 @@ int RemFromMessageTableWhereRemoveFlagExists(struct MessageTable * mt)
   if (mt->message_queue_total_length==0) {return 0;}
   if (mt->message_queue_current_length==0) {return 0;}
 
-  LockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------
+  pthread_mutex_lock (&mt->lock);  // LOCK PROTECTED OPERATION -------------------------------------------
 
   unsigned int mt_id=0;
   unsigned int messages_removed=0;
@@ -300,7 +267,7 @@ int RemFromMessageTableWhereRemoveFlagExists(struct MessageTable * mt)
 
   if (messages_removed>0) fprintf(stderr,"RemFromMessageTableWhereRemoveFlagExists removed %u messages \n",messages_removed);
 
-  UnlockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------
+   pthread_mutex_unlock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
   return messages_removed;
 }
 
