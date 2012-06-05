@@ -222,51 +222,67 @@ int AcceptRequest_WriteVariable(struct VariableShare * vsh,unsigned int peer_id,
 
 */
 
+struct failint NewProtocolRequest_Send(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,unsigned char OPTYPE,unsigned int free_malloc_at_disposal,void * payload,unsigned int payload_size)
+{
+  struct failint retres={0};
+
+  struct PacketHeader header={0};
+  header.incremental_value=vsh->peer_list[peer_id].incremental_value;
+  header.operation_type=OPTYPE;
+  header.var_id=var_id;
+  header.payload_size=payload_size;
+
+  //struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,unsigned int free_malloc_at_disposal,struct PacketHeader * header,void * payload,unsigned int msg_timer)
+  retres=AddToMessageTable(&vsh->peer_list[peer_id].messages,0,free_malloc_at_disposal,&header,payload,vsh->central_timer);
+
+  if (protocol_msg()) fprintf(stderr,"Request_ReadVariable called for peer_id %u , var_id %u , incremental value %u  \n",peer_id,var_id,header.incremental_value);
+
+  return retres;
+}
+
+
+
+/*
+    ------------------------------------------------------
+                GENERIC MESSAGE TABLE FUNCTIONS
+    ------------------------------------------------------
+
+    ------------------------------------------------------
+    ------------------------------------------------------
+    ------------------------------------------------------
+    ------------------------------------------------------
+
+    ------------------------------------------------------
+    ------------------------------------------------------
+    ------------------------------------------------------
+    ------------------------------------------------------
+
+    ------------------------------------------------------
+                HANDSHAKES THROUGH MESSAGE TABLES
+    ------------------------------------------------------
+*/
+
+
 int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,int peersock)
 {
   // When we initiate a request we increment our inc_value to signal a new group of messages
   ++vsh->peer_list[peer_id].incremental_value;
 
-  // We also want a new header to go with our message!
-  struct PacketHeader header={0};
-  header.incremental_value=vsh->peer_list[peer_id].incremental_value;
-  header.operation_type=READFROM;
-  header.var_id=var_id;
-  header.payload_size=0;
-
-  //Just some fprintf debugging
-  if (protocol_msg()) fprintf(stderr,"Request_ReadVariable called for peer_id %u , var_id %u , socket %u , incremental value %u  \n",peer_id,var_id,peersock,header.incremental_value);
-
-
-
-  //We add the new message to the message table , it will get consumed by the SocketAdapterToMessageTables thread
-  struct failint msg1=AddToMessageTable(&vsh->peer_list[peer_id].messages,0,0,&header,0,vsh->central_timer);
-  if (msg1.failed)
-   {
-      fprintf(stderr,"ERROR : Could not add Request_Variable to local MessageTable STEP 1\n");
-      return 0;
-   }
+  //We send a new READFROM request
+  struct failint msg1=NewProtocolRequest_Send(vsh,peer_id,var_id,READFROM,0,0,0);
+  //msg1.value has the value of the new outgoing messagetable entry
+  if (msg1.failed) { fprintf(stderr,"ERROR : Could not add Request_Variable to local MessageTable STEP 1\n"); return 0;  }
 
 
   //We wait for the success indicator recv and subsequent pass to our message table
+  unsigned char optypeForMSG3=SIGNALMSGSUCCESS;
   struct failint msg2=WaitForVariableAndCopyItAtMessageTableItem(&vsh->peer_list[peer_id].messages,msg1.value,vsh,var_id);
-  if ( msg2.failed )
-    {
-        header.operation_type=SIGNALMSGFAILURE; // Only change message type the rest remains the same
-    } else
-    {
-        header.operation_type=SIGNALMSGSUCCESS; // Only change message type the rest remains the same
-    }
+  if ( msg2.failed ) { optypeForMSG3=SIGNALMSGFAILURE; /*Only change message type the rest remains the same*/ } else
+                     { optypeForMSG3=SIGNALMSGSUCCESS; /*Only change message type the rest remains the same*/ }
 
   //We remove payloads ,etc and sent a positive or negative confirmation to end the protocol handshake
-  header.var_id=var_id;
-  header.payload_size=0;
-  struct failint msg3=AddToMessageTable(&vsh->peer_list[peer_id].messages,0,0,&header,0,vsh->central_timer);
-  if (msg3.failed)
-   {
-      fprintf(stderr,"Could not add Request_Variable to local MessageTable STEP 2\n");
-      return 0;
-   }
+  struct failint msg3=NewProtocolRequest_Send(vsh,peer_id,var_id,optypeForMSG3,0,0,0);
+  if (msg3.failed) { fprintf(stderr,"Could not add Request_Variable to local MessageTable STEP 2\n"); return 0;  }
 
   //Wait for message to be sent
   WaitForMessageTableItemToBeSent(&vsh->peer_list[peer_id].messages.table[msg3.value]);
@@ -283,35 +299,25 @@ int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,s
 {
   // We have accepted a new Message Table entry which contains a Request_ReadVariable so we will try to accept it..
   // First make a local copy of the header ..
-  struct PacketHeader header = mt->table[mt_id].header;
 
   // Secondly this incremental_value is now the last for this client , if we make a new request it should have a different inc_value than this..
-  vsh->peer_list[peer_id].incremental_value=header.incremental_value;
+  vsh->peer_list[peer_id].incremental_value = mt->table[mt_id].header.incremental_value;
 
-  if (protocol_msg()) fprintf(stderr,"AcceptRequest_ReadVariable called for peer_id %u ,  socket %u , incremental value %u  \n",peer_id,peersock,header.incremental_value);
 
+  unsigned int var_id = mt->table[mt_id].header.var_id;
   //We received a READFROM request ( otherwise this function wouldnt have been triggered so lets respond to it )
   /* TODO HERE , HANDLE PERMISSIONS ETC*/
   //fprintf(stderr,"TODO HERE , HANDLE PERMISSIONS ETC\n");
-
-  if (!VariableIdExists(vsh,header.var_id))
+  if (!VariableIdExists(vsh,var_id))
    {
-       fprintf(stderr,"ERROR : AcceptRequest_ReadVariable called for non existing var_id %u \n",header.var_id);
+       fprintf(stderr,"ERROR : AcceptRequest_ReadVariable called for non existing var_id %u \n",var_id);
        //TODO RESPOND HERE WITH MSG_FAILURE
        return 0;
    }
 
-  // We can send the variable back
-  header.operation_type=RESP_WRITETO; // Only change message type the rest remains the same
-  header.payload_size = vsh->share.variables[header.var_id].size_of_ptr;
-
-  //Sending RESP_WRITETO back to the peer along with the payload..!
-  struct failint msg1=AddToMessageTable(&vsh->peer_list[peer_id].messages,0,0,&header,vsh->share.variables[header.var_id].ptr,vsh->central_timer);
-  if (msg1.failed)
-   {
-      fprintf(stderr,"Could not add AcceptRequest_ReadVariable to local MessageTable\n");
-      return 0;
-   }
+  // Sending RESP_WRITETO back to the peer along with the payload..!
+  struct failint msg1=NewProtocolRequest_Send(vsh,peer_id,var_id,RESP_WRITETO,0,vsh->share.variables[var_id].ptr,vsh->share.variables[var_id].size_of_ptr);
+  if (msg1.failed) { fprintf(stderr,"Could not add AcceptRequest_ReadVariable to local MessageTable\n"); return 0; }
 
 
   struct failint msg2=WaitForSuccessIndicatorAtMessageTableItem(&vsh->peer_list[peer_id].messages,msg1.value);
@@ -342,17 +348,7 @@ int Request_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id
   ++vsh->peer_list[peer_id].incremental_value;
 
   // We also want a new header to go with our message!
-  struct PacketHeader header={0};
-  header.incremental_value=vsh->peer_list[peer_id].incremental_value;
-  header.operation_type=SIGNALCHANGED;
-  header.var_id=var_id;
-  header.payload_size=0;
-
-  //Just some fprintf debugging
-  if (protocol_msg()) fprintf(stderr,"Request_SignalChangeVariable called for peer_id %u , var_id %u , socket %u , incremental value %u \n",peer_id,var_id,peersock,vsh->peer_list[peer_id].incremental_value);
-
-  //We add the new message to the message table , it will get consumed by the SocketAdapterToMessageTables thread
-  struct failint msg1=AddToMessageTable(&vsh->peer_list[peer_id].messages,0,0,&header,0,vsh->central_timer);
+  struct failint msg1=NewProtocolRequest_Send(vsh,peer_id,var_id,SIGNALCHANGED,0,0,0);
   if (msg1.failed) { fprintf(stderr,"Could not add SignalChange_Variable to local MessageTable\n"); return 0; }
 
   //We wait for the success indicator recv and subsequent pass to our message table
@@ -369,34 +365,33 @@ int AcceptRequest_SignalChangeVariable(struct VariableShare * vsh,unsigned int p
 {
   // We have accepted a new Message Table entry which contains a Request_ReadVariable so we will try to accept it..
   // First make a local copy of the header ..
-  struct PacketHeader header = mt->table[mt_id].header;
 
   // Secondly this incremental_value is now the last for this client , if we make a new request it should have a different inc_value than this..
-  vsh->peer_list[peer_id].incremental_value=header.incremental_value;
-
-  if (protocol_msg()) fprintf(stderr,"AcceptRequest_SignalChangeVariable called for peer_id %u ,  socket %u , local incremental value %u , msg incremental value %u \n",peer_id,peersock,vsh->peer_list[peer_id].incremental_value,header.incremental_value);
+  vsh->peer_list[peer_id].incremental_value=mt->table[mt_id].header.incremental_value;
 
   //We received a READFROM request ( otherwise this function wouldnt have been triggered so lets respond to it )
   /* TODO HERE , HANDLE PERMISSIONS ETC*/
   //fprintf(stderr,"TODO HERE , HANDLE PERMISSIONS ETC\n");
 
   // If we manage to mark the variable as needing refresh from this socket we will emmit back a signalmsgsuccess , if not we will emmit a failure signal
-  if ( MarkVariableAsNeedsRefresh_VariableDatabase(vsh,header.var_id,peersock) )
+  unsigned char respTYPE=SIGNALMSGFAILURE;
+  unsigned int var_id=mt->table[mt_id].header.var_id;
+  if ( MarkVariableAsNeedsRefresh_VariableDatabase(vsh,var_id,peersock) )
    {
-     fprintf(stderr,"Peer Signaled that variable %u changed \n",header.var_id);
-       header.operation_type=SIGNALMSGSUCCESS; // Only change message type the rest remains the same
+     fprintf(stderr,"Peer Signaled that variable %u changed \n",var_id);
+     respTYPE=SIGNALMSGSUCCESS; // Only change message type the rest remains the same
    } else
    {
-     fprintf(stderr,"Error Peer Signaled that a variable that does not exist (%u) changed \n",header.var_id);
-       header.operation_type=SIGNALMSGFAILURE; // Only change message type the rest remains the same
+     fprintf(stderr,"Error Peer Signaled that a variable that does not exist (%u) changed \n",var_id);
+     respTYPE=SIGNALMSGFAILURE; // Only change message type the rest remains the same
    }
 
   //We send the aforementioned signal and gracefully exit
-  struct failint msg1=AddToMessageTable(&vsh->peer_list[peer_id].messages,0,0,&header,0,vsh->central_timer);
+  struct failint msg1=NewProtocolRequest_Send(vsh,peer_id,var_id,respTYPE,0,0,0);
   if (msg1.failed) { fprintf(stderr,"Could not add AcceptRequest_Variable to local MessageTable\n"); return 0; }
 
   //Wait for message to be sent
-    WaitForMessageTableItemToBeSent(&vsh->peer_list[peer_id].messages.table[msg1.value]);
+  WaitForMessageTableItemToBeSent(&vsh->peer_list[peer_id].messages.table[msg1.value]);
 
   SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].messages.table[mt_id]);
   SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].messages.table[msg1.value]);

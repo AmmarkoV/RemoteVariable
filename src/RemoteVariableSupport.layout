@@ -2,25 +2,31 @@
 <CodeBlocks_layout_file>
 	<ActiveTarget name="Debug" />
 	<File name="HashFunctions.c" open="1" top="0" tabpos="6">
-		<Cursor position="459" topLine="0" />
+		<Cursor position="588" topLine="0" />
 	</File>
 	<File name="HashFunctions.h" open="1" top="0" tabpos="11">
 		<Cursor position="83" topLine="0" />
 	</File>
+	<File name="InternalTester.c" open="1" top="0" tabpos="22">
+		<Cursor position="30" topLine="0" />
+	</File>
+	<File name="InternalTester.h" open="1" top="0" tabpos="23">
+		<Cursor position="85" topLine="0" />
+	</File>
 	<File name="MessageTables.c" open="1" top="0" tabpos="14">
-		<Cursor position="8070" topLine="231" />
+		<Cursor position="5942" topLine="343" />
 	</File>
 	<File name="MessageTables.h" open="1" top="0" tabpos="15">
-		<Cursor position="1142" topLine="0" />
+		<Cursor position="105" topLine="0" />
 	</File>
 	<File name="NetworkFramework.c" open="1" top="0" tabpos="1">
-		<Cursor position="1068" topLine="0" />
+		<Cursor position="9142" topLine="183" />
 	</File>
 	<File name="NetworkFramework.h" open="1" top="0" tabpos="9">
 		<Cursor position="1291" topLine="0" />
 	</File>
 	<File name="Peers.c" open="1" top="0" tabpos="12">
-		<Cursor position="2342" topLine="51" />
+		<Cursor position="1791" topLine="18" />
 	</File>
 	<File name="Peers.h" open="1" top="0" tabpos="13">
 		<Cursor position="314" topLine="0" />
@@ -29,25 +35,25 @@
 		<Cursor position="0" topLine="0" />
 	</File>
 	<File name="Protocol.c" open="1" top="0" tabpos="18">
-		<Cursor position="141" topLine="0" />
+		<Cursor position="16126" topLine="132" />
 	</File>
 	<File name="Protocol.h" open="1" top="0" tabpos="19">
 		<Cursor position="1033" topLine="0" />
 	</File>
 	<File name="RemoteVariableSupport.c" open="1" top="0" tabpos="4">
-		<Cursor position="1125" topLine="3" />
+		<Cursor position="3581" topLine="78" />
 	</File>
 	<File name="RemoteVariableSupport.h" open="1" top="0" tabpos="7">
-		<Cursor position="1464" topLine="33" />
+		<Cursor position="2158" topLine="46" />
 	</File>
 	<File name="SocketAdapterToMessageTables.c" open="1" top="1" tabpos="16">
-		<Cursor position="13862" topLine="271" />
+		<Cursor position="10270" topLine="95" />
 	</File>
 	<File name="SocketAdapterToMessageTables.h" open="1" top="0" tabpos="17">
 		<Cursor position="298" topLine="0" />
 	</File>
 	<File name="VariableDatabase.c" open="1" top="0" tabpos="5">
-		<Cursor position="1131" topLine="2" />
+		<Cursor position="9924" topLine="240" />
 	</File>
 	<File name="VariableDatabase.h" open="1" top="0" tabpos="8">
 		<Cursor position="1796" topLine="0" />

@@ -365,19 +365,21 @@ struct failint WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *m
                 unsigned int * old_val = (unsigned int *) vsh->share.variables[var_id].ptr;
                 unsigned int * new_val = (unsigned int *) mt->table[mt_traverse].payload;
 
-                if (old_val==new_val) {fprintf(stderr,"HOW ON EARTH IS IT POSSIBLE ? :S"); error("WHAT???\n\n\n\n\n\n"); }
-                unsigned int ptr_size = vsh->share.variables[var_id].size_of_ptr;
-                fprintf(stderr,"!!!!!!!!!!--> Copying a fresh value for variable %u , was %u now will become %u ( size %u ) \n", var_id,  *old_val,  *new_val, ptr_size);
-                memcpy(old_val,new_val,ptr_size);
-
-                /*
-                Memory can be deallocated at this point since the message has been copied , this however is not very stable :S
-                if (mt->table[mt_traverse].payload_local_malloc)
+                if (old_val==0) { fprintf(stderr,"ERROR : WaitForVariableAndCopyItAtMessageTableItem old_value memory points to zero \n");  retres.failed=1; return retres; }
+                  else
+                if (new_val==0) { fprintf(stderr,"ERROR : WaitForVariableAndCopyItAtMessageTableItem new_value memory points to zero \n");  retres.failed=1; return retres; }
+                  else
+                if (old_val==new_val) {fprintf(stderr,"ERROR : WaitForVariableAndCopyItAtMessageTableItem copy target memory the same with source\n");  retres.failed=1; return retres;}
+                 else
                  {
-                   free(mt->table[mt_traverse].payload);
-                 }
+                   unsigned int ptr_size = vsh->share.variables[var_id].size_of_ptr;
+                   fprintf(stderr,"!!!!!!!!!!--> Copying a fresh value for variable %u , was %u now will become %u ( size %u ) \n", var_id,  *old_val,  *new_val, ptr_size);
+                   memcpy(old_val,new_val,ptr_size);
+                /* Memory can be deallocated at this point since the message has been copied , this however is not very stable :S
+                   if (mt->table[mt_traverse].payload_local_malloc) { free(mt->table[mt_traverse].payload); }
                    mt->table[mt_traverse].payload=0;
                    mt->table[mt_traverse].payload_local_malloc=0; */
+                 }
 
 
                 retres.failed=0;
