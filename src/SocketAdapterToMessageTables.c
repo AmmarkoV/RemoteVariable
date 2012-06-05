@@ -59,8 +59,15 @@ void PrintMessageType(struct PacketHeader *header)
 {
       switch (header->operation_type)
       {
-        // case EAGAIN :
          case NOACTION : fprintf(stderr,"NOACTION"); break;
+
+         case INTERNAL_START_SIGNALCHANGED : fprintf(stderr,"INTERNAL_START_SIGNALCHANGED"); break;
+         case INTERNAL_START_READFROM : fprintf(stderr,"INTERNAL_START_READFROM"); break;
+         case INTERNAL_START_WRITETO : fprintf(stderr,"INTERNAL_START_WRITETO"); break;
+
+         case RAW_MESSAGE : fprintf(stderr,"RAW_MESSAGE"); break;
+
+
          case RESP_WRITETO : fprintf(stderr,"RESP_WRITETO"); break;
          case WRITETO : fprintf(stderr,"WRITETO"); break;
          case READFROM : fprintf(stderr,"READFROM"); break;
@@ -331,6 +338,10 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
   fprintf(stderr,"Started JobAndMessageTableExecutor_Thread for peer %u , internal_loop = %u",peer_id,internal_loop);
 
   while (*pause_switch) { fprintf(stderr,".INIT."); usleep(100); }
+
+
+  if (internal_loop==2) {return 0; }
+  if (internal_loop==1) { internal_loop=0; } // Use only one global process loop
 
 
   unsigned int mt_id=0;

@@ -74,7 +74,6 @@ if (!ignore_payload)
 
 void PrintMessageTableItem(struct MessageTableItem * mti,unsigned int val)
 {
-   return;
    fprintf(stderr,"MessageTableItem Printout (mti index %u) \n",val);
    fprintf(stderr,"mti->header.incremental_value = %u\n",mti->header.incremental_value);
    fprintf(stderr,"mti->header.operation_type = %u ",mti->header.operation_type); PrintMessageType(&mti->header);  fprintf(stderr,"\n");
@@ -97,7 +96,7 @@ void PrintMessageTableItem(struct MessageTableItem * mti,unsigned int val)
 
 int AllocateMessageQueue(struct MessageTable *  mt,unsigned int total_messages)
 {
-   if (mt==0) { error("complain"); return 0; }
+   if (mt==0) { error("AllocateMessageQueue called with a zero message table"); return 0; }
 
    mt->locked=0; //New allocation so cleaning it up
    LockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------
@@ -169,10 +168,11 @@ int FreeMessageQueue(struct MessageTable * mt)
 
 struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,unsigned int free_malloc_at_disposal,struct PacketHeader * header,void * payload,unsigned int msg_timer)
 {
-
   struct failint retres={0};
   retres.failed=0;
   retres.value=0;
+
+  LockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------
 
   if (mt->message_queue_current_length >= mt->message_queue_total_length)
     {
@@ -182,8 +182,6 @@ struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,
       return retres;
     }
 
-
-  LockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------
 
   fprintf(stderr,"AddToMessageTable incoming = %u , freemalloc_atdispoal = %u , payload = %p , payload_size %u ",incoming,free_malloc_at_disposal,payload,header->payload_size);
   PrintMessageType(header); fprintf(stderr," group = %u time = %u \n",header->incremental_value,msg_timer);
@@ -205,6 +203,7 @@ struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,
   mt->table[mt_pos].payload_local_malloc=free_malloc_at_disposal;
   mt->table[mt_pos].payload=payload;
 
+  fprintf(stderr,"New MessageTable Item ( small flags supposed to be clean ) \n");
   PrintMessageTableItem(&mt->table[mt_pos],mt_pos);
 
   retres.value=mt_pos;
@@ -232,10 +231,9 @@ int SwapItemsMessageTable(struct MessageTable * mt,unsigned int mt_id1,unsigned 
 
 
 
-int RemFromMessageTable(struct MessageTable * mt,unsigned int mt_id)
+int RemFromMessageTableINTERNAL_MUST_BE_LOCKED(struct MessageTable * mt,unsigned int mt_id)
 {
 
-  LockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------
 
   if (mt->message_queue_current_length <= mt_id ) { error("RemFromMessageTableKeepOrder called for out of bounds mt_id \n"); return 0; }
   if (mt->message_queue_current_length==0) { fprintf(stderr,"Erroneous call at RemFromMessageTableKeepOrder for item %u , it must have been removed by another thread\n",mt_id); }
@@ -264,7 +262,6 @@ int RemFromMessageTable(struct MessageTable * mt,unsigned int mt_id)
    }
 
 
-  UnlockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------
 
   return 1;
 }
@@ -281,9 +278,12 @@ int SetMessageTableItemForRemoval(struct MessageTableItem * mti)
 
 int RemFromMessageTableWhereRemoveFlagExists(struct MessageTable * mt)
 {
+
   if (mt==0) {return 0;}
   if (mt->message_queue_total_length==0) {return 0;}
   if (mt->message_queue_current_length==0) {return 0;}
+
+  LockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------
 
   unsigned int mt_id=0;
   unsigned int messages_removed=0;
@@ -293,37 +293,14 @@ int RemFromMessageTableWhereRemoveFlagExists(struct MessageTable * mt)
      {
        if ( mt->table[mt_id].remove )
           {
-             if ( RemFromMessageTable(mt,mt_id) ) { ++messages_removed; }
+             if ( RemFromMessageTableINTERNAL_MUST_BE_LOCKED(mt,mt_id) ) { ++messages_removed; }
           }
      }
-
-    /*
-    // FANCY LESS OVERHEAD REMOVAL :P
-    // First message hardcoded removal
-    if (mt->message_queue_current_length==1)
-     {
-        if ( mt->table[0].remove ) { if ( RemFromMessageTable(mt,0) ) { ++messages_removed; } }
-        if (messages_removed) { fprintf(stderr,"Hardcoded single message removed %u msgs",messages_removed); }
-       return messages_removed;
-     }
-
-
-    // If we have more than one messages The rest of the messages starting from the last till the second one!
-    for (mt_id=mt->message_queue_current_length-1; mt_id>0; mt_id--)
-     {
-       if ( mt->table[mt_id].remove )
-          {
-             if ( RemFromMessageTable(mt,mt_id) ) { ++messages_removed; }
-          }
-     }
-
-    //Hardcoded last check
-    if ( mt->table[0].remove ) { if ( RemFromMessageTable(mt,0) ) { ++messages_removed; } }
-    */
 
 
   if (messages_removed>0) fprintf(stderr,"RemFromMessageTableWhereRemoveFlagExists removed %u messages \n",messages_removed);
 
+  UnlockMessageTable(mt); // LOCK PROTECTED OPERATION -------------------------------------------
   return messages_removed;
 }
 
@@ -351,7 +328,8 @@ struct failint WaitForSuccessIndicatorAtMessageTableItem(struct MessageTable *mt
   unsigned int done_waiting=0;
   unsigned int mt_traverse=0;
   fprintf(stderr,"WaitForSuccessIndicatorAtMessageTableItem ( waiting for SIGNALMSGSUCCESS or SIGNALMSGFAILURE ) mt_id=%u , mt_length = %u , our_inc_value = %u\n",mt_id,mt->message_queue_current_length,our_incremental_value);
-while (!done_waiting)
+
+  while (!done_waiting)
    {
      if(mt->message_queue_current_length>0)
      {
@@ -359,16 +337,17 @@ while (!done_waiting)
        {
          if (SIGNALMSGSUCCESS==mt->table[mt_traverse].header.operation_type)
             {
-             fprintf(stderr,"FOUND SIGNALMSGSUCCESS!\n");
+              fprintf(stderr,"FOUND SIGNALMSGSUCCESS!\n");
               retres.failed=0;
               retres.value=mt_traverse;
-
               return retres;
             }  else
          if (SIGNALMSGFAILURE==mt->table[mt_traverse].header.operation_type)
             {
-             fprintf(stderr,"FOUND SIGNALMSGFAILURE!\n");
-             return retres;
+               fprintf(stderr,"FOUND SIGNALMSGFAILURE!\n");
+               retres.failed=1;
+               retres.value=mt_traverse;
+              return retres;
             } else
             {
             //  fprintf(stderr," Encountered : "); PrintMessageType(&mt->table[mt_traverse].header);
