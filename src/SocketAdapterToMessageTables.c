@@ -99,11 +99,12 @@ struct failint SendPacketPassedToMT(int clientsock,struct MessageTable * mt,unsi
       return retres;
    }
 
+/*
   if(sockadap_msg())
   {
     fprintf(stderr,"About to send the following : \n");
     PrintMessageTableItem(&mt->table[item_num],item_num);
-  }
+  }*/
 
   int opres=send(clientsock,&mt->table[item_num].header,sizeof(mt->table[item_num].header),MSG_WAITALL);
   if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; return retres; }
@@ -111,7 +112,10 @@ struct failint SendPacketPassedToMT(int clientsock,struct MessageTable * mt,unsi
   if ( mt->table[item_num].header.payload_size > 0 )
    {
      unsigned int * payload_val = (unsigned int *) mt->table[item_num].payload;
-     fprintf(stderr,"SendPacketPassedToMT sending payload %p , payload_val %u , payload size %u \n", mt->table[item_num].payload,*payload_val,mt->table[item_num].header.payload_size);
+
+     fprintf(stderr,"SendPacketPassedToMT sending");
+     PrintMessageType(&mt->table[item_num].header);
+     fprintf(stderr,"payload %p , payload_val %u , payload size %u GROUP %u \n", mt->table[item_num].payload,*payload_val,mt->table[item_num].header.payload_size,mt->table[item_num].header.incremental_value);
 
      opres=send(clientsock,mt->table[item_num].payload,mt->table[item_num].header.payload_size,MSG_WAITALL);
      if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; return retres; } else
@@ -129,7 +133,6 @@ struct failint SendPacketPassedToMT(int clientsock,struct MessageTable * mt,unsi
   mt->table[item_num].sent=1;
 
 
-  if(sockadap_msg()) fprintf(stderr,"SendPacketPassedToMT complete ----------------\n");
 
   retres.value=item_num;
   retres.failed=0;
@@ -142,23 +145,13 @@ struct failint RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt,uns
   retres.value=0;
   retres.failed=0;
 
-  if(sockadap_msg()) fprintf(stderr,"Trying RecvPacketAndPassToMT <<<<<<<<<<<<<<<<<<<<<<< ");
-
   struct PacketHeader header={0};
   int opres=recv(clientsock,&header,sizeof(struct PacketHeader),MSG_WAITALL);
   if (opres<0) { fprintf(stderr,"Error RecvPacketAndPassToMT recv error %u \n",errno); retres.failed=1; return retres; } else
   if (opres!=sizeof(struct PacketHeader)) { fprintf(stderr,"Error RecvPacketAndPassToMT incorrect number of bytes recieved %u \n",opres); retres.failed=1; return retres; }
 
-  if(sockadap_msg())
-  {
-    PrintMessageType(&header);
-    fprintf(stderr," inc value %u \n",header.incremental_value);
-  }
-
-
   if ( header.payload_size > 0 )
    {
-    if(sockadap_msg())fprintf(stderr,"RecvPacketAndPassToMT waiting and mallocing for payload size %u \n",header.payload_size);
     void * payload = (void * ) malloc(header.payload_size);
     if (payload==0) { fprintf(stderr,"Error mallocing %u bytes \n ",header.payload_size); }
     opres=recv(clientsock,payload,header.payload_size,MSG_WAITALL);
@@ -166,14 +159,23 @@ struct failint RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt,uns
     if ( opres != header.payload_size ) { fprintf(stderr,"Payload was not fully received only %u of %u bytes \n",opres,header.payload_size); retres.failed=1; return retres; }
 
     unsigned int * payload_val=(unsigned int * ) payload;
-    if(sockadap_msg())fprintf(stderr,"received payload seems to be carrying value %u \n",*payload_val);
 
     retres = AddToMessageTable(mt,1,1,&header,payload,msg_timer);
-    if(sockadap_msg())fprintf(stderr,"RecvPacketAndPassToMT complete with payload----------------\n");
+    if(sockadap_msg())
+     {
+        fprintf(stderr,"RecvPacketAndPassToMT just received ");
+        PrintMessageType(&header);
+        fprintf(stderr," - GROUP %u - With %u bytes of payload ----------------\n",header.incremental_value,header.payload_size);
+     }
     return retres;
    } else
    {
-     if(sockadap_msg())fprintf(stderr,"RecvPacketAndPassToMT with no payload\n");
+     if(sockadap_msg())
+      {
+        fprintf(stderr,"RecvPacketAndPassToMT just received ");
+        PrintMessageType(&header);
+        fprintf(stderr," - GROUP %u - with NO payload ----------------\n",header.incremental_value);
+      }
    }
 
   retres = AddToMessageTable(mt,1,0,&header,0,msg_timer);
@@ -303,7 +305,7 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
   int peersock = thread_context->peersock;
   unsigned int internal_loop = thread_context->type_of_thread;
   struct MessageTable * mt = &vsh->peer_list[peer_id].messages;
-  if ((mt==0)||(mt->table==0)) { fprintf(stderr," Serious Error MessageTable doesnt seem to be allocated\n\ "); return 0; }
+  if ((mt==0)||(mt->table==0)) { fprintf(stderr," Serious Error MessageTable doesnt seem to be allocated\n"); return 0; }
 
   unsigned int * sendrcv_pause_switch=&vsh->peer_list[peer_id].messages.pause_sendrecv_thread;
 

@@ -232,17 +232,24 @@ struct failint NewProtocolRequest_Send(struct VariableShare * vsh,unsigned int p
   header.var_id=var_id;
   header.payload_size=payload_size;
 
+
+  if (protocol_msg())
+  {
+    fprintf(stderr,"NewProtocolRequest_Send called for peer_id %u , var_id %u , incremental value %u  type ",peer_id,var_id,header.incremental_value);
+    PrintMessageType(&header);
+    fprintf(stderr,"\n");
+  }
+
   //struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,unsigned int free_malloc_at_disposal,struct PacketHeader * header,void * payload,unsigned int msg_timer)
   retres=AddToMessageTable(&vsh->peer_list[peer_id].messages,0,free_malloc_at_disposal,&header,payload,vsh->central_timer);
 
-  if (protocol_msg()) fprintf(stderr,"Request_ReadVariable called for peer_id %u , var_id %u , incremental value %u  \n",peer_id,var_id,header.incremental_value);
 
   return retres;
 }
 
 
 
-/*
+/*!
     ------------------------------------------------------
                 GENERIC MESSAGE TABLE FUNCTIONS
     ------------------------------------------------------
@@ -260,7 +267,7 @@ struct failint NewProtocolRequest_Send(struct VariableShare * vsh,unsigned int p
     ------------------------------------------------------
                 HANDSHAKES THROUGH MESSAGE TABLES
     ------------------------------------------------------
-*/
+!*/
 
 
 int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,int peersock)
@@ -295,14 +302,19 @@ int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigne
   return 1;
 }
 
+/*!
+    ------------------------------------------------------  ------------------------------------------------------
+    ------------------------------------------------------  ------------------------------------------------------
+!*/
 int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,struct MessageTable * mt,unsigned int mt_id,int peersock)
 {
   // We have accepted a new Message Table entry which contains a Request_ReadVariable so we will try to accept it..
   // First make a local copy of the header ..
 
   // Secondly this incremental_value is now the last for this client , if we make a new request it should have a different inc_value than this..
-  vsh->peer_list[peer_id].incremental_value = mt->table[mt_id].header.incremental_value;
-
+  if (mt->table[mt_id].header.incremental_value>vsh->peer_list[peer_id].incremental_value)
+   { vsh->peer_list[peer_id].incremental_value = mt->table[mt_id].header.incremental_value; }
+   else { fprintf(stderr,"Header accepted has a smaller inc value ( %u ) than our current one ( %u ) , ignoring it ..\n",mt->table[mt_id].header.incremental_value,vsh->peer_list[peer_id].incremental_value); }
 
   unsigned int var_id = mt->table[mt_id].header.var_id;
   //We received a READFROM request ( otherwise this function wouldnt have been triggered so lets respond to it )
@@ -330,7 +342,7 @@ int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,s
 }
 
 
-/*
+/*!
 
     ------------------------------------------------------  ------------------------------------------------------
     ------------------------------------------------------  ------------------------------------------------------
@@ -340,7 +352,7 @@ int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,s
     ------------------------------------------------------  ------------------------------------------------------
     ------------------------------------------------------  ------------------------------------------------------
 
-*/
+!*/
 
 int Request_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,int peersock)
 {
@@ -367,7 +379,9 @@ int AcceptRequest_SignalChangeVariable(struct VariableShare * vsh,unsigned int p
   // First make a local copy of the header ..
 
   // Secondly this incremental_value is now the last for this client , if we make a new request it should have a different inc_value than this..
-  vsh->peer_list[peer_id].incremental_value=mt->table[mt_id].header.incremental_value;
+  if (mt->table[mt_id].header.incremental_value>vsh->peer_list[peer_id].incremental_value)
+   { vsh->peer_list[peer_id].incremental_value = mt->table[mt_id].header.incremental_value; }
+   else { fprintf(stderr,"Header accepted has a smaller inc value ( %u ) than our current one ( %u ) , ignoring it ..\n",mt->table[mt_id].header.incremental_value,vsh->peer_list[peer_id].incremental_value); }
 
   //We received a READFROM request ( otherwise this function wouldnt have been triggered so lets respond to it )
   /* TODO HERE , HANDLE PERMISSIONS ETC*/
