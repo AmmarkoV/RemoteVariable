@@ -51,12 +51,12 @@ void error(char * msg)
 
 int protocol_msg()
 {
- return 0;
+ return 1;
 }
 
 int sockadap_msg()
 {
- return 0;
+ return 1;
 }
 int debug_msg()
 {

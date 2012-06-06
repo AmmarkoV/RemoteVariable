@@ -151,7 +151,7 @@ struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,
     }
 
 
-  fprintf(stderr,"AddToMessageTable incoming(%u) , freemalloc(%u) , payload = %p , size %u ",incoming,free_malloc_at_disposal,payload,header->payload_size);
+  fprintf(stderr,"ADDING incoming(%u) , freemalloc(%u) , payload = %p , size %u ",incoming,free_malloc_at_disposal,payload,header->payload_size);
   PrintMessageType(header); fprintf(stderr," group = %u time = %u \n",header->incremental_value,msg_timer);
   //usleep(200);
 
@@ -205,8 +205,8 @@ int RemFromMessageTableINTERNAL_MUST_BE_LOCKED(struct MessageTable * mt,unsigned
 
 
   // PRINT THE REM MESSAGE TABLE OPERATION
-  fprintf(stderr,"RemFromMessageTableKeepOrder -> mt_id %u of %u - type ",mt_id,mt->message_queue_current_length); PrintMessageType(&mt->table[mt_id].header);
-  fprintf(stderr," group %u \n",mt->table[mt_id].header.incremental_value);
+  fprintf(stderr,"REMOVING ->"); PrintMessageType(&mt->table[mt_id].header);
+  fprintf(stderr," GROUP %u  mt_id %u/%u \n",mt->table[mt_id].header.incremental_value,mt_id,mt->message_queue_current_length-1);
 
   if (mt->message_queue_current_length==1)
    {
@@ -217,11 +217,17 @@ int RemFromMessageTableINTERNAL_MUST_BE_LOCKED(struct MessageTable * mt,unsigned
    {
     if (mt_id<mt->message_queue_current_length-1)
      {
+       //We are not in the last position , we need to move some things around...
        int i=0;
        for (i=mt_id; i<mt->message_queue_current_length; i++) { mt->table[i]=mt->table[i+1]; } // This "bug" took me 2 days to find out :P , this line was mt->table[mt_id]=mt->table[mt_id+1];
 
        EmptyMTItem(&mt->table[mt->message_queue_current_length-1],1); //ignore malloc cause it is a copy
        --mt->message_queue_current_length;
+     } else
+     {
+       //We are in the last position..
+       EmptyMTItem(&mt->table[mt_id],0);
+        --mt->message_queue_current_length;
      }
    }
 
@@ -262,7 +268,7 @@ int RemFromMessageTableWhereRemoveFlagExists(struct MessageTable * mt)
      }
 
 
-  if (messages_removed>0) fprintf(stderr,"RemFromMessageTableWhereRemoveFlagExists removed %u messages \n",messages_removed);
+ // if (messages_removed>0) fprintf(stderr,"RemFromMessageTableWhereRemoveFlagExists removed %u messages \n",messages_removed);
 
    pthread_mutex_unlock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
   return messages_removed;
@@ -291,7 +297,7 @@ struct failint WaitForSuccessIndicatorAtMessageTableItem(struct MessageTable *mt
   unsigned int our_incremental_value=mt->table[mt_id].header.incremental_value;
   unsigned int done_waiting=0;
   unsigned int mt_traverse=0;
-  fprintf(stderr,"WaitForSuccessIndicatorAtMessageTableItem ( waiting for SIGNALMSGSUCCESS or SIGNALMSGFAILURE ) mt_id=%u , mt_length = %u , our_inc_value = %u\n",mt_id,mt->message_queue_current_length,our_incremental_value);
+  fprintf(stderr,"WAITING for SIGNALMSGSUCCESS or SIGNALMSGFAILURE  GROUP %u , mt_id=%u , mt_length = %u \n",our_incremental_value,mt_id,mt->message_queue_current_length);
 
   while (!done_waiting)
    {
@@ -345,7 +351,7 @@ struct failint WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *m
   unsigned int our_incremental_value=mt->table[mt_id].header.incremental_value;
   unsigned int done_waiting=0;
   unsigned int mt_traverse=0;
-  fprintf(stderr,"WaitForVariableAndCopyItAtMessageTableItem ( waiting for RESP_WRITETO ) mt_id=%u , mt_length = %u , our_inc_value = %u , var_id = %u\n",mt_id,mt->message_queue_current_length,our_incremental_value,var_id);
+  fprintf(stderr,"WAITING for RESP_WRITETO GROUP = %u mt_id=%u , mt_length = %u ,  , var_id = %u\n",our_incremental_value,mt_id,mt->message_queue_current_length,var_id);
   while (!done_waiting)
    {
 
@@ -389,7 +395,7 @@ struct failint WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *m
        ++mt_traverse;
      }
        if (mt_traverse>=mt->message_queue_current_length) { mt_traverse=0; }
-       fprintf(stderr,".W_RWT_GRP_%u.",our_incremental_value);
+       fprintf(stderr,".WRESP.",our_incremental_value);
        usleep(1500);
    }
 
