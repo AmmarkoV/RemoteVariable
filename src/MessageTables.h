@@ -8,15 +8,16 @@ void PrintMessageTableItem(struct MessageTableItem * mti,unsigned int val);
 int AllocateMessageQueue(struct MessageTable *  mt,unsigned int total_messages);
 int FreeMessageQueue(struct MessageTable * mt);
 
-struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,unsigned int free_malloc_at_disposal,struct PacketHeader * header,void * payload,unsigned int msg_timer);
-int RemFromMessageTable(struct MessageTable * mt,unsigned int mt_id);
+struct failint AddMessage(struct MessageTable * mt,unsigned int incoming,unsigned int free_malloc_at_disposal,struct PacketHeader * header,void * payload,unsigned int msg_timer);
+int RemMessage(struct MessageTable * mt,unsigned int mt_id);
 int RemFromMessageTableWhereRemoveFlagExists(struct MessageTable * mt);
 
-int SetMessageTableItemForRemoval(struct MessageTableItem * mti);
+int SetMessage_Flag_ForRemoval(struct MessageTableItem * mti);
 
 int DeleteRemovedFromMessageTable(struct MessageTable * mt);
 
 
+struct failint WaitForMessage(struct MessageTable *mt , unsigned char optype1 , unsigned char optype2 , unsigned int inc_value , unsigned int incoming , unsigned int wait_forever);
 unsigned int WaitForMessageTableItemToBeSent(struct MessageTableItem * mti);
 struct failint  WaitForSuccessIndicatorAtMessageTableItem(struct MessageTable *mt , unsigned int mt_id);
 struct failint  WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *mt , unsigned int mt_id,struct VariableShare *vsh ,unsigned int var_id);

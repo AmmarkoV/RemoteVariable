@@ -133,7 +133,7 @@ int FreeMessageQueue(struct MessageTable * mt)
    return 1;
 }
 
-struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,unsigned int free_malloc_at_disposal,struct PacketHeader * header,void * payload,unsigned int msg_timer)
+struct failint AddMessage(struct MessageTable * mt,unsigned int incoming,unsigned int free_malloc_at_disposal,struct PacketHeader * header,void * payload,unsigned int msg_timer)
 {
    pthread_mutex_lock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
 
@@ -179,7 +179,7 @@ struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,
   return retres;
 }
 
-int SwapItemsMessageTable(struct MessageTable * mt,unsigned int mt_id1,unsigned int mt_id2)
+int SwapMessages(struct MessageTable * mt,unsigned int mt_id1,unsigned int mt_id2)
 {
   if ( (mt->message_queue_current_length <= mt_id1 )||
         (mt->message_queue_current_length <= mt_id2 ) )
@@ -197,7 +197,7 @@ int SwapItemsMessageTable(struct MessageTable * mt,unsigned int mt_id1,unsigned 
 
 
 
-int RemFromMessageTableINTERNAL_MUST_BE_LOCKED(struct MessageTable * mt,unsigned int mt_id)
+int RemMessageINTERNAL_MUST_BE_LOCKED(struct MessageTable * mt,unsigned int mt_id)
 {
   if (mt->message_queue_current_length <= mt_id ) { error("RemFromMessageTableKeepOrder called for out of bounds mt_id \n"); return 0; }
   if (mt->message_queue_current_length==0) { fprintf(stderr,"Erroneous call at RemFromMessageTableKeepOrder for item %u , it must have been removed by another thread\n",mt_id); }
@@ -238,7 +238,7 @@ int RemFromMessageTableINTERNAL_MUST_BE_LOCKED(struct MessageTable * mt,unsigned
 
 
 
-int SetMessageTableItemForRemoval(struct MessageTableItem * mti)
+int SetMessage_Flag_ForRemoval(struct MessageTableItem * mti)
 {
   if (mti==0) { fprintf(stderr,"SetMessageTableItemForRemoval called with a zero MTI \n"); return 0; }
   mti->remove=1;
@@ -263,7 +263,7 @@ int RemFromMessageTableWhereRemoveFlagExists(struct MessageTable * mt)
      {
        if ( mt->table[mt_id].remove )
           {
-             if ( RemFromMessageTableINTERNAL_MUST_BE_LOCKED(mt,mt_id) ) { ++messages_removed; }
+             if ( RemMessageINTERNAL_MUST_BE_LOCKED(mt,mt_id) ) { ++messages_removed; }
           }
      }
 
@@ -284,121 +284,104 @@ unsigned int WaitForMessageTableItemToBeSent(struct MessageTableItem * mti)
    return 1;
 }
 
+struct failint WaitForMessage(struct MessageTable *mt , unsigned char optype1 , unsigned char optype2 , unsigned int inc_value , unsigned int incoming , unsigned int wait_forever)
+{
+    struct failint retres; retres.failed=1; retres.value=0;
+    if (mt==0) { fprintf(stderr,"WaitForMessage Called with zero MessageTable\n"); return retres;}
+    if ((mt->message_queue_current_length == 0)&&(!wait_forever)) { /*No messages , wont wait*/ return retres; }
+
+
+
+    unsigned int done_waiting=0;
+    unsigned int mt_traverse=0;
+
+   while (!done_waiting)
+   {
+     if ( !wait_forever ) { done_waiting=1; } // Wait forever ( until message comes .. ) :P
+
+     pthread_mutex_lock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
+     for (mt_traverse=0; mt_traverse<mt->message_queue_current_length; mt_traverse++)
+     {
+       if ( (optype1==mt->table[mt_traverse].header.operation_type) &&
+            (inc_value==mt->table[mt_traverse].header.incremental_value)&&
+            (incoming==mt->table[mt_traverse].incoming)  )
+       {
+         fprintf(stderr,"\nFOUND1 ");
+         PrintMessageType(&mt->table[mt_traverse].header);
+         fprintf(stderr," , group %u !\n",inc_value);
+
+         retres.failed=0; retres.value=mt_traverse; return retres;
+
+       }
+
+        else //Todo 2 loops one when optype1==optype2 , one which does both..!
+
+       if ( (optype2==mt->table[mt_traverse].header.operation_type) &&
+            (inc_value==mt->table[mt_traverse].header.incremental_value) &&
+            (incoming==mt->table[mt_traverse].incoming) )
+       {
+         fprintf(stderr,"\nFOUND2 ");
+         PrintMessageType(&mt->table[mt_traverse].header);
+         fprintf(stderr," , group %u !\n",inc_value);
+
+         retres.failed=0; retres.value=mt_traverse; return retres;
+       }
+     }
+     pthread_mutex_unlock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
+
+     usleep(500);
+     fprintf(stderr,"*");
+   }
+
+   return retres;
+}
 
 struct failint WaitForSuccessIndicatorAtMessageTableItem(struct MessageTable *mt , unsigned int mt_id)
 {
-  struct failint retres;
-  retres.failed=1; retres.value=1;
+  unsigned int group=mt->table[mt_id].header.incremental_value;
+  fprintf(stderr,"WAITING for SIGNALMSGSUCCESS or SIGNALMSGFAILURE  GROUP %u , mt_id=%u , mt_length = %u \n",group,mt_id,mt->message_queue_current_length);
+  struct failint retres=  WaitForMessage(mt ,SIGNALMSGSUCCESS,SIGNALMSGFAILURE,group,1 /*INCOMING*/,1);
+  fprintf(stderr,"DONE WAITING for SIGNALMSGSUCCESS or SIGNALMSGFAILURE  GROUP %u , mt_id=%u , mt_length = %u \n",group,mt_id,mt->message_queue_current_length);
 
-  if (mt==0) { fprintf(stderr,"WaitForSuccessIndicatorAtMessageTableItem Called with zero MessageTable\n"); return retres;}
-  if (mt->message_queue_current_length <= mt_id ) { error("WaitForSuccessIndicatorAtMessageTableItem mt_id out of bounds \n"); return retres; }
-
-
-  unsigned int our_incremental_value=mt->table[mt_id].header.incremental_value;
-  unsigned int done_waiting=0;
-  unsigned int mt_traverse=0;
-  fprintf(stderr,"WAITING for SIGNALMSGSUCCESS or SIGNALMSGFAILURE  GROUP %u , mt_id=%u , mt_length = %u \n",our_incremental_value,mt_id,mt->message_queue_current_length);
-
-  while (!done_waiting)
-   {
-     if(mt->message_queue_current_length>0)
-     {
-       if (our_incremental_value==mt->table[mt_traverse].header.incremental_value)
-       {
-         if (SIGNALMSGSUCCESS==mt->table[mt_traverse].header.operation_type)
-            {
-              fprintf(stderr,"\nFOUND SIGNALMSGSUCCESS , group %u !\n",our_incremental_value);
-              retres.failed=0;
-              retres.value=mt_traverse;
-              return retres;
-            }  else
-         if (SIGNALMSGFAILURE==mt->table[mt_traverse].header.operation_type)
-            {
-               fprintf(stderr,"\nFOUND SIGNALMSGFAILURE , group %u !\n",our_incremental_value);
-               retres.failed=1;
-               retres.value=mt_traverse;
-              return retres;
-            } else
-            {
-            //  fprintf(stderr," Encountered : "); PrintMessageType(&mt->table[mt_traverse].header);
-            }
-       } else
-       {
-          // fprintf(stderr,"Dismissing group value %u , we have %u , total %u queued messages \n",mt->table[mt_traverse].header.incremental_value,our_incremental_value,mt->message_queue_current_length);
-       }
-
-       ++mt_traverse;
-     }
-       if (mt_traverse>=mt->message_queue_current_length) { mt_traverse=0; }
-       fprintf(stderr,".W_S_OrF_GRP_%u.",our_incremental_value);
-       usleep(500);
-   }
-
-  fprintf(stderr,"\nWaitForSuccessIndicatorAtMessageTableItem failed after timeout\n");
   return retres;
 }
 
 struct failint WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *mt , unsigned int mt_id,struct VariableShare *vsh ,unsigned int var_id)
 {
-  struct failint retres;
-  retres.failed=1; retres.value=1;
+  unsigned int group=mt->table[mt_id].header.incremental_value;
+  fprintf(stderr,"WAITING for RESP_WRITETO  GROUP %u , mt_id=%u , mt_length = %u \n",group,mt_id,mt->message_queue_current_length);
+  struct failint retres= WaitForMessage(mt,RESP_WRITETO,RESP_WRITETO,group,1 /*INCOMING*/,1);
+  fprintf(stderr,"DONE WAITING for RESP_WRITETO  GROUP %u , mt_id=%u , mt_length = %u \n",group,mt_id,mt->message_queue_current_length);
 
-  if (mt==0) { fprintf(stderr,"WaitForVariableAndCopyItAtMessageTableItem Called with zero MessageTable\n"); return retres;}
-  if (mt->message_queue_current_length <= mt_id ) { error("WaitForVariableAndCopyItAtMessageTableItem mt_id out of bounds \n"); return retres; }
-
-
-
-  unsigned int our_incremental_value=mt->table[mt_id].header.incremental_value;
-  unsigned int done_waiting=0;
-  unsigned int mt_traverse=0;
-  fprintf(stderr,"WAITING for RESP_WRITETO GROUP = %u mt_id=%u , mt_length = %u ,  , var_id = %u\n",our_incremental_value,mt_id,mt->message_queue_current_length,var_id);
-  while (!done_waiting)
+  if (!retres.failed)
    {
-
-     if(mt->message_queue_current_length>0)
+     unsigned int mt_respwriteto = retres.value;
+     if ( (var_id==mt->table[mt_respwriteto].header.var_id) || (vsh->share.variables[var_id].size_of_ptr!=mt->table[mt_respwriteto].header.payload_size) )
      {
-       if  (RESP_WRITETO==mt->table[mt_traverse].header.operation_type)
-       {
-        // fprintf(stderr,"Found RESP_WRITETO , our inc_value %u header inc_value %u\n",our_incremental_value,mt->table[mt_id].header.incremental_value);
-         if (our_incremental_value==mt->table[mt_traverse].header.incremental_value)
-            {
-              //fprintf(stderr,"Found candidate inc value %u \n",our_incremental_value);
-              if ( (var_id==mt->table[mt_traverse].header.var_id) || (vsh->share.variables[var_id].size_of_ptr!=mt->table[mt_traverse].header.payload_size) )
-              {
-                unsigned int * old_val = (unsigned int *) vsh->share.variables[var_id].ptr;
-                unsigned int * new_val = (unsigned int *) mt->table[mt_traverse].payload;
+         unsigned int * old_val = (unsigned int *) vsh->share.variables[var_id].ptr;
+         unsigned int * new_val = (unsigned int *) mt->table[mt_respwriteto].payload;
 
-                if (old_val==0) { fprintf(stderr,"\nERROR : WaitForVariableAndCopyItAtMessageTableItem old_value memory points to zero \n");  retres.failed=1; return retres; }
-                else if (new_val==0) { fprintf(stderr,"\nERROR : WaitForVariableAndCopyItAtMessageTableItem new_value memory points to zero \n");  retres.failed=1; return retres; }
-                else if (old_val==new_val) {fprintf(stderr,"\nERROR : WaitForVariableAndCopyItAtMessageTableItem copy target memory the same with source\n");  retres.failed=1; return retres;}
-                else
-                 {
-                   unsigned int ptr_size = vsh->share.variables[var_id].size_of_ptr;
-                   fprintf(stderr,"\n!!!!!!!!!!--> Copying a fresh value for variable %u , was %u now will become %u ( size %u ) \n", var_id,  *old_val,  *new_val, ptr_size);
-                   memcpy(old_val,new_val,ptr_size);
-                /* Memory can be deallocated at this point since the message has been copied , this however is not very stable :S
-                   if (mt->table[mt_traverse].payload_local_malloc) { free(mt->table[mt_traverse].payload); }
-                   mt->table[mt_traverse].payload=0;
-                   mt->table[mt_traverse].payload_local_malloc=0; */
-                   retres.failed=0;
-                   retres.value=mt_traverse;
-                   return retres;
-                 }
-              } else
-              {
-                fprintf(stderr,"\nMixed or tampered RESP_WRITETO for var_id %u while waiting for var_id %u\n",mt->table[mt_traverse].header.var_id,var_id);
-                return retres;
+         if (old_val==0) { fprintf(stderr,"\nERROR : WaitForVariableAndCopyItAtMessageTableItem old_value memory points to zero \n");  retres.failed=1; return retres; }
+         else if (new_val==0) { fprintf(stderr,"\nERROR : WaitForVariableAndCopyItAtMessageTableItem new_value memory points to zero \n");  retres.failed=1; return retres; }
+         else if (old_val==new_val) {fprintf(stderr,"\nERROR : WaitForVariableAndCopyItAtMessageTableItem copy target memory the same with source\n");  retres.failed=1; return retres;}
+         else {
+               unsigned int ptr_size = vsh->share.variables[var_id].size_of_ptr;
+               fprintf(stderr,"\n!!!!!!!!!!--> Copying a fresh value for variable %u , was %u now will become %u ( size %u ) \n", var_id,  *old_val,  *new_val, ptr_size);
+               memcpy(old_val,new_val,ptr_size);
+               // Memory can be deallocated at this point since the message has been copied , this however is not very stable :S
+               //    if (mt->table[mt_respwriteto].payload_local_malloc) { free(mt->table[mt_respwriteto].payload); }
+               //    mt->table[mt_respwriteto].payload=0;
+               //    mt->table[mt_respwriteto].payload_local_malloc=0;
+               return retres;
               }
-            }
-       }
-
-       ++mt_traverse;
      }
-       if (mt_traverse>=mt->message_queue_current_length) { mt_traverse=0; }
-       fprintf(stderr,".WRESP.",our_incremental_value);
-       usleep(1500);
+       else
+     {
+        fprintf(stderr,"\nMixed or tampered RESP_WRITETO for var_id %u while waiting for var_id %u\n",mt->table[mt_respwriteto].header.var_id,var_id);
+        retres.failed=1;
+        return retres;
+     }
    }
 
-  fprintf(stderr,"\nWaitForVariableAndCopyItAtMessageTableItem failed after timeout\n");
   return retres;
 }

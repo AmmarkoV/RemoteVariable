@@ -241,7 +241,7 @@ struct failint NewProtocolRequest_Send(struct VariableShare * vsh,unsigned int p
   }
 
   //struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,unsigned int free_malloc_at_disposal,struct PacketHeader * header,void * payload,unsigned int msg_timer)
-  retres=AddToMessageTable(&vsh->peer_list[peer_id].messages,0,free_malloc_at_disposal,&header,payload,vsh->central_timer);
+  retres=AddMessage(&vsh->peer_list[peer_id].messages,0,free_malloc_at_disposal,&header,payload,vsh->central_timer);
 
 
   return retres;
@@ -296,9 +296,9 @@ int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigne
 
 
   //The messages sent and received can now be removed..!
-  SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].messages.table[msg1.value]);
-  SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].messages.table[msg2.value]);
-  SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].messages.table[msg3.value]);
+  SetMessage_Flag_ForRemoval(&vsh->peer_list[peer_id].messages.table[msg1.value]);
+  SetMessage_Flag_ForRemoval(&vsh->peer_list[peer_id].messages.table[msg2.value]);
+  SetMessage_Flag_ForRemoval(&vsh->peer_list[peer_id].messages.table[msg3.value]);
   return 1;
 }
 
@@ -335,9 +335,9 @@ int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,s
   struct failint msg2=WaitForSuccessIndicatorAtMessageTableItem(&vsh->peer_list[peer_id].messages,msg1.value);
 
   //The messages sent and received can now be removed..!
-  SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].messages.table[mt_id]);
-  SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].messages.table[msg1.value]);
-  SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].messages.table[msg2.value]);
+  SetMessage_Flag_ForRemoval(&vsh->peer_list[peer_id].messages.table[mt_id]);
+  SetMessage_Flag_ForRemoval(&vsh->peer_list[peer_id].messages.table[msg1.value]);
+  SetMessage_Flag_ForRemoval(&vsh->peer_list[peer_id].messages.table[msg2.value]);
   return 1;
 }
 
@@ -368,8 +368,8 @@ int Request_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id
 
 
   //The messages sent and received can now be removed..!
-  SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].messages.table[msg1.value]);
-  SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].messages.table[msg2.value]);
+  SetMessage_Flag_ForRemoval(&vsh->peer_list[peer_id].messages.table[msg1.value]);
+  SetMessage_Flag_ForRemoval(&vsh->peer_list[peer_id].messages.table[msg2.value]);
   return (!msg2.failed);
 }
 
@@ -407,8 +407,8 @@ int AcceptRequest_SignalChangeVariable(struct VariableShare * vsh,unsigned int p
   //Wait for message to be sent
   WaitForMessageTableItemToBeSent(&vsh->peer_list[peer_id].messages.table[msg1.value]);
 
-  SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].messages.table[mt_id]);
-  SetMessageTableItemForRemoval(&vsh->peer_list[peer_id].messages.table[msg1.value]);
+  SetMessage_Flag_ForRemoval(&vsh->peer_list[peer_id].messages.table[mt_id]);
+  SetMessage_Flag_ForRemoval(&vsh->peer_list[peer_id].messages.table[msg1.value]);
   return 1;
 }
 

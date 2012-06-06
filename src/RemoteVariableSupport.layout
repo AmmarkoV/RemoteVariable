@@ -7,20 +7,20 @@
 	<File name="HashFunctions.h" open="1" top="0" tabpos="11">
 		<Cursor position="83" topLine="0" />
 	</File>
-	<File name="InternalTester.c" open="1" top="0" tabpos="22">
+	<File name="InternalTester.c" open="1" top="0" tabpos="20">
 		<Cursor position="30" topLine="0" />
 	</File>
-	<File name="InternalTester.h" open="1" top="0" tabpos="23">
+	<File name="InternalTester.h" open="1" top="0" tabpos="21">
 		<Cursor position="85" topLine="0" />
 	</File>
-	<File name="MessageTables.c" open="1" top="0" tabpos="14">
-		<Cursor position="5942" topLine="343" />
+	<File name="MessageTables.c" open="1" top="1" tabpos="14">
+		<Cursor position="7259" topLine="182" />
 	</File>
 	<File name="MessageTables.h" open="1" top="0" tabpos="15">
 		<Cursor position="105" topLine="0" />
 	</File>
 	<File name="NetworkFramework.c" open="1" top="0" tabpos="1">
-		<Cursor position="9142" topLine="183" />
+		<Cursor position="2825" topLine="57" />
 	</File>
 	<File name="NetworkFramework.h" open="1" top="0" tabpos="9">
 		<Cursor position="1291" topLine="0" />
@@ -35,19 +35,19 @@
 		<Cursor position="0" topLine="0" />
 	</File>
 	<File name="Protocol.c" open="1" top="0" tabpos="18">
-		<Cursor position="16126" topLine="132" />
+		<Cursor position="10040" topLine="216" />
 	</File>
 	<File name="Protocol.h" open="1" top="0" tabpos="19">
 		<Cursor position="1033" topLine="0" />
 	</File>
 	<File name="RemoteVariableSupport.c" open="1" top="0" tabpos="4">
-		<Cursor position="3581" topLine="78" />
+		<Cursor position="3581" topLine="132" />
 	</File>
 	<File name="RemoteVariableSupport.h" open="1" top="0" tabpos="7">
 		<Cursor position="2158" topLine="46" />
 	</File>
-	<File name="SocketAdapterToMessageTables.c" open="1" top="1" tabpos="16">
-		<Cursor position="10270" topLine="95" />
+	<File name="SocketAdapterToMessageTables.c" open="1" top="0" tabpos="16">
+		<Cursor position="15499" topLine="332" />
 	</File>
 	<File name="SocketAdapterToMessageTables.h" open="1" top="0" tabpos="17">
 		<Cursor position="298" topLine="0" />

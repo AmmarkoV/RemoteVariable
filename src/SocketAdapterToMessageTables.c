@@ -55,9 +55,11 @@ void PrintError(unsigned int errornum)
       };
 }
 
-void PrintMessageType(struct PacketHeader *header)
+
+
+void PrintMessageTypeVal(unsigned char optype)
 {
-      switch (header->operation_type)
+      switch (optype)
       {
          case NOACTION : fprintf(stderr,"NOACTION"); break;
 
@@ -76,10 +78,16 @@ void PrintMessageType(struct PacketHeader *header)
          case SIGNALMSGFAILURE : fprintf(stderr,"SIGNALMSGFAILURE"); break;
          case SYNC : fprintf(stderr,"SYNC"); break;
          default :
-             fprintf(stderr," Unknown message type %u \n",header->operation_type);
+             fprintf(stderr," Unknown message type %u \n",optype);
              break;
       };
   fprintf(stderr," ");
+}
+
+
+void PrintMessageType(struct PacketHeader *header)
+{
+      PrintMessageTypeVal(header->operation_type);
 }
 
 
@@ -160,7 +168,7 @@ struct failint RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt,uns
 
     unsigned int * payload_val=(unsigned int * ) payload;
 
-    retres = AddToMessageTable(mt,1,1,&header,payload,msg_timer);
+    retres = AddMessage(mt,1,1,&header,payload,msg_timer);
     if(sockadap_msg())
      {
         fprintf(stderr,"RECEIVED ");
@@ -178,7 +186,7 @@ struct failint RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt,uns
       }
    }
 
-  retres = AddToMessageTable(mt,1,0,&header,0,msg_timer);
+  retres = AddMessage(mt,1,0,&header,0,msg_timer);
   return retres;
 }
 
