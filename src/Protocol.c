@@ -362,7 +362,7 @@ int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,s
   if (*protocol_progress==1)
   {
     fprintf(stderr,"\nAcceptRequest_ReadVariable STEP 1\n");
-    struct failint msg2=WaitForSuccessIndicatorAtMessageTableItem(&vsh->peer_list[peer_id].messages,*last_protocol_mid,0);
+    struct failint msg2=WaitForSuccessIndicatorAtMessageTableItem(&vsh->peer_list[peer_id].messages,*groupid,0);
     if (msg2.failed==1) { return 0; } //2 means negative response , we let it pass through
 
   //The messages sent and received can now be removed..!
@@ -415,7 +415,7 @@ int Request_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id
   {
    fprintf(stderr,"\nRequest_SignalChangeVariable STEP 1\n");
    //We wait for the success indicator recv and subsequent pass to our message table
-   struct failint msg2=WaitForSuccessIndicatorAtMessageTableItem(&vsh->peer_list[peer_id].messages,*last_protocol_mid,0);
+   struct failint msg2=WaitForSuccessIndicatorAtMessageTableItem(&vsh->peer_list[peer_id].messages,*groupid,0);
    if (msg2.failed==1) { return 0; } //2 means negative response , we let it pass through
 
    //The messages sent and received can now be removed..!

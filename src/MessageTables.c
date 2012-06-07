@@ -465,7 +465,7 @@ unsigned int WaitForMessageTableItemToBeSent(struct MessageTableItem * mti)
 }
 
 
-struct failint WaitForMessage(struct MessageTable *mt , unsigned char optype1 , unsigned char optype2 , unsigned int inc_value , unsigned int direction , unsigned int wait_forever)
+struct failint WaitForMessage(struct MessageTable *mt , unsigned char optype1 , unsigned char optype2 , unsigned int groupid , unsigned int direction , unsigned int wait_forever)
 {
     struct failint retres; retres.failed=1; retres.value=0;
     if (mt==0) { fprintf(stderr,"WaitForMessage Called with zero MessageTable\n"); return retres;}
@@ -484,46 +484,47 @@ struct failint WaitForMessage(struct MessageTable *mt , unsigned char optype1 , 
      for (mt_traverse=0; mt_traverse<mt->message_queue_current_length; mt_traverse++)
      {
        if ( (optype1==mt->table[mt_traverse].header.operation_type) &&
-            (inc_value==mt->table[mt_traverse].header.incremental_value)&&
+            (groupid==mt->table[mt_traverse].header.incremental_value)&&
             (direction==mt->table[mt_traverse].direction)  )
        {
-         fprintf(stderr,"\nFOUND1 %s , group %u !\n",ReturnPrintMessageTypeVal(mt->table[mt_traverse].header.operation_type),inc_value);
+         fprintf(stderr,"\nFOUND1 %s , group %u !\n",ReturnPrintMessageTypeVal(mt->table[mt_traverse].header.operation_type),groupid);
          retres.failed=0; retres.value=mt_traverse; return retres;
        }
         else //Todo 2 loops one when optype1==optype2 , one which does both..!
        if ( (optype2==mt->table[mt_traverse].header.operation_type) &&
-            (inc_value==mt->table[mt_traverse].header.incremental_value) &&
+            (groupid==mt->table[mt_traverse].header.incremental_value) &&
             (direction==mt->table[mt_traverse].direction) )
        {
-         fprintf(stderr,"\nFOUND2 %s , group %u !\n",ReturnPrintMessageTypeVal(mt->table[mt_traverse].header.operation_type),inc_value);
+         fprintf(stderr,"\nFOUND2 %s , group %u !\n",ReturnPrintMessageTypeVal(mt->table[mt_traverse].header.operation_type),groupid);
          retres.failed=2; retres.value=mt_traverse; return retres;
        }
      }
    //  pthread_mutex_unlock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
 
-     usleep(500);
-     fprintf(stderr,"*");
+     if (wait_forever)
+      {
+       usleep(500);
+       fprintf(stderr,"*");
+      }
    }
 
    return retres;
 }
 
-struct failint WaitForSuccessIndicatorAtMessageTableItem(struct MessageTable *mt , unsigned int mt_id, unsigned int wait_forever)
+struct failint WaitForSuccessIndicatorAtMessageTableItem(struct MessageTable *mt , unsigned int groupid, unsigned int wait_forever)
 {
-  unsigned int group=mt->table[mt_id].header.incremental_value;
-  fprintf(stderr,"WAITING for SIGNALMSGSUCCESS or SIGNALMSGFAILURE  GROUP %u , mt_id=%u , mt_length = %u \n",group,mt_id,mt->message_queue_current_length);
-  struct failint retres=  WaitForMessage(mt ,SIGNALMSGSUCCESS,SIGNALMSGFAILURE,group,1 /*INCOMING*/,wait_forever);
-  if (wait_forever) fprintf(stderr,"DONE WAITING for SIGNALMSGSUCCESS or SIGNALMSGFAILURE  GROUP %u , mt_id=%u , mt_length = %u \n",group,mt_id,mt->message_queue_current_length);
+  fprintf(stderr,"WAITING for SIGNALMSGSUCCESS or SIGNALMSGFAILURE  GROUP %u , mt_length = %u \n",groupid,mt->message_queue_current_length);
+  struct failint retres=  WaitForMessage(mt ,SIGNALMSGSUCCESS,SIGNALMSGFAILURE,groupid,1 /*INCOMING*/,wait_forever);
+  if (wait_forever) fprintf(stderr,"DONE WAITING for SIGNALMSGSUCCESS or SIGNALMSGFAILURE  GROUP %u  , mt_length = %u \n",groupid,mt->message_queue_current_length);
 
   return retres;
 }
 
-struct failint WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *mt , unsigned int mt_id,struct VariableShare *vsh ,unsigned int var_id, unsigned int wait_forever)
+struct failint WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *mt , unsigned int groupid,struct VariableShare *vsh ,unsigned int var_id, unsigned int wait_forever)
 {
-  unsigned int group=mt->table[mt_id].header.incremental_value;
-  fprintf(stderr,"WAITING for RESP_WRITETO  GROUP %u , mt_id=%u , mt_length = %u \n",group,mt_id,mt->message_queue_current_length);
-  struct failint retres= WaitForMessage(mt,RESP_WRITETO,RESP_WRITETO,group,1 /*INCOMING*/,wait_forever);
-  if (wait_forever) fprintf(stderr,"DONE WAITING for RESP_WRITETO  GROUP %u , mt_id=%u , mt_length = %u \n",group,mt_id,mt->message_queue_current_length);
+  fprintf(stderr,"WAITING for RESP_WRITETO  GROUP %u , mt_length = %u \n",groupid,mt->message_queue_current_length);
+  struct failint retres= WaitForMessage(mt,RESP_WRITETO,RESP_WRITETO,groupid,1 /*INCOMING*/,wait_forever);
+  if (wait_forever) fprintf(stderr,"DONE WAITING for RESP_WRITETO  GROUP %u , mt_length = %u \n",groupid,mt->message_queue_current_length);
 
   if (!retres.failed)
    {
@@ -555,7 +556,7 @@ struct failint WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *m
      }
    } else
    {
-       if (wait_forever) fprintf(stderr,"ERROR ,FAILED WAITING for RESP_WRITETO  GROUP %u , mt_id=%u , mt_length = %u \n",group,mt_id,mt->message_queue_current_length);
+       if (wait_forever) fprintf(stderr,"ERROR ,FAILED WAITING for RESP_WRITETO  GROUP %u ,  mt_length = %u \n",groupid,mt->message_queue_current_length);
    }
 
   return retres;
