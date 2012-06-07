@@ -101,22 +101,24 @@ struct MessageTable
     pthread_mutex_t lock;
     pthread_mutex_t remlock;
 
-    unsigned int message_queue_total_length;
-    unsigned int message_queue_current_length;
-
-    struct MessageTableItem * table;
+    unsigned int GUARD_BYTE1;
 
     pthread_t sendrecv_thread;
     unsigned int pause_sendrecv_thread;
     unsigned int stop_sendrecv_thread;
 
-    pthread_t internal_messageproc_thread;
-    unsigned int pause_internal_messageproc_thread;
-    unsigned int stop_internal_messageproc_thread;
+    pthread_t messageproc_thread;
+    unsigned int pause_messageproc_thread;
+    unsigned int stop_messageproc_thread;
 
-    pthread_t external_messageproc_thread;
-    unsigned int pause_external_messageproc_thread;
-    unsigned int stop_external_messageproc_thread;
+    unsigned int GUARD_BYTE2;
+
+    unsigned int message_queue_total_length;
+
+    unsigned int message_queue_current_length;
+
+    struct MessageTableItem * table;
+
 };
 
 

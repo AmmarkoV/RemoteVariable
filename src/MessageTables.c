@@ -85,17 +85,18 @@ int AllocateMessageQueue(struct MessageTable *  mt,unsigned int total_messages)
     mt->pause_sendrecv_thread=0;
     mt->stop_sendrecv_thread=0;
 
-    mt->internal_messageproc_thread=0;
-    mt->pause_internal_messageproc_thread=1; //We want it to start paused , sendrecv thread will initiate it when needed
-    mt->stop_internal_messageproc_thread=0;
-
-    mt->external_messageproc_thread=0;
-    mt->pause_external_messageproc_thread=1; //We want it to start paused , sendrecv thread will initiate it when needed
-    mt->stop_external_messageproc_thread=0;
+    mt->messageproc_thread=0;
+    mt->pause_messageproc_thread=1; //We want it to start paused , sendrecv thread will initiate it when needed
+    mt->stop_messageproc_thread=0;
 
 
    mt->message_queue_current_length=0;
    mt->message_queue_total_length=0;
+
+   mt->GUARD_BYTE1=RVS_GUARD_VALUE;
+   mt->GUARD_BYTE2=RVS_GUARD_VALUE;
+
+
    mt->table = (struct MessageTableItem *) malloc( (total_messages+1) * sizeof(struct MessageTableItem) );
    if (mt->table==0) { error("Could not allocate memory for new Message Table!"); return 0; }
 
@@ -124,11 +125,8 @@ int FreeMessageQueue(struct MessageTable * mt)
     mt->pause_sendrecv_thread=0;
     mt->stop_sendrecv_thread=1;
 
-    mt->pause_internal_messageproc_thread=0;
-    mt->stop_internal_messageproc_thread=1;
-
-    mt->pause_external_messageproc_thread=0;
-    mt->stop_external_messageproc_thread=1;
+    mt->pause_messageproc_thread=0;
+    mt->stop_messageproc_thread=1;
 
     int i=0;
     for (i=0; i<mt->message_queue_current_length; i++)
@@ -365,12 +363,14 @@ int RemMessageINTERNAL_MUST_BE_LOCKED(struct MessageTable * mt,unsigned int mt_i
        for (i=mt_id; i<mt->message_queue_current_length; i++) { mt->table[i]=mt->table[i+1]; } // This "bug" took me 2 days to find out :P , this line was mt->table[mt_id]=mt->table[mt_id+1];
 
        EmptyMTItem(&mt->table[mt->message_queue_current_length-1],1); //ignore malloc cause it is a copy
-       --mt->message_queue_current_length;
+       if (mt->message_queue_current_length>0 ) { --mt->message_queue_current_length; } else
+                                                { fprintf(stderr,"BUG : What am i doing , almost overflowed mt->message_queue_current_length by subtracting from it\n"); }
      } else
      {
        //We are in the last position..
        EmptyMTItem(&mt->table[mt_id],0);
-        --mt->message_queue_current_length;
+       if (mt->message_queue_current_length>0 ) { --mt->message_queue_current_length; } else
+                                                { fprintf(stderr,"BUG : What am i doing , almost overflowed mt->message_queue_current_length by subtracting from it\n"); }
      }
    }
 
@@ -393,6 +393,8 @@ int SetAllMessagesOfGroup_Flag_ForRemoval(struct MessageTable * mt,unsigned int 
   if (mt==0) {return 0;}
   if (mt->message_queue_total_length==0) {return 0;}
   if (mt->message_queue_current_length==0) {return 0;}
+
+  fprintf(stderr,"SetAllMessagesOfGroup_Flag_ForRemoval called for GROUP %u , total possible messages %u \n",groupid,mt->message_queue_current_length);
 
   unsigned int mt_id=0;
   for (mt_id=0; mt_id < mt->message_queue_current_length; mt_id++)
@@ -477,7 +479,6 @@ struct failint WaitForMessage(struct MessageTable *mt , unsigned char optype1 , 
    {
      if ( !wait_forever ) { done_waiting=1; } // Wait forever ( until message comes .. ) :P
 
-  //   pthread_mutex_lock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
      for (mt_traverse=0; mt_traverse<mt->message_queue_current_length; mt_traverse++)
      {
        if ( (optype1==mt->table[mt_traverse].header.operation_type) &&
@@ -496,7 +497,6 @@ struct failint WaitForMessage(struct MessageTable *mt , unsigned char optype1 , 
          retres.failed=2; retres.value=mt_traverse; return retres;
        }
      }
-   //  pthread_mutex_unlock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
 
      if (wait_forever)
       {

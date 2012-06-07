@@ -116,7 +116,11 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
   struct failint res;
   unsigned int table_iterator=0;
 
+  mt->message_queue_current_length=0;
+
+
   fprintf(stderr,"SocketAdapterToMessageTable_Thread started , peer_id = %u , peer socket = %d , master = %u \n",peer_id,peersock,vsh->this_address_space_is_master);
+  fprintf(stderr,"Message Pool %u/%u \n",mt->message_queue_current_length,mt->message_queue_total_length);
 
   if ( vsh->this_address_space_is_master )
    {
@@ -143,15 +147,14 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
   int rest_perms = fcntl(peersock,F_GETFL,0);
 
   //Allow MessageProc Threads to wake up!
-  mt->pause_internal_messageproc_thread=0;
-  mt->pause_external_messageproc_thread=0;
+  mt->pause_messageproc_thread=0;
 
   int data_received = 0;
 
   while (! mt->stop_sendrecv_thread)
   {
 
-   pthread_mutex_lock (&mt->remlock); // LOCK PROTECTED OPERATION -------------------------------------------
+//   pthread_mutex_lock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
 
    /* ------------------------------------------------- RECEIVE PART ------------------------------------------------- */
    incoming_packet.incremental_value=0;
@@ -202,7 +205,7 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
 
    }
 
-    pthread_mutex_unlock (&mt->remlock); // LOCK PROTECTED OPERATION -------------------------------------------
+ //   pthread_mutex_unlock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
    usleep(500);
   }
 
@@ -226,18 +229,18 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
 
   unsigned int * stop_switch=0;
   unsigned int * pause_switch=0;
-  if (internal_loop==1) {stop_switch=&mt->stop_internal_messageproc_thread;
-                         pause_switch=&mt->pause_internal_messageproc_thread; }
-                          else
-                        {stop_switch=&mt->stop_external_messageproc_thread;
-                         pause_switch=&mt->pause_external_messageproc_thread; }
+
+  stop_switch=&mt->stop_messageproc_thread;
+  pause_switch=&mt->pause_messageproc_thread;
 
   //We permit the var to be deallocated from the thread generator stack
   thread_context->keep_var_on_stack=0;
 
   fprintf(stderr,"Started JobAndMessageTableExecutor_Thread for peer %u , internal_loop = %u",peer_id,internal_loop);
 
+
   while (*pause_switch) { fprintf(stderr,".INIT."); usleep(100); }
+
 
 
   unsigned char * protocol_progress=0;
@@ -260,12 +263,9 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
        last_protocol_id = &mt->table[mt_id].last_protocol_id;
        groupid = &mt->table[mt_id].header.incremental_value;
 
-       //INTERNAL MESSAGING THREAD WORK
-       if ( (internal_loop==0) || (internal_loop==1) ) // This is an internal message only processing thread
-       {
           switch ( mt->table[mt_id].header.operation_type )
          {
-          case NOACTION : fprintf(stderr,"NOACTION doesnt trigger @ Internal Message Processing Thread\n"); break;
+          case NOACTION : fprintf(stderr,"NOACTION doesnt trigger @  Message Processing Thread\n"); break;
 
           case INTERNAL_START_SIGNALCHANGED :
              if ( Request_SignalChangeVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock,groupid,protocol_progress,last_protocol_id))
@@ -275,19 +275,10 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
              if ( Request_ReadVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock,groupid,protocol_progress,last_protocol_id))
               { mt->table[mt_id].remove=1;  mt->table[mt_id].executed=1; } /*Internal messages must me marked remove here*/
           break;
+
           case INTERNAL_START_WRITETO :
              if ( Request_WriteVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock,groupid,protocol_progress,last_protocol_id))
               { mt->table[mt_id].remove=1;  mt->table[mt_id].executed=1; } /*Internal messages must me marked remove here*/
-          break;
-         };
-       }
-
-       //EXTERNAL MESSAGING THREAD WORK
-       if ( (internal_loop==0) || (internal_loop==2) ) // This is an external message only processing thread
-       {
-         switch ( mt->table[mt_id].header.operation_type )
-         {
-          case NOACTION : fprintf(stderr,"NOACTION doesnt trigger @ External Message Processing Thread\n"); break;
 
           case WRITETO:
              if ( AcceptRequest_WriteVariable(vsh,peer_id,mt,mt_id,peersock,groupid,protocol_progress,last_protocol_id))
@@ -307,24 +298,23 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
 
        }
       }
-    }
 
+
+    if (mt->GUARD_BYTE1 != RVS_GUARD_VALUE ) { fprintf(stderr,"GUARD VALUE 1 CORRUPTED \n"); }
+    if (mt->GUARD_BYTE2 != RVS_GUARD_VALUE ) { fprintf(stderr,"GUARD VALUE 2 CORRUPTED \n"); }
 
     //First delete from message table messages pending removal
-    if ( (internal_loop==0) || (internal_loop==2) )
-       { // Only external or global thread removes messages to make things simpler..
 
          // We will also pause the SEND/RECV thread in order to keep them from accessing the messagetable structure
 
-      //   pthread_mutex_lock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
-          pthread_mutex_lock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
          //Right now we are the only thread that has access to the MessageTable Structure
-          RemFromMessageTableWhereRemoveFlagExists(mt);
-          //Ok , we have removed the trash , now to resume functionality..
-         pthread_mutex_unlock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
-      //  pthread_mutex_unlock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
-
+          //This call locks internally using the table mutex..
+      if (mt->message_queue_current_length >60 )
+       {
+           RemFromMessageTableWhereRemoveFlagExists(mt);
        }
+
+      //Ok , we have removed the trash , now to resume functionality..
 
     usleep(500);
   }
