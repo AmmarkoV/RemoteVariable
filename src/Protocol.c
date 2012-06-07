@@ -282,7 +282,6 @@ int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigne
     //msg1.value has the value of the new outgoing messagetable entry
     if (msg1.failed) { fprintf(stderr,"ERROR : Could not add Request_Variable to local MessageTable STEP 1\n"); return 0;  }
     *protocol_progress=1;
-    *last_protocol_mid=msg1.value;
   }
 
   if (*protocol_progress==1)
@@ -290,7 +289,7 @@ int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigne
   fprintf(stderr,"\nRequest_ReadVariable STEP 1\n");
    //We wait for the success indicator recv and subsequent pass to our message table
   unsigned char optypeForMSG3=SIGNALMSGSUCCESS;
-  struct failint msg2=WaitForVariableAndCopyItAtMessageTableItem(&vsh->peer_list[peer_id].messages,*last_protocol_mid,vsh,var_id,0);
+  struct failint msg2=WaitForVariableAndCopyItAtMessageTableItem(&vsh->peer_list[peer_id].messages,*groupid,vsh,var_id,0);
   if ( msg2.failed==1 ) { return 0;  /*Only change message type the rest remains the same*/ } else
   if ( msg2.failed==2 ) { optypeForMSG3=SIGNALMSGFAILURE; /*Only change message type the rest remains the same*/ } else
                         { optypeForMSG3=SIGNALMSGSUCCESS; /*Only change message type the rest remains the same*/ }
@@ -407,7 +406,6 @@ int Request_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id
     struct failint msg1=NewProtocolRequest_Send(vsh,peer_id,var_id,SIGNALCHANGED,*groupid,0,0,0);
     if (msg1.failed) { fprintf(stderr,"Could not add SignalChange_Variable to local MessageTable\n"); return 0; }
     *protocol_progress=1;
-    *last_protocol_mid=msg1.value;
   }
 
 
