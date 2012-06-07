@@ -75,6 +75,8 @@ struct PacketHeader
 struct MessageTableItem
 {
    unsigned int time;
+   unsigned char protocol_progress;
+   unsigned char last_protocol_id;
    unsigned char executed;
    unsigned char remove;
    unsigned char incoming;

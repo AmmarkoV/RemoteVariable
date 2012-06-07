@@ -13,6 +13,7 @@ int RemMessage(struct MessageTable * mt,unsigned int mt_id);
 int RemFromMessageTableWhereRemoveFlagExists(struct MessageTable * mt);
 
 int SetMessage_Flag_ForRemoval(struct MessageTableItem * mti);
+int SetAllMessagesOfGroup_Flag_ForRemoval(struct MessageTable * mt,unsigned int groupid);
 
 int DeleteRemovedFromMessageTable(struct MessageTable * mt);
 

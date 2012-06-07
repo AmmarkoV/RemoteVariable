@@ -30,6 +30,8 @@ if (!ignore_payload)
   mti->header.operation_type=0;
   mti->header.var_id=0;
   mti->header.payload_size=0;
+  mti->protocol_progress=0;
+  mti->last_protocol_id=0;
   mti->time=0;
   mti->remove=0;
   mti->executed=0;
@@ -46,6 +48,8 @@ void PrintMessageTableItem(struct MessageTableItem * mti,unsigned int val)
    fprintf(stderr,"mti->header.incremental_value = %u\n",mti->header.incremental_value);
    fprintf(stderr,"mti->header.operation_type = %u ",mti->header.operation_type); PrintMessageType(&mti->header);  fprintf(stderr,"\n");
    fprintf(stderr,"mti->header.var_id = %u\n",mti->header.var_id);
+   fprintf(stderr,"mti->protocol_progress = %u\n",mti->protocol_progress);
+   fprintf(stderr,"mti->last_protocol_id = %u\n",mti->last_protocol_id);
    fprintf(stderr,"mti->time = %u\n",mti->time);
    fprintf(stderr,"mti->remove = %u\n",mti->remove);
    fprintf(stderr,"mti->executed = %u\n",mti->executed);
@@ -245,6 +249,21 @@ int SetMessage_Flag_ForRemoval(struct MessageTableItem * mti)
   return 1;
 }
 
+int SetAllMessagesOfGroup_Flag_ForRemoval(struct MessageTable * mt,unsigned int groupid)
+{
+  if (mt==0) {return 0;}
+  if (mt->message_queue_total_length==0) {return 0;}
+  if (mt->message_queue_current_length==0) {return 0;}
+
+  unsigned int mt_id=0;
+  for (mt_id=0; mt_id < mt->message_queue_current_length; mt_id++)
+     {
+       if (mt->table[mt_id].header.incremental_value==groupid) { mt->table[mt_id].remove=1;  }
+     }
+
+  return 1;
+}
+
 
 int RemFromMessageTableWhereRemoveFlagExists(struct MessageTable * mt)
 {
@@ -317,7 +336,7 @@ struct failint WaitForMessage(struct MessageTable *mt , unsigned char optype1 , 
          PrintMessageType(&mt->table[mt_traverse].header);
          fprintf(stderr," , group %u !\n",inc_value);
 
-         retres.failed=0; retres.value=mt_traverse; return retres;
+         retres.failed=2; retres.value=mt_traverse; return retres;
        }
      }
      pthread_mutex_unlock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------

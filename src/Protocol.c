@@ -200,12 +200,12 @@ int Accept_Version_Handshake(struct VariableShare * vsh,int peersock)
     ------------------------------------------------------
 */
 
-int Request_WriteVariable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,int peersock)
+int Request_WriteVariable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,int peersock,unsigned int groupid ,  unsigned int * protocol_progress , unsigned int * last_protocol_mid)
 {
   return 0;
 }
 
-int AcceptRequest_WriteVariable(struct VariableShare * vsh,unsigned int peer_id,struct MessageTable * mt,unsigned int mt_id,int peersock)
+int AcceptRequest_WriteVariable(struct VariableShare * vsh,unsigned int peer_id,struct MessageTable * mt,unsigned int mt_id,int peersock, unsigned int groupid , unsigned int * protocol_progress , unsigned int * last_protocol_mid)
 {
   return 0;
 }
@@ -270,47 +270,68 @@ struct failint NewProtocolRequest_Send(struct VariableShare * vsh,unsigned int p
 !*/
 
 
-int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,int peersock)
+int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,int peersock , unsigned int groupid , unsigned int * protocol_progress , unsigned int * last_protocol_mid)
 {
   // When we initiate a request we increment our inc_value to signal a new group of messages
   ++vsh->peer_list[peer_id].incremental_value;
 
-  //We send a new READFROM request
-  struct failint msg1=NewProtocolRequest_Send(vsh,peer_id,var_id,READFROM,0,0,0);
-  //msg1.value has the value of the new outgoing messagetable entry
-  if (msg1.failed) { fprintf(stderr,"ERROR : Could not add Request_Variable to local MessageTable STEP 1\n"); return 0;  }
 
+  if (*protocol_progress==0)
+  { //We send a new READFROM request
+    struct failint msg1=NewProtocolRequest_Send(vsh,peer_id,var_id,READFROM,0,0,0);
+    //msg1.value has the value of the new outgoing messagetable entry
+    if (msg1.failed) { fprintf(stderr,"ERROR : Could not add Request_Variable to local MessageTable STEP 1\n"); return 0;  }
+    *protocol_progress=1;
+    *last_protocol_mid=msg1.value;
+  }
 
+  if (*protocol_progress==1)
+  {
   //We wait for the success indicator recv and subsequent pass to our message table
   unsigned char optypeForMSG3=SIGNALMSGSUCCESS;
-  struct failint msg2=WaitForVariableAndCopyItAtMessageTableItem(&vsh->peer_list[peer_id].messages,msg1.value,vsh,var_id);
-  if ( msg2.failed ) { optypeForMSG3=SIGNALMSGFAILURE; /*Only change message type the rest remains the same*/ } else
-                     { optypeForMSG3=SIGNALMSGSUCCESS; /*Only change message type the rest remains the same*/ }
-
+  struct failint msg2=WaitForVariableAndCopyItAtMessageTableItem(&vsh->peer_list[peer_id].messages,*last_protocol_mid,vsh,var_id,0);
+  if ( msg2.failed==1 ) { return 0;  /*Only change message type the rest remains the same*/ } else
+  if ( msg2.failed==2 ) { optypeForMSG3=SIGNALMSGFAILURE; /*Only change message type the rest remains the same*/ } else
+                        { optypeForMSG3=SIGNALMSGSUCCESS; /*Only change message type the rest remains the same*/ }
   //We remove payloads ,etc and sent a positive or negative confirmation to end the protocol handshake
   struct failint msg3=NewProtocolRequest_Send(vsh,peer_id,var_id,optypeForMSG3,0,0,0);
   if (msg3.failed) { fprintf(stderr,"Could not add Request_Variable to local MessageTable STEP 2\n"); return 0;  }
+  *protocol_progress=2;
+  *last_protocol_mid=msg3.value;
+  }
 
-  //Wait for message to be sent
-  WaitForMessageTableItemToBeSent(&vsh->peer_list[peer_id].messages.table[msg3.value]);
+  if (*protocol_progress==2)
+  {
+    //Wait for message to be sent
+    WaitForMessageTableItemToBeSent(&vsh->peer_list[peer_id].messages.table[*last_protocol_mid]);
 
 
-  //The messages sent and received can now be removed..!
-  SetMessage_Flag_ForRemoval(&vsh->peer_list[peer_id].messages.table[msg1.value]);
-  SetMessage_Flag_ForRemoval(&vsh->peer_list[peer_id].messages.table[msg2.value]);
-  SetMessage_Flag_ForRemoval(&vsh->peer_list[peer_id].messages.table[msg3.value]);
-  return 1;
+    //The messages sent and received can now be removed..!
+    SetAllMessagesOfGroup_Flag_ForRemoval(&vsh->peer_list[peer_id].messages,groupid);
+
+    *protocol_progress=3;
+    return 1;
+  }
+
+
+  if (*protocol_progress>=3)
+  { fprintf(stderr,"Request_ReadVariable protocol progress , ended..!\n"); }
+
+
+  return 0;
 }
 
 /*!
     ------------------------------------------------------  ------------------------------------------------------
     ------------------------------------------------------  ------------------------------------------------------
 !*/
-int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,struct MessageTable * mt,unsigned int mt_id,int peersock)
+int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,struct MessageTable * mt,unsigned int mt_id,int peersock, unsigned int groupid , unsigned int * protocol_progress , unsigned int * last_protocol_mid)
 {
   // We have accepted a new Message Table entry which contains a Request_ReadVariable so we will try to accept it..
   // First make a local copy of the header ..
 
+  if (*protocol_progress==0)
+  {
   // Secondly this incremental_value is now the last for this client , if we make a new request it should have a different inc_value than this..
   if (mt->table[mt_id].header.incremental_value>vsh->peer_list[peer_id].incremental_value)
    { vsh->peer_list[peer_id].incremental_value = mt->table[mt_id].header.incremental_value; }
@@ -330,15 +351,26 @@ int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,s
   // Sending RESP_WRITETO back to the peer along with the payload..!
   struct failint msg1=NewProtocolRequest_Send(vsh,peer_id,var_id,RESP_WRITETO,0,vsh->share.variables[var_id].ptr,vsh->share.variables[var_id].size_of_ptr);
   if (msg1.failed) { fprintf(stderr,"Could not add AcceptRequest_ReadVariable to local MessageTable\n"); return 0; }
+  *protocol_progress=1;
+  *last_protocol_mid=msg1.value;
+  }
 
-
-  struct failint msg2=WaitForSuccessIndicatorAtMessageTableItem(&vsh->peer_list[peer_id].messages,msg1.value);
+  if (*protocol_progress==1)
+  {
+    struct failint msg2=WaitForSuccessIndicatorAtMessageTableItem(&vsh->peer_list[peer_id].messages,*last_protocol_mid,0);
+    if (msg2.failed==1) { return 0; } //2 means negative response , we let it pass through
 
   //The messages sent and received can now be removed..!
-  SetMessage_Flag_ForRemoval(&vsh->peer_list[peer_id].messages.table[mt_id]);
-  SetMessage_Flag_ForRemoval(&vsh->peer_list[peer_id].messages.table[msg1.value]);
-  SetMessage_Flag_ForRemoval(&vsh->peer_list[peer_id].messages.table[msg2.value]);
+  SetAllMessagesOfGroup_Flag_ForRemoval(mt,groupid);
+  *protocol_progress=2;
   return 1;
+  }
+
+
+  if (*protocol_progress>=2)
+  { fprintf(stderr,"AcceptRequest_ReadVariable protocol progress , ended..!\n"); }
+
+ return 0;
 }
 
 
@@ -354,30 +386,47 @@ int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,s
 
 !*/
 
-int Request_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,int peersock)
+int Request_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,int peersock, unsigned int groupid , unsigned int * protocol_progress , unsigned int * last_protocol_mid)
 {
   // When we initiate a request we increment our inc_value to signal a new group of messages
   ++vsh->peer_list[peer_id].incremental_value;
 
-  // We also want a new header to go with our message!
-  struct failint msg1=NewProtocolRequest_Send(vsh,peer_id,var_id,SIGNALCHANGED,0,0,0);
-  if (msg1.failed) { fprintf(stderr,"Could not add SignalChange_Variable to local MessageTable\n"); return 0; }
+  if (*protocol_progress==0)
+  {
+    // We also want a new header to go with our message!
+    struct failint msg1=NewProtocolRequest_Send(vsh,peer_id,var_id,SIGNALCHANGED,0,0,0);
+    if (msg1.failed) { fprintf(stderr,"Could not add SignalChange_Variable to local MessageTable\n"); return 0; }
+    *protocol_progress=1;
+    *last_protocol_mid=msg1.value;
+  }
 
-  //We wait for the success indicator recv and subsequent pass to our message table
-  struct failint msg2=WaitForSuccessIndicatorAtMessageTableItem(&vsh->peer_list[peer_id].messages,msg1.value);
+
+  if (*protocol_progress==1)
+  {
+   //We wait for the success indicator recv and subsequent pass to our message table
+   struct failint msg2=WaitForSuccessIndicatorAtMessageTableItem(&vsh->peer_list[peer_id].messages,*last_protocol_mid,0);
+   if (msg2.failed==1) { return 0; } //2 means negative response , we let it pass through
+
+   //The messages sent and received can now be removed..!
+   SetAllMessagesOfGroup_Flag_ForRemoval(&vsh->peer_list[peer_id].messages,groupid);
+   *protocol_progress=2;
+   return 1;
+  }
 
 
-  //The messages sent and received can now be removed..!
-  SetMessage_Flag_ForRemoval(&vsh->peer_list[peer_id].messages.table[msg1.value]);
-  SetMessage_Flag_ForRemoval(&vsh->peer_list[peer_id].messages.table[msg2.value]);
-  return (!msg2.failed);
+  if (*protocol_progress>=2)
+  { fprintf(stderr,"Request_SignalChangeVariable protocol progress , ended..!\n"); }
+
+  return 0;
 }
 
-int AcceptRequest_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id,struct MessageTable * mt,unsigned int mt_id,int peersock)
+int AcceptRequest_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id,struct MessageTable * mt,unsigned int mt_id,int peersock, unsigned int groupid, unsigned int * protocol_progress , unsigned int * last_protocol_mid)
 {
   // We have accepted a new Message Table entry which contains a Request_ReadVariable so we will try to accept it..
   // First make a local copy of the header ..
 
+  if (*protocol_progress==0)
+  {
   // Secondly this incremental_value is now the last for this client , if we make a new request it should have a different inc_value than this..
   if (mt->table[mt_id].header.incremental_value>vsh->peer_list[peer_id].incremental_value)
    { vsh->peer_list[peer_id].incremental_value = mt->table[mt_id].header.incremental_value; }
@@ -400,15 +449,26 @@ int AcceptRequest_SignalChangeVariable(struct VariableShare * vsh,unsigned int p
      respTYPE=SIGNALMSGFAILURE; // Only change message type the rest remains the same
    }
 
-  //We send the aforementioned signal and gracefully exit
-  struct failint msg1=NewProtocolRequest_Send(vsh,peer_id,var_id,respTYPE,0,0,0);
-  if (msg1.failed) { fprintf(stderr,"Could not add AcceptRequest_Variable to local MessageTable\n"); return 0; }
+   //We send the aforementioned signal and gracefully exit
+   struct failint msg1=NewProtocolRequest_Send(vsh,peer_id,var_id,respTYPE,0,0,0);
+   if (msg1.failed) { fprintf(stderr,"Could not add AcceptRequest_Variable to local MessageTable\n"); return 0; }
+   *protocol_progress=1;
+   *last_protocol_mid=msg1.value;
+  }
 
-  //Wait for message to be sent
-  WaitForMessageTableItemToBeSent(&vsh->peer_list[peer_id].messages.table[msg1.value]);
+  if (*protocol_progress==1)
+  {
+   //Wait for message to be sent
+   WaitForMessageTableItemToBeSent(&vsh->peer_list[peer_id].messages.table[*last_protocol_mid]);
 
-  SetMessage_Flag_ForRemoval(&vsh->peer_list[peer_id].messages.table[mt_id]);
-  SetMessage_Flag_ForRemoval(&vsh->peer_list[peer_id].messages.table[msg1.value]);
-  return 1;
+   SetAllMessagesOfGroup_Flag_ForRemoval(mt,groupid);
+   *protocol_progress=1;
+   return 1;
+  }
+
+  if (*protocol_progress>=1)
+  { fprintf(stderr,"AcceptRequest_SignalChangeVariable protocol progress , ended..!\n"); }
+
+  return 0;
 }
 
