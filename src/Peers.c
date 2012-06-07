@@ -108,14 +108,14 @@ int PeerNewPingValue(struct VariableShare * vsh,unsigned int peer_id,long ping_i
   return 1;
 }
 
-int UpdateIncrementalValueWithIncoming(unsigned char * central_incremental_value, unsigned char * incoming_incremental_value)
+int UpdatePeerIncrementalValueWithIncoming(struct VariableShare * vsh,unsigned int peer_id,unsigned char incoming_incremental_value)
 {
-   if (*central_incremental_value<*incoming_incremental_value)
+   if (vsh->peer_list[peer_id].incremental_value < incoming_incremental_value)
     {
-        *central_incremental_value=*incoming_incremental_value;
+        vsh->peer_list[peer_id].incremental_value = incoming_incremental_value;
     } else
     {
-      fprintf(stderr,"Header accepted has a smaller inc value ( %u ) than our current one ( %u ) , ignoring it ..\n",*incoming_incremental_value,*central_incremental_value);
+      fprintf(stderr,"Header accepted has a smaller inc value ( %u ) than our current one ( %u ) , ignoring it ..\n",incoming_incremental_value,vsh->peer_list[peer_id].incremental_value);
       return 0;
     }
   return 1;

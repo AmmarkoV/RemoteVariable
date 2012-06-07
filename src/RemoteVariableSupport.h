@@ -58,6 +58,13 @@ enum jobactions
     SYNC
 };
 
+enum msgdir
+{
+   NO_DIRECTION = 0 ,
+   INCOMING_MSG ,
+   OUTGOING_MSG
+};
+
 struct failint
 {
   unsigned char failed;
@@ -72,14 +79,16 @@ struct PacketHeader
    unsigned int  payload_size;
 };
 
+
+
 struct MessageTableItem
 {
    unsigned int time;
    unsigned char protocol_progress;
-   unsigned char last_protocol_id;
+   unsigned int last_protocol_id;
    unsigned char executed;
    unsigned char remove;
-   unsigned char incoming;
+   unsigned char direction; // see enum msgdir
    unsigned char sent;
    struct PacketHeader header;
    unsigned char payload_local_malloc;

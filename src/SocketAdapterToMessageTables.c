@@ -100,19 +100,20 @@ struct failint SendPacketPassedToMT(int clientsock,struct MessageTable * mt,unsi
   PrintMessageType(&mt->table[item_num].header);
   fprintf(stderr,"\n");
 
-  if (mt->table[item_num].incoming)
+  if (mt->table[item_num].direction != OUTGOING_MSG)
    {
-      fprintf(stderr,"ERROR : Asked SendPacketAndPassToMT to send an incoming message ( %u ) , skipping operation\n",item_num);
+      fprintf(stderr,"ERROR : Asked SendPacketAndPassToMT to send a non Outgoing message ( %u ) , skipping operation\n",item_num);
       retres.failed=1;
       return retres;
    }
 
-/*
+
   if(sockadap_msg())
   {
-    fprintf(stderr,"About to send the following : \n");
-    PrintMessageTableItem(&mt->table[item_num],item_num);
-  }*/
+    fprintf(stderr,"SENDING ");
+     PrintMessageType(&mt->table[item_num].header);
+     fprintf(stderr,"mt_id=%u , GROUP %u \n", item_num,mt->table[item_num].header.incremental_value);
+  }
 
   int opres=send(clientsock,&mt->table[item_num].header,sizeof(mt->table[item_num].header),MSG_WAITALL);
   if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; return retres; }
@@ -168,7 +169,7 @@ struct failint RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt,uns
 
     unsigned int * payload_val=(unsigned int * ) payload;
 
-    retres = AddMessage(mt,1,1,&header,payload,msg_timer);
+    retres = AddMessage(mt,INCOMING_MSG,1,&header,payload,msg_timer);
     if(sockadap_msg())
      {
         fprintf(stderr,"RECEIVED ");
@@ -186,7 +187,7 @@ struct failint RecvPacketAndPassToMT(int clientsock,struct MessageTable * mt,uns
       }
    }
 
-  retres = AddMessage(mt,1,0,&header,0,msg_timer);
+  retres = AddMessage(mt,INCOMING_MSG,0,&header,0,msg_timer);
   return retres;
 }
 
@@ -282,7 +283,7 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
    {
     for ( table_iterator=0; table_iterator< mt->message_queue_current_length; table_iterator++)
     {
-        if ( (!mt->table[table_iterator].remove)&&(!mt->table[table_iterator].incoming)&&(!mt->table[table_iterator].sent) )
+        if ( (!mt->table[table_iterator].remove)&&(mt->table[table_iterator].direction==OUTGOING_MSG)&&(!mt->table[table_iterator].sent) )
         {
           ++vsh->central_timer;
           res=SendPacketPassedToMT(peersock,mt,table_iterator);
@@ -294,7 +295,7 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
    }
 
     pthread_mutex_unlock (&mt->remlock); // LOCK PROTECTED OPERATION -------------------------------------------
-   usleep(100);
+   usleep(200);
   }
 
   RemPeerBySock(vsh,peersock);
@@ -331,9 +332,9 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
   while (*pause_switch) { fprintf(stderr,".INIT."); usleep(100); }
 
 
-  unsigned int * protocol_progress=0;
+  unsigned char * protocol_progress=0;
   unsigned int * last_protocol_id=0;
-  unsigned int groupid=0;
+  unsigned char * groupid=0;
 
   unsigned int mt_id=0;
   while (! (*stop_switch) )
@@ -342,13 +343,14 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
     for (mt_id=0; mt_id<mt->message_queue_current_length; mt_id++)
     {
       if ( (!mt->table[mt_id].executed) &&
-            (mt->table[mt_id].incoming) &&
+            (mt->table[mt_id].direction==INCOMING_MSG) &&
             (!mt->table[mt_id].remove)
           )
       {
+
        protocol_progress = &mt->table[mt_id].protocol_progress;
        last_protocol_id = &mt->table[mt_id].last_protocol_id;
-       groupid = mt->table[mt_id].header.incremental_value;
+       groupid = &mt->table[mt_id].header.incremental_value;
 
        //INTERNAL MESSAGING THREAD WORK
        if ( (internal_loop==0) || (internal_loop==1) ) // This is an internal message only processing thread
@@ -356,11 +358,20 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
           switch ( mt->table[mt_id].header.operation_type )
          {
           case NOACTION : fprintf(stderr,"NOACTION doesnt trigger @ Internal Message Processing Thread\n"); break;
-          case INTERNAL_START_SIGNALCHANGED : if ( Request_SignalChangeVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock,groupid,protocol_progress,last_protocol_id) ) { mt->table[mt_id].remove=1;  mt->table[mt_id].executed=1; } /*Internal messages must me marked remove here*/ break;
-          case INTERNAL_START_READFROM :      if ( Request_ReadVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock,groupid,protocol_progress,last_protocol_id)         ) { mt->table[mt_id].remove=1;  mt->table[mt_id].executed=1; } /*Internal messages must me marked remove here*/ break;
-          case INTERNAL_START_WRITETO :       if ( Request_WriteVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock,groupid,protocol_progress,last_protocol_id)        ) { mt->table[mt_id].remove=1;  mt->table[mt_id].executed=1; } /*Internal messages must me marked remove here*/ break;
-         };
 
+          case INTERNAL_START_SIGNALCHANGED :
+             if ( Request_SignalChangeVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock,groupid,protocol_progress,last_protocol_id))
+              { mt->table[mt_id].remove=1;  mt->table[mt_id].executed=1; } /*Internal messages must me marked remove here*/
+          break;
+          case INTERNAL_START_READFROM :
+             if ( Request_ReadVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock,groupid,protocol_progress,last_protocol_id))
+              { mt->table[mt_id].remove=1;  mt->table[mt_id].executed=1; } /*Internal messages must me marked remove here*/
+          break;
+          case INTERNAL_START_WRITETO :
+             if ( Request_WriteVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock,groupid,protocol_progress,last_protocol_id))
+              { mt->table[mt_id].remove=1;  mt->table[mt_id].executed=1; } /*Internal messages must me marked remove here*/
+          break;
+         };
        }
 
        //EXTERNAL MESSAGING THREAD WORK
@@ -369,12 +380,20 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
          switch ( mt->table[mt_id].header.operation_type )
          {
           case NOACTION : fprintf(stderr,"NOACTION doesnt trigger @ External Message Processing Thread\n"); break;
-          //case RESP_WRITETO : fprintf(stderr,"RESP_WRITETO received packet doesnt trigger New Protocol Request\n"); break;
-          case WRITETO:        if ( AcceptRequest_WriteVariable(vsh,peer_id,mt,mt_id,peersock,groupid,protocol_progress,last_protocol_id)        ) { mt->table[mt_id].executed=1; } break;
-          case READFROM:       if ( AcceptRequest_ReadVariable(vsh,peer_id,mt,mt_id,peersock,groupid,protocol_progress,last_protocol_id)         ) { mt->table[mt_id].executed=1; } break;
-          case SIGNALCHANGED : if ( AcceptRequest_SignalChangeVariable(vsh,peer_id,mt,mt_id,peersock,groupid,protocol_progress,last_protocol_id) ) { mt->table[mt_id].executed=1; } break;
-          //case SIGNALMSGSUCCESS : fprintf(stderr,"SIGNALMSGSUCCESS received packet doesnt trigger New Protocol Request\n"); break;
-          //case SIGNALMSGFAILURE : fprintf(stderr,"SIGNALMSGFAILURE received packet doesnt trigger New Protocol Request\n"); break;
+
+          case WRITETO:
+             if ( AcceptRequest_WriteVariable(vsh,peer_id,mt,mt_id,peersock,groupid,protocol_progress,last_protocol_id))
+             { mt->table[mt_id].executed=1; }
+          break;
+          case READFROM:
+             if ( AcceptRequest_ReadVariable(vsh,peer_id,mt,mt_id,peersock,groupid,protocol_progress,last_protocol_id))
+             { mt->table[mt_id].executed=1; }
+          break;
+          case SIGNALCHANGED :
+             if ( AcceptRequest_SignalChangeVariable(vsh,peer_id,mt,mt_id,peersock,groupid,protocol_progress,last_protocol_id) )
+             { mt->table[mt_id].executed=1; }
+          break;
+
           case SYNC : fprintf(stderr,"SYNC received packet doesnt trigger New Protocol Request\n"); break;
          };
 

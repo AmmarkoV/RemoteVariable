@@ -8,7 +8,7 @@ void PrintMessageTableItem(struct MessageTableItem * mti,unsigned int val);
 int AllocateMessageQueue(struct MessageTable *  mt,unsigned int total_messages);
 int FreeMessageQueue(struct MessageTable * mt);
 
-struct failint AddMessage(struct MessageTable * mt,unsigned int incoming,unsigned int free_malloc_at_disposal,struct PacketHeader * header,void * payload,unsigned int msg_timer);
+struct failint AddMessage(struct MessageTable * mt,unsigned int direction,unsigned int free_malloc_at_disposal,struct PacketHeader * header,void * payload,unsigned int msg_timer);
 int RemMessage(struct MessageTable * mt,unsigned int mt_id);
 int RemFromMessageTableWhereRemoveFlagExists(struct MessageTable * mt);
 
