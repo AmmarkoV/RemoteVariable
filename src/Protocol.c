@@ -224,8 +224,6 @@ int AcceptRequest_WriteVariable(struct VariableShare * vsh,unsigned int peer_id,
 
 struct failint NewProtocolRequest_Send(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,unsigned char OPTYPE,unsigned char GROUPID, unsigned int free_malloc_at_disposal,void * payload,unsigned int payload_size)
 {
-  struct failint retres={0};
-
   struct PacketHeader header={0};
   header.incremental_value=GROUPID;
   header.operation_type=OPTYPE;
@@ -273,8 +271,7 @@ int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigne
 
   if (*protocol_progress==0)
   {
-    ++vsh->peer_list[peer_id].incremental_value;
-    *groupid=vsh->peer_list[peer_id].incremental_value;
+    *groupid=GenNewMessagePeerIncrementalValue(vsh,peer_id);
 
     fprintf(stderr,"\nRequest_ReadVariable STEP 0\n");
     //We send a new READFROM request
@@ -355,7 +352,6 @@ int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,s
   struct failint msg1=NewProtocolRequest_Send(vsh,peer_id,var_id,RESP_WRITETO,*groupid,0,vsh->share.variables[var_id].ptr,vsh->share.variables[var_id].size_of_ptr);
   if (msg1.failed) { fprintf(stderr,"Could not add AcceptRequest_ReadVariable to local MessageTable\n"); return 0; }
   *protocol_progress=1;
-  *last_protocol_mid=msg1.value;
   }
 
   if (*protocol_progress==1)
@@ -398,8 +394,7 @@ int Request_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id
 
   if (*protocol_progress==0)
   {
-    ++vsh->peer_list[peer_id].incremental_value;
-    *groupid=vsh->peer_list[peer_id].incremental_value;
+    *groupid=GenNewMessagePeerIncrementalValue(vsh,peer_id);
 
     fprintf(stderr,"\nRequest_SignalChangeVariable STEP 0\n");
     // We also want a new header to go with our message!

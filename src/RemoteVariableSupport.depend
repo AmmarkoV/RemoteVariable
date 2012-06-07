@@ -98,7 +98,7 @@
 1338748877 /home/ammar/Documents/Programming/RemoteVariableSupport/src/VariableDatabase.h
 	"RemoteVariableSupport.h"
 
-1339027492 /home/ammar/Documents/Programming/RemoteVariableSupport/src/RemoteVariableSupport.h
+1339075604 /home/ammar/Documents/Programming/RemoteVariableSupport/src/RemoteVariableSupport.h
 	<pthread.h>
 	<unistd.h>
 
@@ -134,24 +134,24 @@
 1337640516 /home/ammar/Documents/Programming/RemoteVariableSupport/src/ProtocolThreads.h
 	"RemoteVariableSupport.h"
 
-1338579635 source:/home/ammar/Documents/Programming/RemoteVariableSupport/src/RemoteVariableSupport.c
+1338855910 source:/home/ammar/Documents/Programming/RemoteVariableSupport/src/RemoteVariableSupport.c
 	<stdio.h>
 	<stdlib.h>
 	<string.h>
 	"helper.h"
 	"RemoteVariableSupport.h"
+	"InternalTester.h"
 	"NetworkFramework.h"
 	"VariableDatabase.h"
-	"JobTables.h"
 
-1338458666 source:/home/ammar/Documents/Programming/RemoteVariableSupport/src/helper.c
+1338944141 source:/home/ammar/Documents/Programming/RemoteVariableSupport/src/helper.c
 	"helper.h"
 	<stdio.h>
 	<stdlib.h>
 	<string.h>
 	"version.h"
 
-1338600572 /home/ammar/Documents/Programming/RemoteVariableSupport/src/version.h
+1339101840 /home/ammar/Documents/Programming/RemoteVariableSupport/src/version.h
 
 1338585581 source:/home/ammar/Documents/Programming/RemoteVariableSupport/src/JobTables.c
 	<stdio.h>
@@ -163,14 +163,15 @@
 	"Protocol.h"
 	"helper.h"
 
-1338597686 source:/home/ammar/Documents/Programming/RemoteVariableSupport/src/VariableDatabase.c
+1339075894 source:/home/ammar/Documents/Programming/RemoteVariableSupport/src/VariableDatabase.c
 	"VariableDatabase.h"
 	"helper.h"
 	<stdio.h>
 	<stdlib.h>
 	<string.h>
 	"HashFunctions.h"
-	"JobTables.h"
+	"MessageTables.h"
+	"Peers.h"
 
 1338858740 source:/home/ammar/Documents/Programming/RemoteVariableSupport/src/Peers.c
 	"Peers.h"
@@ -179,13 +180,13 @@
 	<stdlib.h>
 	<string.h>
 
-1338807737 /home/ammar/Documents/Programming/RemoteVariableSupport/src/Peers.h
+1339101800 /home/ammar/Documents/Programming/RemoteVariableSupport/src/Peers.h
 	"RemoteVariableSupport.h"
 
-1339029372 /home/ammar/Documents/Programming/RemoteVariableSupport/src/Protocol.h
+1339099988 /home/ammar/Documents/Programming/RemoteVariableSupport/src/Protocol.h
 	"RemoteVariableSupport.h"
 
-1339023337 /home/ammar/Documents/Programming/RemoteVariableSupport/src/SocketAdapterToMessageTables.h
+1339093262 /home/ammar/Documents/Programming/RemoteVariableSupport/src/SocketAdapterToMessageTables.h
 	"RemoteVariableSupport.h"
 
 1338600459 source:/home/ammar/Documents/Programming/RemoteVariableSupport/src/Protocol.c
@@ -209,10 +210,10 @@
 	<sys/uio.h>
 	<errno.h>
 
-1339027297 /home/ammar/Documents/Programming/RemoteVariableSupport/src/MessageTables.h
+1339098358 /home/ammar/Documents/Programming/RemoteVariableSupport/src/MessageTables.h
 	"RemoteVariableSupport.h"
 
-1338600291 source:/home/ammar/Documents/Programming/RemoteVariableSupport/src/SocketAdapterToMessageTables.c
+1339095651 source:/home/ammar/Documents/Programming/RemoteVariableSupport/src/SocketAdapterToMessageTables.c
 	"SocketAdapterToMessageTables.h"
 	<stdio.h>
 	<stdlib.h>
@@ -220,6 +221,8 @@
 	"helper.h"
 	"MessageTables.h"
 	"VariableDatabase.h"
+	"Protocol.h"
+	"Peers.h"
 	<sys/time.h>
 	<sys/types.h>
 	<sys/socket.h>
@@ -235,7 +238,7 @@
 
 1338855877 /home/ammar/Documents/Programming/RemoteVariableSupport/src/InternalTester.h
 
-1339028205 source:/home/ammar/Documents/Programming/RemoteVariableSupport/src/MessageTables.c
+1339098716 source:/home/ammar/Documents/Programming/RemoteVariableSupport/src/MessageTables.c
 	"RemoteVariableSupport.h"
 	"MessageTables.h"
 	"helper.h"
@@ -244,4 +247,12 @@
 	<stdio.h>
 	<stdlib.h>
 	"SocketAdapterToMessageTables.h"
+	<sys/time.h>
+	<sys/types.h>
+	<sys/socket.h>
+	<netinet/in.h>
+	<arpa/inet.h>
+	<netdb.h>
+	<sys/uio.h>
+	<fcntl.h>
 

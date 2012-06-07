@@ -24,6 +24,7 @@
 #include <string.h>
 #include "helper.h"
 #include "RemoteVariableSupport.h"
+#include "Peers.h"
 #include "InternalTester.h"
 #include "NetworkFramework.h"
 #include "VariableDatabase.h"

@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "helper.h"
 
 struct failint AddPeer(struct VariableShare * vsh,char * name,unsigned int port , int clientsock)
 {
@@ -107,6 +108,17 @@ int PeerNewPingValue(struct VariableShare * vsh,unsigned int peer_id,long ping_i
   fprintf(stderr,"New ping value for peer %u = %u milliseconds \n",peer_id,(unsigned int) ping_in_microseconds/1000);
   return 1;
 }
+
+
+unsigned char GenNewMessagePeerIncrementalValue(struct VariableShare * vsh,unsigned int peer_id)
+{
+  if (vsh->peer_list[peer_id].incremental_value>=250) { fprintf(stderr,"New Incremental Value truncated\n"); vsh->peer_list[peer_id].incremental_value=1; return 1; }
+
+  ++vsh->peer_list[peer_id].incremental_value;
+
+  return vsh->peer_list[peer_id].incremental_value;
+}
+
 
 int UpdatePeerIncrementalValueWithIncoming(struct VariableShare * vsh,unsigned int peer_id,unsigned char incoming_incremental_value)
 {

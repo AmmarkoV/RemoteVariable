@@ -9,6 +9,8 @@ int RemPeer(struct VariableShare * vsh,int peer_id) ;
 struct failint GetPeerIdBySock(struct VariableShare * vsh,int clientsock);
 int RemPeerBySock(struct VariableShare * vsh,int clientsock) ;
 int PeerNewPingValue(struct VariableShare * vsh,unsigned int peer_id,long ping_in_microseconds);
+
+unsigned char GenNewMessagePeerIncrementalValue(struct VariableShare * vsh,unsigned int peer_id);
 int UpdatePeerIncrementalValueWithIncoming(struct VariableShare * vsh,unsigned int peer_id , unsigned char incoming_incremental_value);
 
 #endif // PEERS_H_INCLUDED

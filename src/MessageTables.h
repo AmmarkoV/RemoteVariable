@@ -22,8 +22,8 @@ int SetAllMessagesOfGroup_Flag_ForRemoval(struct MessageTable * mt,unsigned int 
 int DeleteRemovedFromMessageTable(struct MessageTable * mt);
 
 
-struct failint WaitForMessage(struct MessageTable *mt , unsigned char optype1 , unsigned char optype2 , unsigned int inc_value , unsigned int incoming , unsigned int wait_forever);
+struct failint WaitForMessage(struct MessageTable *mt , unsigned char optype1 , unsigned char optype2 , unsigned int groupid , unsigned int incoming , unsigned int wait_forever);
 unsigned int WaitForMessageTableItemToBeSent(struct MessageTableItem * mti);
-struct failint  WaitForSuccessIndicatorAtMessageTableItem(struct MessageTable *mt , unsigned int groupid, unsigned int wait_forever);
-struct failint  WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *mt , unsigned int groupid,struct VariableShare *vsh ,unsigned int var_id, unsigned int wait_forever);
+struct failint  WaitForSuccessIndicatorAtMessageTableItem(struct MessageTable *mt , unsigned char groupid, unsigned int wait_forever);
+struct failint  WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *mt , unsigned char groupid,struct VariableShare *vsh ,unsigned int var_id, unsigned int wait_forever);
 #endif // MESSAGETABLES_H_INCLUDED
