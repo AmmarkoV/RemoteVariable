@@ -57,31 +57,39 @@ void PrintError(unsigned int errornum)
 
 
 
-void PrintMessageTypeVal(unsigned char optype)
+char * ReturnPrintMessageTypeVal(unsigned char optype)
 {
       switch (optype)
       {
-         case NOACTION : fprintf(stderr,"NOACTION"); break;
+         case NOACTION : return "NOACTION"; break;
 
-         case INTERNAL_START_SIGNALCHANGED : fprintf(stderr,"INTERNAL_START_SIGNALCHANGED"); break;
-         case INTERNAL_START_READFROM : fprintf(stderr,"INTERNAL_START_READFROM"); break;
-         case INTERNAL_START_WRITETO : fprintf(stderr,"INTERNAL_START_WRITETO"); break;
+         case INTERNAL_START_SIGNALCHANGED : return "INTERNAL_START_SIGNALCHANGED"; break;
+         case INTERNAL_START_READFROM : return "INTERNAL_START_READFROM"; break;
+         case INTERNAL_START_WRITETO : return "INTERNAL_START_WRITETO"; break;
 
-         case RAW_MESSAGE : fprintf(stderr,"RAW_MESSAGE"); break;
+         case RAW_MESSAGE : return "RAW_MESSAGE"; break;
 
 
-         case RESP_WRITETO : fprintf(stderr,"RESP_WRITETO"); break;
-         case WRITETO : fprintf(stderr,"WRITETO"); break;
-         case READFROM : fprintf(stderr,"READFROM"); break;
-         case SIGNALCHANGED : fprintf(stderr,"SIGNALCHANGED"); break;
-         case SIGNALMSGSUCCESS : fprintf(stderr,"SIGNALMSGSUCCESS"); break;
-         case SIGNALMSGFAILURE : fprintf(stderr,"SIGNALMSGFAILURE"); break;
-         case SYNC : fprintf(stderr,"SYNC"); break;
+         case RESP_WRITETO : return "RESP_WRITETO"; break;
+         case WRITETO : return "WRITETO"; break;
+         case READFROM : return "READFROM"; break;
+         case SIGNALCHANGED : return "SIGNALCHANGED"; break;
+         case SIGNALMSGSUCCESS : return "SIGNALMSGSUCCESS"; break;
+         case SIGNALMSGFAILURE : return "SIGNALMSGFAILURE"; break;
+         case SYNC : return "SYNC"; break;
          default :
              fprintf(stderr," Unknown message type %u \n",optype);
+             return "UNKNOWN";
              break;
       };
-  fprintf(stderr," ");
+
+      return "NOTHING";
+}
+
+
+void PrintMessageTypeVal(unsigned char optype)
+{
+  fprintf(stderr," %s ",ReturnPrintMessageTypeVal(optype));
 }
 
 

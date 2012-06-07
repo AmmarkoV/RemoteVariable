@@ -222,12 +222,12 @@ int AcceptRequest_WriteVariable(struct VariableShare * vsh,unsigned int peer_id,
 
 */
 
-struct failint NewProtocolRequest_Send(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,unsigned char OPTYPE,unsigned int free_malloc_at_disposal,void * payload,unsigned int payload_size)
+struct failint NewProtocolRequest_Send(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,unsigned char OPTYPE,unsigned char GROUPID, unsigned int free_malloc_at_disposal,void * payload,unsigned int payload_size)
 {
   struct failint retres={0};
 
   struct PacketHeader header={0};
-  header.incremental_value=vsh->peer_list[peer_id].incremental_value;
+  header.incremental_value=GROUPID;
   header.operation_type=OPTYPE;
   header.var_id=var_id;
   header.payload_size=payload_size;
@@ -278,7 +278,7 @@ int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigne
 
     fprintf(stderr,"\nRequest_ReadVariable STEP 0\n");
     //We send a new READFROM request
-    struct failint msg1=NewProtocolRequest_Send(vsh,peer_id,var_id,READFROM,0,0,0);
+    struct failint msg1=NewProtocolRequest_Send(vsh,peer_id,var_id,READFROM,*groupid,0,0,0);
     //msg1.value has the value of the new outgoing messagetable entry
     if (msg1.failed) { fprintf(stderr,"ERROR : Could not add Request_Variable to local MessageTable STEP 1\n"); return 0;  }
     *protocol_progress=1;
@@ -295,7 +295,7 @@ int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigne
   if ( msg2.failed==2 ) { optypeForMSG3=SIGNALMSGFAILURE; /*Only change message type the rest remains the same*/ } else
                         { optypeForMSG3=SIGNALMSGSUCCESS; /*Only change message type the rest remains the same*/ }
   //We remove payloads ,etc and sent a positive or negative confirmation to end the protocol handshake
-  struct failint msg3=NewProtocolRequest_Send(vsh,peer_id,var_id,optypeForMSG3,0,0,0);
+  struct failint msg3=NewProtocolRequest_Send(vsh,peer_id,var_id,optypeForMSG3,*groupid,0,0,0);
   if (msg3.failed) { fprintf(stderr,"Could not add Request_Variable to local MessageTable STEP 2\n"); return 0;  }
   *protocol_progress=2;
   *last_protocol_mid=msg3.value;
@@ -353,7 +353,7 @@ int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,s
    }
 
   // Sending RESP_WRITETO back to the peer along with the payload..!
-  struct failint msg1=NewProtocolRequest_Send(vsh,peer_id,var_id,RESP_WRITETO,0,vsh->share.variables[var_id].ptr,vsh->share.variables[var_id].size_of_ptr);
+  struct failint msg1=NewProtocolRequest_Send(vsh,peer_id,var_id,RESP_WRITETO,*groupid,0,vsh->share.variables[var_id].ptr,vsh->share.variables[var_id].size_of_ptr);
   if (msg1.failed) { fprintf(stderr,"Could not add AcceptRequest_ReadVariable to local MessageTable\n"); return 0; }
   *protocol_progress=1;
   *last_protocol_mid=msg1.value;
@@ -404,7 +404,7 @@ int Request_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id
 
     fprintf(stderr,"\nRequest_SignalChangeVariable STEP 0\n");
     // We also want a new header to go with our message!
-    struct failint msg1=NewProtocolRequest_Send(vsh,peer_id,var_id,SIGNALCHANGED,0,0,0);
+    struct failint msg1=NewProtocolRequest_Send(vsh,peer_id,var_id,SIGNALCHANGED,*groupid,0,0,0);
     if (msg1.failed) { fprintf(stderr,"Could not add SignalChange_Variable to local MessageTable\n"); return 0; }
     *protocol_progress=1;
     *last_protocol_mid=msg1.value;
@@ -463,7 +463,7 @@ int AcceptRequest_SignalChangeVariable(struct VariableShare * vsh,unsigned int p
    }
 
    //We send the aforementioned signal and gracefully exit
-   struct failint msg1=NewProtocolRequest_Send(vsh,peer_id,var_id,respTYPE,0,0,0);
+   struct failint msg1=NewProtocolRequest_Send(vsh,peer_id,var_id,respTYPE,*groupid,0,0,0);
    if (msg1.failed) { fprintf(stderr,"Could not add AcceptRequest_Variable to local MessageTable\n"); return 0; }
    *protocol_progress=1;
    *last_protocol_mid=msg1.value;

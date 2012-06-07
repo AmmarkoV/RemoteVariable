@@ -168,8 +168,8 @@ struct failint AddMessage(struct MessageTable * mt,unsigned int direction,unsign
   unsigned int mt_pos = mt->message_queue_current_length;
   ++mt->message_queue_current_length;
 
-  fprintf(stderr,"ADDING direction(%u) , freemalloc(%u) , payload = %p , size %u ",direction,free_malloc_at_disposal,payload,header->payload_size);
-  PrintMessageType(header); fprintf(stderr," group = %u time = %u , mt_id = %u \n",header->incremental_value,msg_timer,mt_pos);
+  fprintf(stderr,"ADDING  %s direction(%u) , freemalloc(%u) , payload = %p , size %u group = %u time = %u , mt_id = %u \n",ReturnPrintMessageTypeVal(header->operation_type),direction,free_malloc_at_disposal,payload,header->payload_size,header->incremental_value,msg_timer,mt_pos);
+
   //usleep(200);
 
   //TODO APPARENTLY THE TIMING ON THIS CALL HAS SOME IMPORTANCE ( RACE CONDITION )!
@@ -211,6 +211,25 @@ int SwapMessages(struct MessageTable * mt,unsigned int mt_id1,unsigned int mt_id
    return 1;
 }
 
+/*!
+
+
+        -------------------------------------------------------------------------
+        -------------------------------------------------------------------------
+
+        -------------------------------------------------------------------------
+        -------------------------------------------------------------------------
+
+
+     SEND/RECEIVE OPERATIONS
+
+          |
+          |
+         \ /
+          -
+!*/
+
+
 
 struct failint SendMessageToSocket(int clientsock,struct MessageTable * mt,unsigned int item_num)
 {
@@ -231,9 +250,7 @@ struct failint SendMessageToSocket(int clientsock,struct MessageTable * mt,unsig
 
   if(sockadap_msg())
   {
-    fprintf(stderr,"SENDING ");
-     PrintMessageType(&mt->table[item_num].header);
-     fprintf(stderr,"mt_id=%u , GROUP %u \n", item_num,mt->table[item_num].header.incremental_value);
+    fprintf(stderr,"SENDING %s mt_id=%u , GROUP %u \n",ReturnPrintMessageTypeVal(mt->table[item_num].header.operation_type), item_num,mt->table[item_num].header.incremental_value);
   }
 
   int opres=send(clientsock,&mt->table[item_num].header,sizeof(mt->table[item_num].header),MSG_WAITALL);
@@ -243,9 +260,7 @@ struct failint SendMessageToSocket(int clientsock,struct MessageTable * mt,unsig
    {
      unsigned int * payload_val = (unsigned int *) mt->table[item_num].payload;
 
-     fprintf(stderr,"SENDING ");
-     PrintMessageType(&mt->table[item_num].header);
-     fprintf(stderr,"payload %p , payload_val %u , payload size %u GROUP %u \n", mt->table[item_num].payload,*payload_val,mt->table[item_num].header.payload_size,mt->table[item_num].header.incremental_value);
+     fprintf(stderr,"SENDING %s payload %p , payload_val %u , payload size %u GROUP %u \n",ReturnPrintMessageTypeVal(mt->table[item_num].header.operation_type),mt->table[item_num].payload,*payload_val,mt->table[item_num].header.payload_size,mt->table[item_num].header.incremental_value);
 
      opres=send(clientsock,mt->table[item_num].payload,mt->table[item_num].header.payload_size,MSG_WAITALL);
      if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; return retres; } else
@@ -293,24 +308,39 @@ struct failint RecvMessageFromSocket(int clientsock,struct MessageTable * mt,uns
     retres = AddMessage(mt,INCOMING_MSG,1,&header,payload,msg_timer);
     if(sockadap_msg())
      {
-        fprintf(stderr,"RECEIVED ");
-        PrintMessageType(&header);
-        fprintf(stderr," - GROUP %u - With %u bytes of payload ----------------\n",header.incremental_value,header.payload_size);
+        fprintf(stderr,"RECEIVED %s - GROUP %u - With %u bytes of payload ----------------\n",ReturnPrintMessageTypeVal(header.operation_type),header.incremental_value,header.payload_size);
      }
     return retres;
    } else
    {
      if(sockadap_msg())
       {
-        fprintf(stderr,"RECEIVED ");
-        PrintMessageType(&header);
-        fprintf(stderr," - GROUP %u - with NO payload ----------------\n",header.incremental_value);
+        fprintf(stderr,"RECEIVED %s - GROUP %u - with NO payload ----------------\n",ReturnPrintMessageTypeVal(header.operation_type),header.incremental_value);
       }
    }
 
   retres = AddMessage(mt,INCOMING_MSG,0,&header,0,msg_timer);
   return retres;
 }
+
+/*!
+
+
+        -------------------------------------------------------------------------
+        -------------------------------------------------------------------------
+
+        -------------------------------------------------------------------------
+        -------------------------------------------------------------------------
+
+
+     REMOVE / FLAG SET  OPERATIONS
+
+          |
+          |
+         \ /
+          -
+!*/
+
 
 
 int RemMessageINTERNAL_MUST_BE_LOCKED(struct MessageTable * mt,unsigned int mt_id)
@@ -321,8 +351,8 @@ int RemMessageINTERNAL_MUST_BE_LOCKED(struct MessageTable * mt,unsigned int mt_i
 
 
   // PRINT THE REM MESSAGE TABLE OPERATION
-  fprintf(stderr,"REMOVING -> GROUP %u  mt_id %u/%u ",mt->table[mt_id].header.incremental_value,mt_id,mt->message_queue_current_length-1);
-  PrintMessageType(&mt->table[mt_id].header); fprintf(stderr,"\n");
+  fprintf(stderr,"REMOVING %s GROUP %u  mt_id %u/%u \n",ReturnPrintMessageTypeVal(mt->table[mt_id].header.operation_type),mt->table[mt_id].header.incremental_value,mt_id,mt->message_queue_current_length-1);
+
 
   if (mt->message_queue_current_length==1)
    {
@@ -373,8 +403,7 @@ int SetAllMessagesOfGroup_Flag_ForRemoval(struct MessageTable * mt,unsigned int 
        if (mt->table[mt_id].header.incremental_value==groupid)
                               {
                                 mt->table[mt_id].remove=1;
-                                fprintf(stderr,"MARKED REMOVE %u/%u ",mt_id,mt->message_queue_current_length-1);
-                                PrintMessageTypeVal(mt->table[mt_id].header.operation_type);
+                                fprintf(stderr,"MARKED REMOVE %u/%u %s \n",mt_id,mt->message_queue_current_length-1,ReturnPrintMessageTypeVal(mt->table[mt_id].header.operation_type));
                               }
      }
 
@@ -384,7 +413,6 @@ int SetAllMessagesOfGroup_Flag_ForRemoval(struct MessageTable * mt,unsigned int 
 
 int RemFromMessageTableWhereRemoveFlagExists(struct MessageTable * mt)
 {
-
   if (mt==0) {return 0;}
   if (mt->message_queue_total_length==0) {return 0;}
   if (mt->message_queue_current_length==0) {return 0;}
@@ -407,6 +435,26 @@ int RemFromMessageTableWhereRemoveFlagExists(struct MessageTable * mt)
 }
 
 
+/*!
+
+
+        -------------------------------------------------------------------------
+        -------------------------------------------------------------------------
+
+        -------------------------------------------------------------------------
+        -------------------------------------------------------------------------
+
+
+     WAIT OPERATIONS
+
+          |
+          |
+         \ /
+          -
+!*/
+
+
+
 unsigned int WaitForMessageTableItemToBeSent(struct MessageTableItem * mti)
 {
   while (!mti->sent)
@@ -415,6 +463,7 @@ unsigned int WaitForMessageTableItemToBeSent(struct MessageTableItem * mti)
    }
    return 1;
 }
+
 
 struct failint WaitForMessage(struct MessageTable *mt , unsigned char optype1 , unsigned char optype2 , unsigned int inc_value , unsigned int direction , unsigned int wait_forever)
 {
@@ -438,10 +487,7 @@ struct failint WaitForMessage(struct MessageTable *mt , unsigned char optype1 , 
             (inc_value==mt->table[mt_traverse].header.incremental_value)&&
             (direction==mt->table[mt_traverse].direction)  )
        {
-         fprintf(stderr,"\nFOUND1 ");
-         PrintMessageType(&mt->table[mt_traverse].header);
-         fprintf(stderr," , group %u !\n",inc_value);
-
+         fprintf(stderr,"\nFOUND1 %s , group %u !\n",ReturnPrintMessageTypeVal(mt->table[mt_traverse].header.operation_type),inc_value);
          retres.failed=0; retres.value=mt_traverse; return retres;
        }
         else //Todo 2 loops one when optype1==optype2 , one which does both..!
@@ -449,10 +495,7 @@ struct failint WaitForMessage(struct MessageTable *mt , unsigned char optype1 , 
             (inc_value==mt->table[mt_traverse].header.incremental_value) &&
             (direction==mt->table[mt_traverse].direction) )
        {
-         fprintf(stderr,"\nFOUND2 ");
-         PrintMessageType(&mt->table[mt_traverse].header);
-         fprintf(stderr," , group %u !\n",inc_value);
-
+         fprintf(stderr,"\nFOUND2 %s , group %u !\n",ReturnPrintMessageTypeVal(mt->table[mt_traverse].header.operation_type),inc_value);
          retres.failed=2; retres.value=mt_traverse; return retres;
        }
      }
