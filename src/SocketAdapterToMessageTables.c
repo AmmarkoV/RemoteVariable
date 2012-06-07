@@ -203,7 +203,7 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
    }
 
     pthread_mutex_unlock (&mt->remlock); // LOCK PROTECTED OPERATION -------------------------------------------
-   usleep(200);
+   usleep(500);
   }
 
   RemPeerBySock(vsh,peersock);
@@ -317,11 +317,11 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
          // We will also pause the SEND/RECV thread in order to keep them from accessing the messagetable structure
 
       //   pthread_mutex_lock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
-          pthread_mutex_lock (&mt->remlock); // LOCK PROTECTED OPERATION -------------------------------------------
+          pthread_mutex_lock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
          //Right now we are the only thread that has access to the MessageTable Structure
           RemFromMessageTableWhereRemoveFlagExists(mt);
           //Ok , we have removed the trash , now to resume functionality..
-         pthread_mutex_unlock (&mt->remlock); // LOCK PROTECTED OPERATION -------------------------------------------
+         pthread_mutex_unlock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
       //  pthread_mutex_unlock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
 
        }
