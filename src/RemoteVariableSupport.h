@@ -156,7 +156,7 @@ struct SharePeer
     unsigned int port;
 
     int socket_to_client;
-    unsigned int incremental_value;
+    unsigned char incremental_value;
 
     unsigned int ping_in_microseconds;
     unsigned int last_transaction;
