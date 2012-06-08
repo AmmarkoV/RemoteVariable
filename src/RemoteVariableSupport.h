@@ -224,6 +224,8 @@ struct VariableShare
     struct SharePeer peer_list[RVS_MAX_PEERS];
     unsigned int total_peers;
 
+
+    pthread_mutex_t refresh_lock;
     pthread_t refresh_thread;
     unsigned int pause_refresh_thread;
     unsigned int stop_refresh_thread;

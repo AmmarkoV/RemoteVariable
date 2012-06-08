@@ -206,7 +206,7 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
    }
 
  //   pthread_mutex_unlock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
-   usleep(500);
+   usleep(100);
   }
 
   RemPeerBySock(vsh,peersock);
@@ -265,7 +265,12 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
 
           switch ( mt->table[mt_id].header.operation_type )
          {
-          case NOACTION : fprintf(stderr,"NOACTION doesnt trigger @  Message Processing Thread\n"); break;
+          case NOACTION :
+            fprintf(stderr,"NOACTION ( id %u ) doesnt trigger @  Message Processing Thread\n",mt_id);
+            fprintf(stderr,"ERROR : There should be no NOACTION messages .. \n");
+            mt->table[mt_id].remove=1;
+            mt->table[mt_id].executed=1;
+          break;
 
           case INTERNAL_START_SIGNALCHANGED :
              if ( Request_SignalChangeVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock,mt_id,groupid,protocol_progress,last_protocol_id))

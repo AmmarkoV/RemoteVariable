@@ -64,6 +64,10 @@ struct VariableShare * Create_VariableDatabase(char * sharename,char * IP,unsign
 
   vsh->central_timer=0;
   vsh->byte_order=0;
+
+
+  pthread_mutex_init(&vsh->refresh_lock, 0); //New allocation so cleaning up mutex
+
   return vsh;
 }
 
@@ -94,6 +98,8 @@ int Destroy_VariableDatabase(struct VariableShare * vsh)
 
   vsh->share.total_variables_memory=0;
   vsh->share.total_variables_shared=0;
+
+  pthread_mutex_destroy(&vsh->refresh_lock);
 
   free(vsh->share.variables);
   free(vsh);
@@ -281,12 +287,17 @@ int NewValueForVariable(struct VariableShare * vsh,unsigned int var_id,void * ne
   else if (old_val==new_val) {fprintf(stderr,"\nERROR : NewValueForVariable copy target memory the same with source\n");  return 0;}
   else if (new_val_size!=vsh->share.variables[var_id].size_of_ptr) { fprintf(stderr,"\nERROR : NewValueForVariable new_value memory points to zero \n");  return 0; }
   else {
+
          unsigned int ptr_size = vsh->share.variables[var_id].size_of_ptr;
          unsigned int * new_val_int = (unsigned int * ) new_val;
-         fprintf(stderr,"\n!!!!!!!!!!--> NewValueForVariable , now copying a fresh value for variable %u , was %u now will become %u ( size %u ) \n", var_id,  *old_val,  *new_val_int, ptr_size);
-         printf("Var  %u now will become %u \n",*old_val,  *new_val_int );
+         fprintf(stderr,"Var %s ( id %u ) %u now will become %u \n",vsh->share.variables[var_id].ptr_name , var_id ,*old_val,  *new_val_int );
+         printf("Var %s ( id %u ) %u now will become %u \n",vsh->share.variables[var_id].ptr_name , var_id ,*old_val,  *new_val_int );
+
+         pthread_mutex_lock (&vsh->refresh_lock); // LOCK PROTECTED OPERATION -------------------------------------------
          memcpy(old_val,new_val,ptr_size);
          vsh->share.variables[var_id].hash=GetVariableHashForVar(vsh,var_id);
+         pthread_mutex_unlock (&vsh->refresh_lock); // LOCK PROTECTED OPERATION -------------------------------------------
+
          fprintf(stderr,"Updated hash value for new payload ( %u ) , hash = %u \n",*new_val_int,vsh->share.variables[var_id].hash);
          return 1;
         }
@@ -380,10 +391,12 @@ AutoRefreshVariable_Thread(void * ptr)
             // This means that auto refresh is disabled so we dont do anything until is re-enabled
           } else
           {
+             pthread_mutex_lock (&vsh->refresh_lock); // LOCK PROTECTED OPERATION -------------------------------------------
              variables_changed=SignalUpdatesForAllLocalVariablesThatNeedIt(vsh);
              total_variables_changed+=variables_changed;
 
              variables_refreshed=RefreshAllVariablesThatNeedIt(vsh);
+             pthread_mutex_unlock (&vsh->refresh_lock); // LOCK PROTECTED OPERATION -------------------------------------------
 
              if ( (variables_changed==0 ) && ( variables_refreshed == 0) ) { /*fprintf(stderr,".");*/ } else
                                                                            { fprintf(stderr,"AutoRefresh Thread: %u variables changed and %u variables refreshed\n",variables_changed,variables_refreshed); }
@@ -409,6 +422,9 @@ int StartAutoRefreshVariable(struct VariableShare * vsh)
 {
   vsh->stop_refresh_thread=0;
   vsh->pause_refresh_thread=0;
+
+
+
   int retres = pthread_create( &vsh->refresh_thread, 0,  AutoRefreshVariable_Thread ,(void*) vsh);
 
   if (retres!=0) retres = 0; else retres = 1;

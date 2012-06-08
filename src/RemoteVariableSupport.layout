@@ -13,8 +13,8 @@
 	<File name="InternalTester.h" open="1" top="0" tabpos="21">
 		<Cursor position="85" topLine="0" />
 	</File>
-	<File name="MessageTables.c" open="1" top="1" tabpos="14">
-		<Cursor position="19906" topLine="509" />
+	<File name="MessageTables.c" open="1" top="0" tabpos="14">
+		<Cursor position="19642" topLine="516" />
 	</File>
 	<File name="MessageTables.h" open="1" top="0" tabpos="15">
 		<Cursor position="1171" topLine="0" />
@@ -26,7 +26,7 @@
 		<Cursor position="1291" topLine="0" />
 	</File>
 	<File name="Peers.c" open="1" top="0" tabpos="12">
-		<Cursor position="674" topLine="0" />
+		<Cursor position="674" topLine="30" />
 	</File>
 	<File name="Peers.h" open="1" top="0" tabpos="13">
 		<Cursor position="551" topLine="0" />
@@ -35,28 +35,28 @@
 		<Cursor position="0" topLine="0" />
 	</File>
 	<File name="Protocol.c" open="1" top="0" tabpos="18">
-		<Cursor position="13275" topLine="247" />
+		<Cursor position="18854" topLine="394" />
 	</File>
 	<File name="Protocol.h" open="1" top="0" tabpos="19">
-		<Cursor position="1559" topLine="0" />
+		<Cursor position="240" topLine="0" />
 	</File>
 	<File name="RemoteVariableSupport.c" open="1" top="0" tabpos="4">
 		<Cursor position="1081" topLine="5" />
 	</File>
 	<File name="RemoteVariableSupport.h" open="1" top="0" tabpos="7">
-		<Cursor position="1124" topLine="19" />
+		<Cursor position="1124" topLine="235" />
 	</File>
 	<File name="SocketAdapterToMessageTables.c" open="1" top="0" tabpos="16">
-		<Cursor position="12627" topLine="253" />
+		<Cursor position="11114" topLine="245" />
 	</File>
 	<File name="SocketAdapterToMessageTables.h" open="1" top="0" tabpos="17">
 		<Cursor position="260" topLine="0" />
 	</File>
-	<File name="VariableDatabase.c" open="1" top="0" tabpos="5">
-		<Cursor position="8962" topLine="217" />
+	<File name="VariableDatabase.c" open="1" top="1" tabpos="5">
+		<Cursor position="10730" topLine="259" />
 	</File>
 	<File name="VariableDatabase.h" open="1" top="0" tabpos="8">
-		<Cursor position="1796" topLine="0" />
+		<Cursor position="2084" topLine="1" />
 	</File>
 	<File name="helper.c" open="1" top="0" tabpos="2">
 		<Cursor position="2035" topLine="18" />

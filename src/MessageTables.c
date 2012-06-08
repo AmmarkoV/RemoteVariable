@@ -79,7 +79,7 @@ int AllocateMessageQueue(struct MessageTable *  mt,unsigned int total_messages)
 {
    pthread_mutex_lock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
 
-   if (mt==0) { error("AllocateMessageQueue called with a zero message table"); return 0; }
+   if (mt==0) { error("AllocateMessageQueue called with a zero message table"); pthread_mutex_unlock (&mt->lock); return 0; }
 
     mt->sendrecv_thread=0;
     mt->pause_sendrecv_thread=0;
@@ -98,7 +98,7 @@ int AllocateMessageQueue(struct MessageTable *  mt,unsigned int total_messages)
 
 
    mt->table = (struct MessageTableItem *) malloc( (total_messages+1) * sizeof(struct MessageTableItem) );
-   if (mt->table==0) { error("Could not allocate memory for new Message Table!"); return 0; }
+   if (mt->table==0) { error("Could not allocate memory for new Message Table!"); pthread_mutex_unlock (&mt->lock); return 0; }
 
 
    unsigned int i=0;
@@ -158,6 +158,7 @@ struct failint AddMessage(struct MessageTable * mt,unsigned int direction,unsign
       error("AddToMessageTable cannot add new Message to table 1\n");
       fprintf(stderr,"Message table can accomodate %u messages and it has already %u/%u\n",mt->message_queue_total_length,mt->message_queue_current_length,mt->message_queue_total_length);
       retres.failed=1;
+      pthread_mutex_unlock (&mt->lock);
       return retres;
     }
 
@@ -188,7 +189,7 @@ struct failint AddMessage(struct MessageTable * mt,unsigned int direction,unsign
 
   retres.value=mt_pos;
 
-   pthread_mutex_unlock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
+  pthread_mutex_unlock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
 
   return retres;
 }
@@ -242,6 +243,7 @@ struct failint SendMessageToSocket(int clientsock,struct MessageTable * mt,unsig
       return retres;
    }
 
+  pthread_mutex_lock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
 
   if(sockadap_msg())
   {
@@ -259,7 +261,7 @@ struct failint SendMessageToSocket(int clientsock,struct MessageTable * mt,unsig
 
 
   int opres=send(clientsock,&mt->table[item_num].header,sizeof(mt->table[item_num].header),MSG_WAITALL);
-  if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1;  mt->table[item_num].sent=0;  return retres; }
+  if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1;  mt->table[item_num].sent=0; pthread_mutex_unlock(&mt->lock); return retres; }
 
   if ( mt->table[item_num].header.payload_size > 0 )
    {
@@ -269,14 +271,15 @@ struct failint SendMessageToSocket(int clientsock,struct MessageTable * mt,unsig
      printf("SENDING %s payload %p , payload_val %u , payload size %u GROUP %u \n",ReturnPrintMessageTypeVal(mt->table[item_num].header.operation_type),mt->table[item_num].payload,*payload_val,mt->table[item_num].header.payload_size,mt->table[item_num].header.incremental_value);
 
      opres=send(clientsock,mt->table[item_num].payload,mt->table[item_num].header.payload_size,MSG_WAITALL);
-     if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; mt->table[item_num].sent=0;  return retres; } else
+     if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; mt->table[item_num].sent=0; pthread_mutex_unlock(&mt->lock); return retres; } else
      if ( opres != mt->table[item_num].header.payload_size ) { fprintf(stderr,"Payload was not fully transmitted only %u of %u bytes \n",opres,mt->table[item_num].header.payload_size);
-                                                                retres.failed=1; mt->table[item_num].sent=0;   return retres; }
+                                                                retres.failed=1; mt->table[item_num].sent=0;  pthread_mutex_unlock(&mt->lock); return retres; }
 
    }
 
 
 
+  pthread_mutex_unlock(&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
 
   retres.value=item_num;
   retres.failed=0;
