@@ -40,6 +40,7 @@ int  MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,unsi
 int CanWriteTo_VariableDatabase(struct VariableShare * vsh,unsigned int var_spot);
 int CanReadFrom_VariableDatabase(struct VariableShare * vsh,unsigned int var_spot);
 
+int NewValueForVariable(struct VariableShare * vsh,unsigned int var_id,void * new_val,unsigned int new_val_size);
 
 int RefreshLocalVariable_VariableDatabase(struct VariableShare * vsh,char * variable_name);
 int RefreshRemoteVariable_VariableDatabase(struct VariableShare * vsh,char * variable_name);

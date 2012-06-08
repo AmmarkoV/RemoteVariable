@@ -532,6 +532,19 @@ struct failint WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *m
      unsigned int mt_respwriteto = retres.value;
      if ( (var_id==mt->table[mt_respwriteto].header.var_id) || (vsh->share.variables[var_id].size_of_ptr!=mt->table[mt_respwriteto].header.payload_size) )
      {
+         if ( NewValueForVariable(vsh,var_id,mt->table[mt_respwriteto].payload,mt->table[mt_respwriteto].header.payload_size) )
+          {
+              //Successfully passed new variable
+              retres.failed=0;
+              return retres;
+          } else
+          {
+             fprintf(stderr,"Failed passing new variable value \n");
+             retres.failed=1;
+             return retres;
+          }
+        /*
+         //TODO: Move this variable update code inside VariableDatabase.c , it does not belong here..!
          unsigned int * old_val = (unsigned int *) vsh->share.variables[var_id].ptr;
          unsigned int * new_val = (unsigned int *) mt->table[mt_respwriteto].payload;
 
@@ -553,7 +566,7 @@ struct failint WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *m
                //    mt->table[mt_respwriteto].payload=0;
                //    mt->table[mt_respwriteto].payload_local_malloc=0;
                return retres;
-              }
+              }*/
      }
        else
      {

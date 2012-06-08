@@ -272,6 +272,28 @@ int SignalUpdatesForAllLocalVariablesThatNeedIt(struct VariableShare * vsh)
   return retres;
 }
 
+int NewValueForVariable(struct VariableShare * vsh,unsigned int var_id,void * new_val,unsigned int new_val_size)
+{
+  unsigned int * old_val = (unsigned int *) vsh->share.variables[var_id].ptr;
+ //TODO: Add locking for variable ..! :)
+  if (old_val==0) { fprintf(stderr,"\nERROR : NewValueForVariable old_value memory points to zero \n");  return 0; }
+  else if (new_val==0) { fprintf(stderr,"\nERROR : NewValueForVariable new_value memory points to zero \n");  return 0; }
+  else if (old_val==new_val) {fprintf(stderr,"\nERROR : NewValueForVariable copy target memory the same with source\n");  return 0;}
+  else if (new_val_size!=vsh->share.variables[var_id].size_of_ptr) { fprintf(stderr,"\nERROR : NewValueForVariable new_value memory points to zero \n");  return 0; }
+  else {
+         unsigned int ptr_size = vsh->share.variables[var_id].size_of_ptr;
+         unsigned int * new_val_int = (unsigned int * ) new_val;
+         fprintf(stderr,"\n!!!!!!!!!!--> NewValueForVariable , now copying a fresh value for variable %u , was %u now will become %u ( size %u ) \n", var_id,  *old_val,  *new_val_int, ptr_size);
+         printf("Var  %u now will become %u \n",*old_val,  *new_val_int );
+         memcpy(old_val,new_val,ptr_size);
+         vsh->share.variables[var_id].hash=GetVariableHashForVar(vsh,var_id);
+         fprintf(stderr,"Updated hash value for new payload ( %u ) , hash = %u \n",*new_val_int,vsh->share.variables[var_id].hash);
+         return 1;
+        }
+
+
+   return 0;
+}
 
 
 int RefreshAllVariablesThatNeedIt(struct VariableShare *vsh)
