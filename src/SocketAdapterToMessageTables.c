@@ -268,16 +268,16 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
           case NOACTION : fprintf(stderr,"NOACTION doesnt trigger @  Message Processing Thread\n"); break;
 
           case INTERNAL_START_SIGNALCHANGED :
-             if ( Request_SignalChangeVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock,groupid,protocol_progress,last_protocol_id))
+             if ( Request_SignalChangeVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock,mt_id,groupid,protocol_progress,last_protocol_id))
               { mt->table[mt_id].remove=1;  mt->table[mt_id].executed=1; } /*Internal messages must me marked remove here*/
           break;
           case INTERNAL_START_READFROM :
-             if ( Request_ReadVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock,groupid,protocol_progress,last_protocol_id))
+             if ( Request_ReadVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock,mt_id,groupid,protocol_progress,last_protocol_id))
               { mt->table[mt_id].remove=1;  mt->table[mt_id].executed=1; } /*Internal messages must me marked remove here*/
           break;
 
           case INTERNAL_START_WRITETO :
-             if ( Request_WriteVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock,groupid,protocol_progress,last_protocol_id))
+             if ( Request_WriteVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock,mt_id,groupid,protocol_progress,last_protocol_id))
               { mt->table[mt_id].remove=1;  mt->table[mt_id].executed=1; } /*Internal messages must me marked remove here*/
 
           case WRITETO:

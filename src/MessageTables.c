@@ -248,29 +248,33 @@ struct failint SendMessageToSocket(int clientsock,struct MessageTable * mt,unsig
     fprintf(stderr,"SENDING %s mt_id=%u , GROUP %u \n",ReturnPrintMessageTypeVal(mt->table[item_num].header.operation_type), item_num, mt->table[item_num].header.incremental_value);
   }
 
-  int opres=send(clientsock,&mt->table[item_num].header,sizeof(mt->table[item_num].header),MSG_WAITALL);
-  if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; return retres; }
-
-  if ( mt->table[item_num].header.payload_size > 0 )
-   {
-     unsigned int * payload_val = (unsigned int *) mt->table[item_num].payload;
-
-     fprintf(stderr,"SENDING %s payload %p , payload_val %u , payload size %u GROUP %u \n",ReturnPrintMessageTypeVal(mt->table[item_num].header.operation_type),mt->table[item_num].payload,*payload_val,mt->table[item_num].header.payload_size,mt->table[item_num].header.incremental_value);
-
-     opres=send(clientsock,mt->table[item_num].payload,mt->table[item_num].header.payload_size,MSG_WAITALL);
-     if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; return retres; } else
-     if ( opres != mt->table[item_num].header.payload_size ) { fprintf(stderr,"Payload was not fully transmitted only %u of %u bytes \n",opres,mt->table[item_num].header.payload_size);
-                                                                retres.failed=1; return retres; }
-
-   }
-
   //This message will trigger will travel to the peer with the send operation but its role is not finished here
   //It will start a protocol action so we set it NOT for removal and NOT executed
   mt->table[item_num].executed=0;
   mt->table[item_num].remove=0;
 
   //Rest of initialization..
-  mt->table[item_num].sent=1;
+  mt->table[item_num].sent=1; // We set it as sent , if sending fails we will restore it
+
+
+
+  int opres=send(clientsock,&mt->table[item_num].header,sizeof(mt->table[item_num].header),MSG_WAITALL);
+  if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1;  mt->table[item_num].sent=0;  return retres; }
+
+  if ( mt->table[item_num].header.payload_size > 0 )
+   {
+     unsigned int * payload_val = (unsigned int *) mt->table[item_num].payload;
+
+     fprintf(stderr,"SENDING %s payload %p , payload_val %u , payload size %u GROUP %u \n",ReturnPrintMessageTypeVal(mt->table[item_num].header.operation_type),mt->table[item_num].payload,*payload_val,mt->table[item_num].header.payload_size,mt->table[item_num].header.incremental_value);
+     printf("SENDING %s payload %p , payload_val %u , payload size %u GROUP %u \n",ReturnPrintMessageTypeVal(mt->table[item_num].header.operation_type),mt->table[item_num].payload,*payload_val,mt->table[item_num].header.payload_size,mt->table[item_num].header.incremental_value);
+
+     opres=send(clientsock,mt->table[item_num].payload,mt->table[item_num].header.payload_size,MSG_WAITALL);
+     if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; mt->table[item_num].sent=0;  return retres; } else
+     if ( opres != mt->table[item_num].header.payload_size ) { fprintf(stderr,"Payload was not fully transmitted only %u of %u bytes \n",opres,mt->table[item_num].header.payload_size);
+                                                                retres.failed=1; mt->table[item_num].sent=0;   return retres; }
+
+   }
+
 
 
 
@@ -539,7 +543,10 @@ struct failint WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *m
                fprintf(stderr,"\n!!!!!!!!!!--> Copying a fresh value for variable %u , was %u now will become %u ( size %u ) \n", var_id,  *old_val,  *new_val, ptr_size);
                printf("Var  %u now will become %u after a RESP_WRITE to of group %u \n",*old_val,  *new_val , groupid);
                memcpy(old_val,new_val,ptr_size);
+               vsh->share.variables[var_id].hash=GetVariableHashForVar(vsh,var_id);
+               fprintf(stderr,"Updated hash value for new payload ( %u ) , hash = %u \n",*new_val,vsh->share.variables[var_id].hash);
 
+               //TODO update hash
 
                // Memory can be deallocated at this point since the message has been copied , this however is not very stable :S
                //    if (mt->table[mt_respwriteto].payload_local_malloc) { free(mt->table[mt_respwriteto].payload); }
