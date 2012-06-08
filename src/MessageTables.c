@@ -537,7 +537,10 @@ struct failint WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *m
          else {
                unsigned int ptr_size = vsh->share.variables[var_id].size_of_ptr;
                fprintf(stderr,"\n!!!!!!!!!!--> Copying a fresh value for variable %u , was %u now will become %u ( size %u ) \n", var_id,  *old_val,  *new_val, ptr_size);
+               printf("Var  %u now will become %u after a RESP_WRITE to of group %u \n",*old_val,  *new_val , groupid);
                memcpy(old_val,new_val,ptr_size);
+
+
                // Memory can be deallocated at this point since the message has been copied , this however is not very stable :S
                //    if (mt->table[mt_respwriteto].payload_local_malloc) { free(mt->table[mt_respwriteto].payload); }
                //    mt->table[mt_respwriteto].payload=0;

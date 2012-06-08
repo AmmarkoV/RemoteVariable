@@ -309,7 +309,7 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
 
          //Right now we are the only thread that has access to the MessageTable Structure
           //This call locks internally using the table mutex..
-      if (mt->message_queue_current_length >60 )
+      if (mt->message_queue_current_length >50 )
        {
            RemFromMessageTableWhereRemoveFlagExists(mt);
        }
