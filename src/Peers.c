@@ -22,7 +22,6 @@ struct failint AddPeer(struct VariableShare * vsh,char * name,unsigned int port 
        vsh->peer_list[pos].port=port;
        vsh->peer_list[pos].socket_to_client = clientsock;
        vsh->peer_list[pos].peer_state=VSS_WAITING_FOR_HANDSHAKE;
-       vsh->peer_list[pos].incremental_value=0;
 
        pthread_mutex_init(&vsh->peer_list[pos].messages.lock, 0); //New allocation so cleaning up mutex
        pthread_mutex_init(&vsh->peer_list[pos].messages.remlock, 0); //New allocation so cleaning up mutex
@@ -106,30 +105,6 @@ int PeerNewPingValue(struct VariableShare * vsh,unsigned int peer_id,long ping_i
   if (vsh->total_peers<=peer_id) { return 0; }
   vsh->peer_list[peer_id].ping_in_microseconds=ping_in_microseconds;
   fprintf(stderr,"New ping value for peer %u = %u milliseconds \n",peer_id,(unsigned int) ping_in_microseconds/1000);
-  return 1;
-}
-
-
-unsigned char GenNewMessagePeerIncrementalValue(struct VariableShare * vsh,unsigned int peer_id)
-{
-  if (vsh->peer_list[peer_id].incremental_value>=250) { fprintf(stderr,"New Incremental Value truncated\n"); vsh->peer_list[peer_id].incremental_value=1; return 1; }
-
-  ++vsh->peer_list[peer_id].incremental_value;
-
-  return vsh->peer_list[peer_id].incremental_value;
-}
-
-
-int UpdatePeerIncrementalValueWithIncoming(struct VariableShare * vsh,unsigned int peer_id,unsigned char incoming_incremental_value)
-{
-   if (vsh->peer_list[peer_id].incremental_value < incoming_incremental_value)
-    {
-        vsh->peer_list[peer_id].incremental_value = incoming_incremental_value;
-    } else
-    {
-      fprintf(stderr,"Header accepted has a smaller inc value ( %u ) than our current one ( %u ) , ignoring it ..\n",incoming_incremental_value,vsh->peer_list[peer_id].incremental_value);
-      return 0;
-    }
   return 1;
 }
 

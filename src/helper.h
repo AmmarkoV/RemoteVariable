@@ -23,6 +23,7 @@
 
 void under_construction_msg();
 void error(char * msg);
+int mutex_msg();
 int protocol_msg();
 int sockadap_msg();
 int debug_msg();

@@ -54,6 +54,11 @@ int protocol_msg()
  return 1;
 }
 
+int mutex_msg()
+{
+ return 0;
+}
+
 int sockadap_msg()
 {
  return 1;

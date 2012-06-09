@@ -101,6 +101,8 @@ struct MessageTable
     pthread_mutex_t lock;
     pthread_mutex_t remlock;
 
+    unsigned char groupid;
+
     unsigned int GUARD_BYTE1;
 
     pthread_t sendrecv_thread;
@@ -167,7 +169,6 @@ struct SharePeer
     unsigned int port;
 
     int socket_to_client;
-    unsigned char incremental_value;
 
     unsigned int ping_in_microseconds;
     unsigned int last_transaction;

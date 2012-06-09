@@ -63,7 +63,9 @@ int main()
     {
      if (!wait_for_var_to_become_x(&SHARED_VAR,WAIT_TIME,i)) { fprintf(stderr,"Client : Failed the test STEP%u , waiting for %u\n",i,i); return 1; }
 
+
      //DUMMY_VAR=rand()%10000;
+     //usleep(8500);
 
      fprintf(stderr,"TEST STEP %u\n",i+1);
      SHARED_VAR=i+1;

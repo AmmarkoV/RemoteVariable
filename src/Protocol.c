@@ -273,7 +273,7 @@ int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigne
 
   if (*protocol_progress==0)
   {
-    *groupid=GenNewMessagePeerIncrementalValue(vsh,peer_id);
+    *groupid=GenNewMessageGroupID(mt);
 
     fprintf(stderr,"\nRequest_ReadVariable STEP 0 triggered from mt_id %u , type %s \n",mt_id,ReturnPrintMessageTypeVal(mt->table[mt_id].header.operation_type));
     //We send a new READFROM request
@@ -339,7 +339,7 @@ int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,s
   {
    fprintf(stderr,"\nAcceptRequest_ReadVariable STEP 0 triggered from mt_id %u , type %s \n",mt_id,ReturnPrintMessageTypeVal(mt->table[mt_id].header.operation_type));
    // Secondly this incremental_value is now the last for this client , if we make a new request it should have a different inc_value than this..
-   UpdatePeerIncrementalValueWithIncoming(vsh,peer_id,mt->table[mt_id].header.incremental_value);
+   UpdateGroupIDWithIncoming(mt,mt->table[mt_id].header.incremental_value);
    // groupid should already have the header inc value
 
   unsigned int var_id = mt->table[mt_id].header.var_id;
@@ -403,7 +403,7 @@ int Request_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id
 
   if (*protocol_progress==0)
   {
-    *groupid=GenNewMessagePeerIncrementalValue(vsh,peer_id);
+    *groupid=GenNewMessageGroupID(mt);
 
     fprintf(stderr,"\nRequest_SignalChangeVariable STEP 0 triggered from mt_id %u , type %s \n",mt_id,ReturnPrintMessageTypeVal(mt->table[mt_id].header.operation_type));;
     // We also want a new header to go with our message!
@@ -445,7 +445,7 @@ int AcceptRequest_SignalChangeVariable(struct VariableShare * vsh,unsigned int p
   {
    fprintf(stderr,"\nAcceptRequest_SignalChangeVariable STEP 0 triggered from mt_id %u , type %s \n",mt_id,ReturnPrintMessageTypeVal(mt->table[mt_id].header.operation_type));
    // Secondly this incremental_value is now the last for this client , if we make a new request it should have a different inc_value than this..
-   UpdatePeerIncrementalValueWithIncoming(vsh,peer_id,mt->table[mt_id].header.incremental_value);
+   UpdateGroupIDWithIncoming(mt,mt->table[mt_id].header.incremental_value);
 
   //We received a READFROM request ( otherwise this function wouldnt have been triggered so lets respond to it )
   /* TODO HERE , HANDLE PERMISSIONS ETC*/

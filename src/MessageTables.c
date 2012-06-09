@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include "SocketAdapterToMessageTables.h"
 
-
+#include "VariableDatabase.h"
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -77,9 +77,13 @@ void PrintMessageTableItem(struct MessageTableItem * mti,unsigned int val)
 
 int AllocateMessageQueue(struct MessageTable *  mt,unsigned int total_messages)
 {
+   if (mutex_msg()) fprintf(stderr,"Waiting for mutex AllocateMessageQueue\n");
    pthread_mutex_lock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
+   if (mutex_msg()) fprintf(stderr,"Entered mutex AllocateMessageQueue\n");
 
    if (mt==0) { error("AllocateMessageQueue called with a zero message table"); pthread_mutex_unlock (&mt->lock); return 0; }
+
+    mt->groupid=0;
 
     mt->sendrecv_thread=0;
     mt->pause_sendrecv_thread=0;
@@ -144,13 +148,65 @@ int FreeMessageQueue(struct MessageTable * mt)
    return 1;
 }
 
+
+
+unsigned char GenNewMessageGroupID(struct MessageTable * mt)
+{
+  if (mt->groupid>=250) { fprintf(stderr,"New GroupID truncated\n"); mt->groupid=1; return 1; }
+
+  ++mt->groupid;
+//  if (vsh->this_address_space_is_master) { mt->groupid+=3; }
+
+  return mt->groupid;
+}
+
+
+int UpdateGroupIDWithIncoming(struct MessageTable * mt,unsigned char incoming_incremental_value)
+{
+   if (mt->groupid < incoming_incremental_value)
+    {
+       mt->groupid = incoming_incremental_value;
+    } else
+    {
+      fprintf(stderr,"Header accepted has a smaller inc value ( %u ) than our current one ( %u ) , ignoring it ..\n",incoming_incremental_value,mt->groupid);
+      return 0;
+    }
+  return 1;
+}
+
+int IsItADuplicate(struct MessageTable * mt , unsigned int varid , unsigned int optype)
+{
+  unsigned int mt_id=0;
+  for (mt_id=0; mt_id < mt->message_queue_current_length; mt_id++)
+     {
+       if ((mt->table[mt_id].remove==0) && (mt->table[mt_id].header.var_id==varid) && (mt->table[mt_id].header.operation_type==optype) )
+          {
+            fprintf(stderr,"There is already a Message for var_id %u with a %s type\n ",mt_id,ReturnPrintMessageTypeVal(optype));
+            printf("There is already a Message for var_id %u with a %s type\n ",mt_id,ReturnPrintMessageTypeVal(optype));
+            return 1;
+          }
+     }
+ return 0;
+}
+
+
 struct failint AddMessage(struct MessageTable * mt,unsigned int direction,unsigned int free_malloc_at_disposal,struct PacketHeader * header,void * payload,unsigned int msg_timer)
 {
+   if (mutex_msg()) fprintf(stderr,"Waiting for mutex AddMessage\n");
    pthread_mutex_lock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
+   if (mutex_msg()) fprintf(stderr,"Entered mutex AddMessage\n");
 
    struct failint retres={0};
    retres.failed=0;
    retres.value=0;
+
+   if ( header->incremental_value==0 )
+    {
+      header->incremental_value = GenNewMessageGroupID(mt);
+      fprintf(stderr,"Header of message %u , has no group set , creating one for it..");
+    }
+
+
 
 
   if (mt->message_queue_current_length >= mt->message_queue_total_length)
@@ -167,14 +223,11 @@ struct failint AddMessage(struct MessageTable * mt,unsigned int direction,unsign
   unsigned int mt_pos = mt->message_queue_current_length;
   ++mt->message_queue_current_length;
 
-  fprintf(stderr,"ADDING  %s GROUP %u mt_id = %u  direction(%u) , freemalloc(%u) , payload = %p , size %u time = %u , \n",ReturnPrintMessageTypeVal(header->operation_type),header->incremental_value,mt_pos,direction,free_malloc_at_disposal,payload,header->payload_size,msg_timer);
+  unsigned int * ptr_val= (unsigned int *) payload;
+  unsigned int ptr_val_safe= 0;
+  if (ptr_val!=0) { ptr_val_safe=*ptr_val; }
 
-  //usleep(200);
-
-  //TODO APPARENTLY THE TIMING ON THIS CALL HAS SOME IMPORTANCE ( RACE CONDITION )!
-
-
-
+  fprintf(stderr,"ADDING  %s GROUP %u mt_id = %u  direction(%u) , freemalloc(%u) , payload = %p , val = %u , size %u time = %u , \n",ReturnPrintMessageTypeVal(header->operation_type),header->incremental_value,mt_pos,direction,free_malloc_at_disposal,payload,ptr_val_safe,header->payload_size,msg_timer);
 
   EmptyMTItem(&mt->table[mt_pos],0); //<- completely clean spot
 
@@ -243,7 +296,9 @@ struct failint SendMessageToSocket(int clientsock,struct MessageTable * mt,unsig
       return retres;
    }
 
+  if (mutex_msg()) fprintf(stderr,"Waiting for mutex SendMessageToSocket\n");
   pthread_mutex_lock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
+  if (mutex_msg()) fprintf(stderr,"Entered mutex SendMessageToSocket\n");
 
   if(sockadap_msg())
   {
@@ -423,11 +478,14 @@ int RemFromMessageTableWhereRemoveFlagExists(struct MessageTable * mt)
   if (mt->message_queue_total_length==0) {return 0;}
   if (mt->message_queue_current_length==0) {return 0;}
 
+  if (mutex_msg()) fprintf(stderr,"Waiting for mutex RemFromMessageTableWhereRemoveFlagExists\n");
   pthread_mutex_lock (&mt->lock);  // LOCK PROTECTED OPERATION -------------------------------------------
+  if (mutex_msg()) fprintf(stderr,"Entered mutex RemFromMessageTableWhereRemoveFlagExists\n");
 
   unsigned int mt_id=0;
   unsigned int messages_removed=0;
 
+   fprintf(stderr,"RemFromMessageTableWhereRemoveFlagExists started with %u messages \n",mt->message_queue_current_length);
    for (mt_id=0; mt_id < mt->message_queue_current_length; mt_id++)
      {
        if ( mt->table[mt_id].remove )
@@ -435,6 +493,7 @@ int RemFromMessageTableWhereRemoveFlagExists(struct MessageTable * mt)
              if ( RemMessageINTERNAL_MUST_BE_LOCKED(mt,mt_id) ) { ++messages_removed; }
           }
      }
+    fprintf(stderr,"RemFromMessageTableWhereRemoveFlagExists ended with %u messages after removal\n",mt->message_queue_current_length);
 
    pthread_mutex_unlock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
   return messages_removed;
@@ -538,6 +597,7 @@ struct failint WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *m
          if ( NewValueForVariable(vsh,var_id,mt->table[mt_respwriteto].payload,mt->table[mt_respwriteto].header.payload_size) )
           {
               //Successfully passed new variable
+              printf("Message %u , group %u changed the variable\n",mt_respwriteto,mt->table[mt_respwriteto].header.incremental_value);
               retres.failed=0;
               return retres;
           } else
@@ -546,30 +606,7 @@ struct failint WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *m
              retres.failed=1;
              return retres;
           }
-        /*
-         //TODO: Move this variable update code inside VariableDatabase.c , it does not belong here..!
-         unsigned int * old_val = (unsigned int *) vsh->share.variables[var_id].ptr;
-         unsigned int * new_val = (unsigned int *) mt->table[mt_respwriteto].payload;
 
-         if (old_val==0) { fprintf(stderr,"\nERROR : WaitForVariableAndCopyItAtMessageTableItem old_value memory points to zero \n");  retres.failed=1; return retres; }
-         else if (new_val==0) { fprintf(stderr,"\nERROR : WaitForVariableAndCopyItAtMessageTableItem new_value memory points to zero \n");  retres.failed=1; return retres; }
-         else if (old_val==new_val) {fprintf(stderr,"\nERROR : WaitForVariableAndCopyItAtMessageTableItem copy target memory the same with source\n");  retres.failed=1; return retres;}
-         else {
-               unsigned int ptr_size = vsh->share.variables[var_id].size_of_ptr;
-               fprintf(stderr,"\n!!!!!!!!!!--> Copying a fresh value for variable %u , was %u now will become %u ( size %u ) \n", var_id,  *old_val,  *new_val, ptr_size);
-               printf("Var  %u now will become %u after a RESP_WRITE to of group %u \n",*old_val,  *new_val , groupid);
-               memcpy(old_val,new_val,ptr_size);
-               vsh->share.variables[var_id].hash=GetVariableHashForVar(vsh,var_id);
-               fprintf(stderr,"Updated hash value for new payload ( %u ) , hash = %u \n",*new_val,vsh->share.variables[var_id].hash);
-
-               //TODO update hash
-
-               // Memory can be deallocated at this point since the message has been copied , this however is not very stable :S
-               //    if (mt->table[mt_respwriteto].payload_local_malloc) { free(mt->table[mt_respwriteto].payload); }
-               //    mt->table[mt_respwriteto].payload=0;
-               //    mt->table[mt_respwriteto].payload_local_malloc=0;
-               return retres;
-              }*/
      }
        else
      {

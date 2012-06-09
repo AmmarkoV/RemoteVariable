@@ -8,6 +8,11 @@ void PrintMessageTableItem(struct MessageTableItem * mti,unsigned int val);
 int AllocateMessageQueue(struct MessageTable *  mt,unsigned int total_messages);
 int FreeMessageQueue(struct MessageTable * mt);
 
+unsigned char GenNewMessageGroupID( struct MessageTable * mt);
+int UpdateGroupIDWithIncoming(struct MessageTable * mt,unsigned char incoming_incremental_value);
+
+int IsItADuplicate(struct MessageTable * mt , unsigned int varid , unsigned int optype);
+
 struct failint AddMessage(struct MessageTable * mt,unsigned int direction,unsigned int free_malloc_at_disposal,struct PacketHeader * header,void * payload,unsigned int msg_timer);
 int RemMessage(struct MessageTable * mt,unsigned int mt_id);
 int RemFromMessageTableWhereRemoveFlagExists(struct MessageTable * mt);
