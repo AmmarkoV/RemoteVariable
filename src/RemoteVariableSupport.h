@@ -101,6 +101,7 @@ struct MessageTable
     pthread_mutex_t lock;
     pthread_mutex_t remlock;
 
+    unsigned char time;
     unsigned char groupid;
 
     unsigned int GUARD_BYTE1;
@@ -133,9 +134,10 @@ struct ShareListItem
 
     unsigned char GUARD_BYTE1;
 
-    unsigned int last_write_inc;
+    unsigned int last_write_time;
     unsigned int permissions;
 
+    unsigned long last_signaled_hash;
     unsigned long hash;
     unsigned int this_hash_transmission_count;
 

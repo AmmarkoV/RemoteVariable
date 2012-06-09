@@ -11,15 +11,15 @@ int FreeMessageQueue(struct MessageTable * mt);
 unsigned char GenNewMessageGroupID( struct MessageTable * mt);
 int UpdateGroupIDWithIncoming(struct MessageTable * mt,unsigned char incoming_incremental_value);
 
-int IsItADuplicate(struct MessageTable * mt , unsigned int varid , unsigned int optype);
+int MessageExists(struct MessageTable * mt , unsigned int varid , unsigned char optype, unsigned char direction);
 
-struct failint AddMessage(struct MessageTable * mt,unsigned int direction,unsigned int free_malloc_at_disposal,struct PacketHeader * header,void * payload,unsigned int msg_timer);
+struct failint AddMessage(struct MessageTable * mt,unsigned int direction,unsigned int free_malloc_at_disposal,struct PacketHeader * header,void * payload);
 int RemMessage(struct MessageTable * mt,unsigned int mt_id);
 int RemFromMessageTableWhereRemoveFlagExists(struct MessageTable * mt);
 
 
 struct failint SendMessageToSocket(int clientsock,struct MessageTable * mt,unsigned int item_num);
-struct failint RecvMessageFromSocket(int clientsock,struct MessageTable * mt,unsigned int msg_timer);
+struct failint RecvMessageFromSocket(int clientsock,struct MessageTable * mt);
 
 int SetMessage_Flag_ForRemoval(struct MessageTableItem * mti);
 int SetAllMessagesOfGroup_Flag_ForRemoval(struct MessageTable * mt,unsigned int groupid);

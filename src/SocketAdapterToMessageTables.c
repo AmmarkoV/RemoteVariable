@@ -170,8 +170,7 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
       else
    if (data_received==sizeof(incoming_packet))
    {
-    ++vsh->central_timer;
-    res=RecvMessageFromSocket(peersock,mt,vsh->central_timer);
+    res=RecvMessageFromSocket(peersock,mt);
     if (res.failed) { fprintf(stderr,"Failed passing socket recv to message table\n"); }
    }
      else
@@ -196,7 +195,6 @@ void * SocketAdapterToMessageTable_Thread(void * ptr)
     {
         if ( (!mt->table[table_iterator].remove)&&(mt->table[table_iterator].direction==OUTGOING_MSG)&&(!mt->table[table_iterator].sent) )
         {
-          ++vsh->central_timer;
           res=SendMessageToSocket(peersock,mt,table_iterator);
           if (res.failed) { fprintf(stderr,"Could not SendMessageToSocket for table num %u and socket %u \n",table_iterator,peersock); } else
                           { /*fprintf(stderr,"Success SendPacketPassedToMT for table num %u and socket %u \n",table_iterator,peersock); */ }

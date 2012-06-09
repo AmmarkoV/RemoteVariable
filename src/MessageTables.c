@@ -84,10 +84,13 @@ int AllocateMessageQueue(struct MessageTable *  mt,unsigned int total_messages)
    if (mt==0) { error("AllocateMessageQueue called with a zero message table"); pthread_mutex_unlock (&mt->lock); return 0; }
 
     mt->groupid=0;
+    mt->time =0;
 
     mt->sendrecv_thread=0;
     mt->pause_sendrecv_thread=0;
     mt->stop_sendrecv_thread=0;
+
+
 
     mt->messageproc_thread=0;
     mt->pause_messageproc_thread=1; //We want it to start paused , sendrecv thread will initiate it when needed
@@ -174,15 +177,21 @@ int UpdateGroupIDWithIncoming(struct MessageTable * mt,unsigned char incoming_in
   return 1;
 }
 
-int IsItADuplicate(struct MessageTable * mt , unsigned int varid , unsigned int optype)
+int MessageExists(struct MessageTable * mt , unsigned int varid , unsigned char optype, unsigned char direction)
 {
   unsigned int mt_id=0;
   for (mt_id=0; mt_id < mt->message_queue_current_length; mt_id++)
      {
-       if ((mt->table[mt_id].remove==0) && (mt->table[mt_id].header.var_id==varid) && (mt->table[mt_id].header.operation_type==optype) )
+           //Executed messages are in progress , only when the remove flag is set do we know that they have been carried out
+           //So a message "effect" exsists until the remove flag is set
+       if ( ( (mt->table[mt_id].remove==0)/* && (mt->table[mt_id].executed==0)*/ ) &&
+            (mt->table[mt_id].header.var_id==varid) &&
+            (mt->table[mt_id].header.operation_type==optype) &&
+            (mt->table[mt_id].direction==direction)
+          )
           {
-            fprintf(stderr,"There is already a Message for var_id %u with a %s type\n ",mt_id,ReturnPrintMessageTypeVal(optype));
-            printf("There is already a Message for var_id %u with a %s type\n ",mt_id,ReturnPrintMessageTypeVal(optype));
+            fprintf(stderr,"Message (%u) for var_id %u type %s already exists\n",mt_id,varid,ReturnPrintMessageTypeVal(optype));
+            //printf("Message (%u) for var_id %u type %s already exists\n",mt_id,varid,ReturnPrintMessageTypeVal(optype));
             return 1;
           }
      }
@@ -190,7 +199,7 @@ int IsItADuplicate(struct MessageTable * mt , unsigned int varid , unsigned int 
 }
 
 
-struct failint AddMessage(struct MessageTable * mt,unsigned int direction,unsigned int free_malloc_at_disposal,struct PacketHeader * header,void * payload,unsigned int msg_timer)
+struct failint AddMessage(struct MessageTable * mt,unsigned int direction,unsigned int free_malloc_at_disposal,struct PacketHeader * header,void * payload)
 {
    if (mutex_msg()) fprintf(stderr,"Waiting for mutex AddMessage\n");
    pthread_mutex_lock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
@@ -203,7 +212,7 @@ struct failint AddMessage(struct MessageTable * mt,unsigned int direction,unsign
    if ( header->incremental_value==0 )
     {
       header->incremental_value = GenNewMessageGroupID(mt);
-      fprintf(stderr,"Header of message %u , has no group set , creating one for it..");
+      fprintf(stderr,"Header of AddMessage  has no group set , creating one for it..");
     }
 
 
@@ -227,17 +236,22 @@ struct failint AddMessage(struct MessageTable * mt,unsigned int direction,unsign
   unsigned int ptr_val_safe= 0;
   if (ptr_val!=0) { ptr_val_safe=*ptr_val; }
 
-  fprintf(stderr,"ADDING  %s GROUP %u mt_id = %u  direction(%u) , freemalloc(%u) , payload = %p , val = %u , size %u time = %u , \n",ReturnPrintMessageTypeVal(header->operation_type),header->incremental_value,mt_pos,direction,free_malloc_at_disposal,payload,ptr_val_safe,header->payload_size,msg_timer);
 
   EmptyMTItem(&mt->table[mt_pos],0); //<- completely clean spot
 
 
   mt->table[mt_pos].header=*header;
   mt->table[mt_pos].direction=direction;
-  mt->table[mt_pos].time=msg_timer;
+
+//  ++mt->time;
+  mt->table[mt_pos].time=++mt->time;
 
   mt->table[mt_pos].payload_local_malloc=free_malloc_at_disposal;
   mt->table[mt_pos].payload=payload;
+
+
+  fprintf(stderr,"ADDING  %s GROUP %u mt_id = %u  direction(%u) , freemalloc(%u) , payload = %p , val = %u , size %u time = %u , \n",ReturnPrintMessageTypeVal(header->operation_type),header->incremental_value,mt_pos,direction,
+          free_malloc_at_disposal,payload,ptr_val_safe,header->payload_size,mt->table[mt_pos].time);
 
 
   retres.value=mt_pos;
@@ -322,8 +336,8 @@ struct failint SendMessageToSocket(int clientsock,struct MessageTable * mt,unsig
    {
      unsigned int * payload_val = (unsigned int *) mt->table[item_num].payload;
 
-     fprintf(stderr,"SENDING %s payload %p , payload_val %u , payload size %u GROUP %u \n",ReturnPrintMessageTypeVal(mt->table[item_num].header.operation_type),mt->table[item_num].payload,*payload_val,mt->table[item_num].header.payload_size,mt->table[item_num].header.incremental_value);
-     printf("SENDING %s payload %p , payload_val %u , payload size %u GROUP %u \n",ReturnPrintMessageTypeVal(mt->table[item_num].header.operation_type),mt->table[item_num].payload,*payload_val,mt->table[item_num].header.payload_size,mt->table[item_num].header.incremental_value);
+     fprintf(stderr,"SENDING %s payload %p , payload_val %u , size %u GROUP %u \n",ReturnPrintMessageTypeVal(mt->table[item_num].header.operation_type),mt->table[item_num].payload,*payload_val,mt->table[item_num].header.payload_size,mt->table[item_num].header.incremental_value);
+     printf("SENDING %s payload %p , payload_val %u , size %u GROUP %u \n",ReturnPrintMessageTypeVal(mt->table[item_num].header.operation_type),mt->table[item_num].payload,*payload_val,mt->table[item_num].header.payload_size,mt->table[item_num].header.incremental_value);
 
      opres=send(clientsock,mt->table[item_num].payload,mt->table[item_num].header.payload_size,MSG_WAITALL);
      if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; mt->table[item_num].sent=0; pthread_mutex_unlock(&mt->lock); return retres; } else
@@ -341,7 +355,7 @@ struct failint SendMessageToSocket(int clientsock,struct MessageTable * mt,unsig
   return retres;
 }
 
-struct failint RecvMessageFromSocket(int clientsock,struct MessageTable * mt,unsigned int msg_timer)
+struct failint RecvMessageFromSocket(int clientsock,struct MessageTable * mt)
 {
   struct failint retres={0};
   retres.value=0;
@@ -360,12 +374,11 @@ struct failint RecvMessageFromSocket(int clientsock,struct MessageTable * mt,uns
     if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; return retres; } else
     if ( opres != header.payload_size ) { fprintf(stderr,"Payload was not fully received only %u of %u bytes \n",opres,header.payload_size); retres.failed=1; return retres; }
 
-    unsigned int * payload_val=(unsigned int * ) payload;
-
-    retres = AddMessage(mt,INCOMING_MSG,1,&header,payload,msg_timer);
+    retres = AddMessage(mt,INCOMING_MSG,1,&header,payload);
     if(sockadap_msg())
      {
-        fprintf(stderr,"RECEIVED %s - GROUP %u - With %u bytes of payload ----------------\n",ReturnPrintMessageTypeVal(header.operation_type),header.incremental_value,header.payload_size);
+        unsigned int * payload_val=(unsigned int * ) payload;
+        fprintf(stderr,"RECEIVED %s - GROUP %u - With %u bytes of payload %u ----------------\n",ReturnPrintMessageTypeVal(header.operation_type),header.incremental_value,header.payload_size,*payload_val);
      }
     return retres;
    } else
@@ -376,7 +389,7 @@ struct failint RecvMessageFromSocket(int clientsock,struct MessageTable * mt,uns
       }
    }
 
-  retres = AddMessage(mt,INCOMING_MSG,0,&header,0,msg_timer);
+  retres = AddMessage(mt,INCOMING_MSG,0,&header,0);
   return retres;
 }
 
@@ -594,7 +607,7 @@ struct failint WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *m
      unsigned int mt_respwriteto = retres.value;
      if ( (var_id==mt->table[mt_respwriteto].header.var_id) || (vsh->share.variables[var_id].size_of_ptr!=mt->table[mt_respwriteto].header.payload_size) )
      {
-         if ( NewValueForVariable(vsh,var_id,mt->table[mt_respwriteto].payload,mt->table[mt_respwriteto].header.payload_size) )
+         if ( NewValueForVariable(vsh,var_id,mt->table[mt_respwriteto].payload,mt->table[mt_respwriteto].header.payload_size,mt->table[mt_respwriteto].time) )
           {
               //Successfully passed new variable
               printf("Message %u , group %u changed the variable\n",mt_respwriteto,mt->table[mt_respwriteto].header.incremental_value);

@@ -65,7 +65,7 @@ int main()
 
 
      //DUMMY_VAR=rand()%10000;
-     //usleep(8500);
+     //usleep(rand()%10000);
 
      fprintf(stderr,"TEST STEP %u\n",i+1);
      SHARED_VAR=i+1;

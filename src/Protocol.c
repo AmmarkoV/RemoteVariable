@@ -239,7 +239,7 @@ struct failint NewProtocolRequest_Send(struct VariableShare * vsh,unsigned int p
   }
 
   //struct failint AddToMessageTable(struct MessageTable * mt,unsigned int incoming,unsigned int free_malloc_at_disposal,struct PacketHeader * header,void * payload,unsigned int msg_timer)
-  return AddMessage(&vsh->peer_list[peer_id].messages,OUTGOING_MSG,free_malloc_at_disposal,&header,payload,vsh->central_timer);
+  return AddMessage(&vsh->peer_list[peer_id].messages,OUTGOING_MSG,free_malloc_at_disposal,&header,payload);
 }
 
 
