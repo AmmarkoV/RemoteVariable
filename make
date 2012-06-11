@@ -28,6 +28,9 @@ FILESTOLINK="HashFunctions.o InternalTester.o helper.o MessageTables.o  NetworkF
 ar  rcs libRemoteVariableSupport.a $FILESTOLINK
 rm $FILESTOLINK
 
+
+cp libRemoteVariableSupport.a ../libRemoteVariableSupport.a
+
 cd RemoteVariableClone
 ./make
 cd ..
@@ -42,7 +45,6 @@ cd ..
 
 cd ..
 
-cp src/libRemoteVariableSupport.a libRemoteVariableSupport.a
 
 if [ -e libRemoteVariableSupport.a ]
 then

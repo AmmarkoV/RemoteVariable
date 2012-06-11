@@ -84,6 +84,8 @@ int main()
 
     printf("\nMaster: Test is successfull\n");
     fprintf(stderr,"Master : Test is successfull!\n");
+    i=system("aplay Documentation/sound.wav");
+    if (i!=0 ) {fprintf(stderr,"Failed to play sound\n"); }
 
     fprintf(stderr,"Master : Closing things down \n");
 

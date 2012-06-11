@@ -166,11 +166,16 @@ int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int
     strncpy(vsh->share.variables[spot_to_take].ptr_name,var_name,var_length);
 
 
-
     vsh->share.variables[spot_to_take].ptr=ptr;
     vsh->share.variables[spot_to_take].size_of_ptr=ptr_size;
     vsh->share.variables[spot_to_take].hash=GetVariableHashForVar(vsh,spot_to_take);
-    vsh->share.variables[spot_to_take].last_signaled_hash=vsh->share.variables[spot_to_take].hash;
+
+
+    unsigned int i=0;
+    for (i=0; i<RVS_MAX_PEERS; i++)
+     {
+       vsh->share.variables[spot_to_take].last_signaled_hash[i]=vsh->share.variables[spot_to_take].hash;
+     }
 
     vsh->share.variables[spot_to_take].last_write_time=0;
     vsh->share.variables[spot_to_take].permissions=permissions;
@@ -233,18 +238,12 @@ int MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,unsig
 int IfLocalVariableChanged_SignalUpdateToJoblist(struct VariableShare * vsh,unsigned int var_id)
 {
   if (!VariableIdExists(vsh,var_id)) { fprintf(stderr,"Variable addressed ( %u ) by IfLocalVariableChanged_SignalUpdateToJoblist does not exist \n",var_id); return 0; }
-  unsigned long current_hash=vsh->share.variables[var_id].hash;//GetVariableHashForVar(vsh,var_id);
 
-  if (current_hash!=vsh->share.variables[var_id].last_signaled_hash)
-    {
-         printf("Variable Changed Hash for variable %u , last hash change transmitted %u , now we have %u !\n",var_id,(unsigned int) vsh->share.variables[var_id].last_signaled_hash , (unsigned int) current_hash);
-         fprintf(stderr,"Variable Changed Hash for variable %u , last hash change transmitted %u , now we have %u !\n",var_id,(unsigned int) vsh->share.variables[var_id].last_signaled_hash , (unsigned int) current_hash);
-         //vsh->share.variables[var_id].last_signaled_hash=current_hash;
 
 
          unsigned int failed_transmissions=0;
          unsigned int successfull_transmissions=0;
-         unsigned int i=0;
+         unsigned int peer_id=0;
          struct failint internal_msg={0};
 
            struct PacketHeader header={0};
@@ -253,29 +252,35 @@ int IfLocalVariableChanged_SignalUpdateToJoblist(struct VariableShare * vsh,unsi
            header.var_id=var_id;
            header.payload_size=0;
 
-         for (i=0; i< vsh->total_peers; i++)
-         {
-           fprintf(stderr,"Singaling LocalVariableChanged broadcasting to peer number %u \n",i);
 
-           if ( MessageExists(&vsh->peer_list[i].messages,var_id,INTERNAL_START_READFROM,INCOMING_MSG) )
+         unsigned long current_hash=vsh->share.variables[var_id].hash;//GetVariableHashForVar(vsh,var_id);
+         for (peer_id=0; peer_id< vsh->total_peers; peer_id++)
+         {
+          if (current_hash!=vsh->share.variables[var_id].last_signaled_hash[peer_id])
+            {
+             printf("Variable %u new hash for peer %u last hash update %u , now %u\n",var_id,peer_id,(unsigned int) vsh->share.variables[var_id].last_signaled_hash[peer_id] , (unsigned int) current_hash);
+             fprintf(stderr,"Variable %u new hash for peer %u last hash update %u , now %u\n",var_id,peer_id,(unsigned int) vsh->share.variables[var_id].last_signaled_hash[peer_id] , (unsigned int) current_hash);
+
+           if ( MessageExists(&vsh->peer_list[peer_id].messages,var_id,INTERNAL_START_READFROM,INCOMING_MSG) )
              {
                fprintf(stderr,"We have a pending READFROM for var %u so no point in resignaling var change\n",var_id);
                printf("We have a pending READFROM for var %u so no point in resignaling var change\n",var_id);
                ++failed_transmissions;
              } else
-          if (! MessageExists(&vsh->peer_list[i].messages,var_id,INTERNAL_START_SIGNALCHANGED,INCOMING_MSG) )
+          if (! MessageExists(&vsh->peer_list[peer_id].messages,var_id,INTERNAL_START_SIGNALCHANGED,INCOMING_MSG) )
              {
                unsigned int * val =  vsh->share.variables[var_id].ptr;
-               fprintf(stderr,"Creating INTERNAL_START_SIGNALCHANGED for var %u ( val %u ) , broadcasted to peer %u \n",var_id,*val,i);
-                //vsh->share.variables[var_id].hash=current_hash; /*We keep the new hash as the current hash :)*/
-                vsh->share.variables[var_id].last_signaled_hash=current_hash;
-                vsh->share.variables[var_id].this_hash_transmission_count=0;
-                internal_msg=AddMessage(&vsh->peer_list[i].messages,INCOMING_MSG,0,&header,0);
-               if (!internal_msg.failed) { ++successfull_transmissions;  ++vsh->share.variables[var_id].this_hash_transmission_count; } else
+               fprintf(stderr,"Creating INTERNAL_START_SIGNALCHANGED for var %u ( val %u ) , broadcasted to peer %u \n",var_id,*val,peer_id);
+               internal_msg=AddMessage(&vsh->peer_list[peer_id].messages,INCOMING_MSG,0,&header,0);
+               if (!internal_msg.failed) {
+                                           ++successfull_transmissions;
+                                           ++vsh->share.variables[var_id].this_hash_transmission_count;
+                                           vsh->share.variables[var_id].last_signaled_hash[peer_id]=current_hash;
+                                         } else
                                          { ++failed_transmissions; }
              }
          }
-    }
+       } // End of for all peers loop
   return 0;
 }
 
@@ -326,20 +331,10 @@ int NewValueForVariable(struct VariableShare * vsh,unsigned int var_id,void * ne
   else if (old_val==new_val) {fprintf(stderr,"\nERROR : NewValueForVariable copy target memory the same with source\n");  return 0;}
   else if (new_val_size!=vsh->share.variables[var_id].size_of_ptr) { fprintf(stderr,"\nERROR : NewValueForVariable new_value memory points to zero \n");  return 0; }
   else {
-
-         /*unsigned long newhash=GetVariableHashForVar(vsh,var_id);
-         if (newhash!=vsh->share.variables[var_id].hash )
-         {
-           printf("The value changed locally before delivery,new value is irrelevant!\n");
-           fprintf(stderr,"The value changed locally before delivery,new value is irrelevant!\n");
-           IfLocalVariableChanged_SignalUpdateToJoblist(vsh,var_id);
-           return 0;
-         }*/
-
          unsigned int ptr_size = vsh->share.variables[var_id].size_of_ptr;
          unsigned int * new_val_int = (unsigned int * ) new_val;
-         fprintf(stderr,"Var %s ( id %u ) %u now becomes %u time %u\n",vsh->share.variables[var_id].ptr_name , var_id ,*old_val,  *new_val_int , vsh->share.variables[var_id].last_write_time);
-         printf("Var %s ( id %u ) %u now becomes %u time %u\n",vsh->share.variables[var_id].ptr_name , var_id ,*old_val,  *new_val_int,vsh->share.variables[var_id].last_write_time);
+         fprintf(stderr,"Var %s ( id %u ) , val %u-time %u now becomes val %u-time %u\n",vsh->share.variables[var_id].ptr_name , var_id ,*old_val, vsh->share.variables[var_id].last_write_time, *new_val_int , time );
+         printf("Var %s ( id %u ) val %u-time %u now becomes val %u-time %u\n",vsh->share.variables[var_id].ptr_name , var_id ,*old_val, vsh->share.variables[var_id].last_write_time, *new_val_int , time );
 
          if (mutex_msg()) fprintf(stderr,"Waiting for mutex NewValueForVariable\n");
          pthread_mutex_lock (&vsh->refresh_lock); // LOCK PROTECTED OPERATION -------------------------------------------

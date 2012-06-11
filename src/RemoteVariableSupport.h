@@ -137,7 +137,7 @@ struct ShareListItem
     unsigned int last_write_time;
     unsigned int permissions;
 
-    unsigned long last_signaled_hash;
+    unsigned long last_signaled_hash[RVS_MAX_PEERS];
     unsigned long hash;
     unsigned int this_hash_transmission_count;
 

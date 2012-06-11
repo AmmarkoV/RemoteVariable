@@ -64,7 +64,7 @@ int main()
      if (!wait_for_var_to_become_x(&SHARED_VAR,WAIT_TIME,i)) { fprintf(stderr,"Client : Failed the test STEP%u , waiting for %u\n",i,i); return 1; }
 
 
-     //DUMMY_VAR=rand()%10000;
+     DUMMY_VAR=rand()%10000;
      //usleep(rand()%10000);
 
      fprintf(stderr,"TEST STEP %u\n",i+1);
@@ -75,6 +75,8 @@ int main()
 
     fprintf(stderr,"TEST STEPS DONE \n");
     printf("Client : Test is successfull!\n");
+    i=system("aplay Documentation/sound.wav");
+    if (i!=0 ) {fprintf(stderr,"Failed to play sound\n"); }
     fprintf(stderr,"Client : Test is successfull!\n");
 
     fprintf(stderr,"Client : Cleaning VariableShare context!\n");
