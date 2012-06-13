@@ -272,28 +272,28 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
           break;
 
           case INTERNAL_START_SIGNALCHANGED :
-             if ( Request_SignalChangeVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock,mt_id,groupid,protocol_progress,last_protocol_id))
+             if ( Request_SignalChangeVariable(vsh,peer_id,mt->table[mt_id].header.var_id,mt_id,groupid,protocol_progress,last_protocol_id))
               { mt->table[mt_id].remove=1;  mt->table[mt_id].executed=1; } /*Internal messages must me marked remove here*/
           break;
           case INTERNAL_START_READFROM :
-             if ( Request_ReadVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock,mt_id,groupid,protocol_progress,last_protocol_id))
+             if ( Request_ReadVariable(vsh,peer_id,mt->table[mt_id].header.var_id,mt_id,groupid,protocol_progress,last_protocol_id))
               { mt->table[mt_id].remove=1;  mt->table[mt_id].executed=1; } /*Internal messages must me marked remove here*/
           break;
 
           case INTERNAL_START_WRITETO :
-             if ( Request_WriteVariable(vsh,peer_id,mt->table[mt_id].header.var_id,peersock,mt_id,groupid,protocol_progress,last_protocol_id))
+             if ( Request_WriteVariable(vsh,peer_id,mt->table[mt_id].header.var_id,mt_id,groupid,protocol_progress,last_protocol_id))
               { mt->table[mt_id].remove=1;  mt->table[mt_id].executed=1; } /*Internal messages must me marked remove here*/
 
           case WRITETO:
-             if ( AcceptRequest_WriteVariable(vsh,peer_id,mt,mt_id,peersock,groupid,protocol_progress,last_protocol_id))
+             if ( AcceptRequest_WriteVariable(vsh,peer_id,mt,mt_id,groupid,protocol_progress,last_protocol_id))
              { mt->table[mt_id].executed=1; }
           break;
           case READFROM:
-             if ( AcceptRequest_ReadVariable(vsh,peer_id,mt,mt_id,peersock,groupid,protocol_progress,last_protocol_id))
+             if ( AcceptRequest_ReadVariable(vsh,peer_id,mt,mt_id,groupid,protocol_progress,last_protocol_id))
              { mt->table[mt_id].executed=1; }
           break;
           case SIGNALCHANGED :
-             if ( AcceptRequest_SignalChangeVariable(vsh,peer_id,mt,mt_id,peersock,groupid,protocol_progress,last_protocol_id) )
+             if ( AcceptRequest_SignalChangeVariable(vsh,peer_id,mt,mt_id,groupid,protocol_progress,last_protocol_id) )
              { mt->table[mt_id].executed=1; }
           break;
 

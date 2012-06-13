@@ -200,12 +200,12 @@ int Accept_Version_Handshake(struct VariableShare * vsh,int peersock)
     ------------------------------------------------------
 */
 
-int Request_WriteVariable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,int peersock,unsigned int mt_id,unsigned char * groupid ,  unsigned char * protocol_progress , unsigned int * last_protocol_mid)
+int Request_WriteVariable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,unsigned int mt_id,unsigned char * groupid ,  unsigned char * protocol_progress , unsigned int * last_protocol_mid)
 {
   return 0;
 }
 
-int AcceptRequest_WriteVariable(struct VariableShare * vsh,unsigned int peer_id,struct MessageTable * mt,unsigned int mt_id,int peersock, unsigned char * groupid , unsigned char * protocol_progress , unsigned int * last_protocol_mid)
+int AcceptRequest_WriteVariable(struct VariableShare * vsh,unsigned int peer_id,struct MessageTable * mt,unsigned int mt_id, unsigned char * groupid , unsigned char * protocol_progress , unsigned int * last_protocol_mid)
 {
   return 0;
 }
@@ -265,7 +265,7 @@ struct failint NewProtocolRequest_Send(struct VariableShare * vsh,unsigned int p
 !*/
 
 
-int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,int peersock , unsigned int mt_id, unsigned char * groupid , unsigned char * protocol_progress , unsigned int * last_protocol_mid)
+int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,unsigned int mt_id, unsigned char * groupid , unsigned char * protocol_progress , unsigned int * last_protocol_mid)
 {
   // When we initiate a request we increment our inc_value to signal a new group of messages
   struct MessageTable * mt = &vsh->peer_list[peer_id].messages;
@@ -340,7 +340,7 @@ int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigne
     ------------------------------------------------------  ------------------------------------------------------
     ------------------------------------------------------  ------------------------------------------------------
 !*/
-int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,struct MessageTable * mt,unsigned int mt_id,int peersock, unsigned char * groupid , unsigned char * protocol_progress , unsigned int * last_protocol_mid)
+int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,struct MessageTable * mt,unsigned int mt_id,unsigned char * groupid , unsigned char * protocol_progress , unsigned int * last_protocol_mid)
 {
   // We have accepted a new Message Table entry which contains a Request_ReadVariable so we will try to accept it..
   // First make a local copy of the header ..
@@ -406,7 +406,7 @@ int AcceptRequest_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,s
 
 !*/
 
-int Request_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,int peersock, unsigned int mt_id, unsigned char * groupid , unsigned char * protocol_progress , unsigned int * last_protocol_mid)
+int Request_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,unsigned int mt_id, unsigned char * groupid , unsigned char * protocol_progress , unsigned int * last_protocol_mid)
 {
   // When we initiate a request we increment our inc_value to signal a new group of messages
   struct MessageTable * mt = &vsh->peer_list[peer_id].messages;
@@ -446,7 +446,7 @@ int Request_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id
   return 0;
 }
 
-int AcceptRequest_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id,struct MessageTable * mt,unsigned int mt_id,int peersock, unsigned char * groupid, unsigned char * protocol_progress , unsigned int * last_protocol_mid)
+int AcceptRequest_SignalChangeVariable(struct VariableShare * vsh,unsigned int peer_id,struct MessageTable * mt,unsigned int mt_id,unsigned char * groupid, unsigned char * protocol_progress , unsigned int * last_protocol_mid)
 {
   // We have accepted a new Message Table entry which contains a Request_ReadVariable so we will try to accept it..
   // First make a local copy of the header ..
