@@ -248,7 +248,8 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
   unsigned int mt_id=0;
   while (! (*stop_switch) )
   {
-
+   if (*sendrcv_pause_switch==0)
+   {
     for (mt_id=0; mt_id<mt->message_queue_current_length; mt_id++)
     {
       if ( (!mt->table[mt_id].executed) &&
@@ -319,6 +320,8 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
 
       //Ok , we have removed the trash , now to resume functionality..
 
+
+   }
     usleep(500);
   }
   return 0;

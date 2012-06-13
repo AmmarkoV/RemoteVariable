@@ -128,7 +128,11 @@ int PeersActive_VariableShare(struct VariableShare * vsh)
 }
 
 
+void SetPolicy(struct VariableShare * vsh,unsigned int new_policy)
+{
+    vsh->global_policy = new_policy;
 
+}
 
 
 /* #Add_VariableToSharingList#
@@ -176,9 +180,20 @@ int Unlock_LocalVariable(struct VariableShare * vsh,char * variable_name)
    If the share policy is manual updates , it forces an update
    This function BLOCKS until the variable is refreshed or the connection dropped
 */
-int Refresh_LocalVariable(struct VariableShare * vsh,char * variable_name)
+int Refresh_AllLocalVariables(struct VariableShare * vsh)
 {
-  return 0;
+  pthread_mutex_lock (&vsh->refresh_lock); // LOCK PROTECTED OPERATION -------------------------------------------
+
+  unsigned int variables_changed=CheckForChangedVariables(vsh);
+
+  unsigned int variables_signaled=SignalUpdatesForAllLocalVariablesThatNeedIt(vsh);
+
+  unsigned int variables_refreshed=RefreshAllVariablesThatNeedIt(vsh);
+  printf("AutoRefresh Thread: %u vars changed | %u vars signaled | %u vars refreshed\n",variables_changed,variables_signaled,variables_refreshed);
+
+  pthread_mutex_unlock (&vsh->refresh_lock); // LOCK PROTECTED OPERATION -------------------------------------------
+
+  return 1;
  //    return RefreshLocalVariable_VariableDatabase(vsh,variable_name);
 }
 

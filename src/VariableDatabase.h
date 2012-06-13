@@ -35,15 +35,18 @@ struct failint FindVariable_Database(struct VariableShare * vsh,char * var_name)
 
 int VariableIdExists(struct VariableShare * vsh,unsigned int var_id);
 
-int  MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,unsigned int var_id,int clientsock);
+int  MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,unsigned int var_id,int peer_id);
 
-int CanWriteTo_VariableDatabase(struct VariableShare * vsh,unsigned int var_spot);
-int CanReadFrom_VariableDatabase(struct VariableShare * vsh,unsigned int var_spot);
+//int CanWriteTo_VariableDatabase(struct VariableShare * vsh,unsigned int var_spot);
+//int CanReadFrom_VariableDatabase(struct VariableShare * vsh,unsigned int var_spot);
+int CheckForChangedVariables(struct VariableShare * vsh);
+int SignalUpdatesForAllLocalVariablesThatNeedIt(struct VariableShare * vsh);
+int RefreshAllVariablesThatNeedIt(struct VariableShare *vsh);
 
-int NewValueForVariable(struct VariableShare * vsh,unsigned int var_id,void * new_val,unsigned int new_val_size,unsigned int time);
+int NewRemoteValueForVariable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,void * new_val,unsigned int new_val_size,unsigned int time);
 
-int RefreshLocalVariable_VariableDatabase(struct VariableShare * vsh,char * variable_name);
-int RefreshRemoteVariable_VariableDatabase(struct VariableShare * vsh,char * variable_name);
+//int RefreshLocalVariable_VariableDatabase(struct VariableShare * vsh,char * variable_name);
+//int RefreshRemoteVariable_VariableDatabase(struct VariableShare * vsh,char * variable_name);
 
 int MakeSureVarReachedPeers(struct VariableShare *vsh,char * varname,unsigned int wait_time);
 

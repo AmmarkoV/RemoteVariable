@@ -37,6 +37,8 @@ int main()
       }
 
 
+    SetPolicy(vsh,VSP_MANUAL);
+
     // We start up with a Variable with the value 666 , we expect the client program to alter it to 1 after it successfully connects
     static volatile int DUMMY_VAR=0;
     static volatile int SHARED_VAR=0;
@@ -62,8 +64,9 @@ int main()
    fprintf(stderr,"Master : Peer found , proceeding..\n");
 
 
-    fprintf(stderr,"TEST STEP 1\n");
+    printf("Master : TEST STEP 1 , setting SHARED VAR to 666\n");
     SHARED_VAR=666; // This will propagate to the client
+     Refresh_AllLocalVariables(vsh);
 
 
 
@@ -75,6 +78,7 @@ int main()
     // DUMMY_VAR=rand()%10000;
      fprintf(stderr,"TEST STEP %u\n",i+1);
      SHARED_VAR=i+1;
+     Refresh_AllLocalVariables(vsh);
      printf("Master : Now we have changed the variable to %u , will wait until it becomes %u\n",i+1,i+2);
     }
 

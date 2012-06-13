@@ -273,6 +273,14 @@ int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigne
 
   if (*protocol_progress==0)
   {
+    if (vsh->share.variables[var_id].receiving_new_val)
+     {
+       fprintf(stderr,"vsh->share.variables[%u].receiving_new_val is set\n",var_id);
+       return 0;
+     }
+    vsh->share.variables[var_id].receiving_new_val=1;
+    vsh->share.variables[var_id].receiving_from_peer=peer_id;
+
     *groupid=GenNewMessageGroupID(mt);
 
     fprintf(stderr,"\nRequest_ReadVariable STEP 0 triggered from mt_id %u , type %s \n",mt_id,ReturnPrintMessageTypeVal(mt->table[mt_id].header.operation_type));
@@ -288,7 +296,7 @@ int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigne
   fprintf(stderr,"\nRequest_ReadVariable STEP 1 triggered from mt_id %u , type %s \n",mt_id,ReturnPrintMessageTypeVal(mt->table[mt_id].header.operation_type));
    //We wait for the success indicator recv and subsequent pass to our message table
   unsigned char optypeForMSG3=SIGNALMSGSUCCESS;
-  struct failint msg2=WaitForVariableAndCopyItAtMessageTableItem(&vsh->peer_list[peer_id].messages,*groupid,vsh,var_id,0);
+  struct failint msg2=WaitForVariableAndCopyItAtMessageTableItem(&vsh->peer_list[peer_id].messages,peer_id,*groupid,vsh,var_id,0);
   if ( msg2.failed==1 ) { return 0;  /*Only change message type the rest remains the same*/ } else
   if ( msg2.failed==2 ) { optypeForMSG3=SIGNALMSGFAILURE; /*Only change message type the rest remains the same*/ } else
                         { optypeForMSG3=SIGNALMSGSUCCESS; /*Only change message type the rest remains the same*/ }
@@ -313,6 +321,8 @@ int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigne
     SetAllMessagesOfGroup_Flag_ForRemoval(&vsh->peer_list[peer_id].messages,*groupid);
 
     *protocol_progress=3;
+    vsh->share.variables[var_id].receiving_new_val=0;
+    vsh->share.variables[var_id].receiving_from_peer=0;
     fprintf(stderr,"Finished Protocol Request_ReadVariable \n");
     return 1;
   }
@@ -454,7 +464,7 @@ int AcceptRequest_SignalChangeVariable(struct VariableShare * vsh,unsigned int p
   // If we manage to mark the variable as needing refresh from this socket we will emmit back a signalmsgsuccess , if not we will emmit a failure signal
   unsigned char respTYPE=SIGNALMSGFAILURE;
   unsigned int var_id=mt->table[mt_id].header.var_id;
-  if ( MarkVariableAsNeedsRefresh_VariableDatabase(vsh,var_id,peersock) )
+  if ( MarkVariableAsNeedsRefresh_VariableDatabase(vsh,var_id,peer_id) )
    {
      fprintf(stderr,"Peer Signaled that variable %u changed \n",var_id);
      respTYPE=SIGNALMSGSUCCESS; // Only change message type the rest remains the same

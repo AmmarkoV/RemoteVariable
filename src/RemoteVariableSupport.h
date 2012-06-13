@@ -141,10 +141,11 @@ struct ShareListItem
     unsigned long hash;
     unsigned int this_hash_transmission_count;
 
+    unsigned char receiving_new_val;
+    unsigned int receiving_from_peer;
 
-    int flag_needs_refresh_from_sock;
-    // TODO : NOTE THAT THIS SHOULD ACTUALLY BE AN ARRAY AS LONG AS THE POSSIBLE PEERS
-
+    unsigned char needs_update;
+    unsigned int needs_update_from_peer;
 
     unsigned int size_of_ptr;
     void * ptr;
@@ -275,9 +276,10 @@ struct VariableShare * ConnectToRemote_VariableSharing(char * sharename,char * I
 int Stop_VariableSharing(struct VariableShare * vsh);
 int PeersActive_VariableShare(struct VariableShare * vsh);
 int RemoteVariableSupport_InternalTest();
+void SetPolicy(struct VariableShare * vsh,unsigned int new_policy);
 int Add_VariableToSharingList(struct VariableShare * vsh,char * variable_name,unsigned int permissions,volatile void * ptr,unsigned int ptr_size);
 int Delete_VariableFromSharingList(struct VariableShare * vsh,char * variable_name);
-int Refresh_LocalVariable(struct VariableShare * vsh,char * variable_name);
+int Refresh_AllLocalVariables(struct VariableShare * vsh);
 int Refresh_RemoteVariable(struct VariableShare * vsh,char * variable_name);
 int IsUptodate_RemoteVariable(struct VariableShare * vsh,char * variable_name);
 int MakeSureVarReachedPeers_RemoteVariable(struct VariableShare * vsh,char * variable_name,unsigned int wait_time_ms);

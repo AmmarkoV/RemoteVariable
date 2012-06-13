@@ -155,10 +155,10 @@ int FreeMessageQueue(struct MessageTable * mt)
 
 unsigned char GenNewMessageGroupID(struct MessageTable * mt)
 {
-  if (mt->groupid>=250) { fprintf(stderr,"New GroupID truncated\n"); mt->groupid=1; return 1; }
+  if (mt->groupid>=230) { fprintf(stderr,"New GroupID truncated\n"); mt->groupid=1; return 1; }
 
   ++mt->groupid;
-//  if (vsh->this_address_space_is_master) { mt->groupid+=3; }
+  //mt->groupid+=rand()%8;
 
   return mt->groupid;
 }
@@ -596,7 +596,7 @@ struct failint WaitForSuccessIndicatorAtMessageTableItem(struct MessageTable *mt
   return retres;
 }
 
-struct failint WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *mt , unsigned char groupid,struct VariableShare *vsh ,unsigned int var_id, unsigned int wait_forever)
+struct failint WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *mt ,unsigned int peer_id,unsigned char groupid,struct VariableShare *vsh ,unsigned int var_id, unsigned int wait_forever)
 {
   fprintf(stderr,"WAITING for RESP_WRITETO  GROUP %u , mt_length = %u \n",groupid,mt->message_queue_current_length);
   struct failint retres= WaitForMessage(mt,RESP_WRITETO,RESP_WRITETO,groupid,1 /*INCOMING*/,wait_forever);
@@ -607,7 +607,7 @@ struct failint WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *m
      unsigned int mt_respwriteto = retres.value;
      if ( (var_id==mt->table[mt_respwriteto].header.var_id) || (vsh->share.variables[var_id].size_of_ptr!=mt->table[mt_respwriteto].header.payload_size) )
      {
-         if ( NewValueForVariable(vsh,var_id,mt->table[mt_respwriteto].payload,mt->table[mt_respwriteto].header.payload_size,mt->table[mt_respwriteto].time) )
+         if ( NewRemoteValueForVariable(vsh,peer_id,var_id,mt->table[mt_respwriteto].payload,mt->table[mt_respwriteto].header.payload_size,mt->table[mt_respwriteto].time) )
           {
               //Successfully passed new variable
               printf("Message %u , group %u changed the variable\n",mt_respwriteto,mt->table[mt_respwriteto].header.incremental_value);

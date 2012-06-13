@@ -36,7 +36,7 @@ int main()
         return 1;
       }
 
-
+    SetPolicy(vsh,VSP_MANUAL);
 
     static volatile int DUMMY_VAR=0;
     static volatile int SHARED_VAR=0;
@@ -56,7 +56,10 @@ int main()
     if ( !wait_for_var_to_become_x(&SHARED_VAR,WAIT_TIME,666)) { fprintf(stderr,"Client : Failed the test PRE1\n"); return 1; }
 
 
+    printf("Client : TEST STEP 1 , setting SHARED VAR to 1\n");
     SHARED_VAR=1;
+     Refresh_AllLocalVariables(vsh);
+
     printf("Client : Starting Self Test waiting for value 2 from peer !\n");
     int i=2;
     for (i=2; i<=100; i+=2)
@@ -64,11 +67,12 @@ int main()
      if (!wait_for_var_to_become_x(&SHARED_VAR,WAIT_TIME,i)) { fprintf(stderr,"Client : Failed the test STEP%u , waiting for %u\n",i,i); return 1; }
 
 
-     DUMMY_VAR=rand()%10000;
+     //DUMMY_VAR=rand()%10000;
      //usleep(rand()%10000);
 
      fprintf(stderr,"TEST STEP %u\n",i+1);
      SHARED_VAR=i+1;
+     Refresh_AllLocalVariables(vsh);
      printf("Client : Now we have changed the variable to %u , will wait until it becomes %u\n",i+1,i+2);
     }
 

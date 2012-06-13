@@ -145,7 +145,7 @@ int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int
  if ( VariableShareOk(vsh) == 0 ) { fprintf(stderr,"Error could not add %s var to database \n",var_name); return 0; }
 
  unsigned int * ptr_val = (unsigned int * ) ptr;
- fprintf(stderr,"AddVariable_Database , var_name = %s ( %u chars ) , ptr value = %p ptr addr = %p , ptr_size = %u \n",var_name,strlen(var_name),*ptr_val,ptr,ptr_size);
+ fprintf(stderr,"AddVariable_Database , var_name = %s ( %u chars ) , ptr value = %u ptr addr = %p , ptr_size = %u \n",var_name,strlen(var_name),*ptr_val,ptr,ptr_size);
 
  unsigned int spot_to_take=vsh->share.total_variables_memory+1;
  if (vsh->share.total_variables_memory > vsh-> share.total_variables_shared )
@@ -170,6 +170,12 @@ int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int
     vsh->share.variables[spot_to_take].size_of_ptr=ptr_size;
     vsh->share.variables[spot_to_take].hash=GetVariableHashForVar(vsh,spot_to_take);
 
+    vsh->share.variables[spot_to_take].receiving_new_val=0;
+    vsh->share.variables[spot_to_take].receiving_from_peer=0;
+
+    vsh->share.variables[spot_to_take].needs_update=0;
+    vsh->share.variables[spot_to_take].needs_update_from_peer=0;
+
 
     unsigned int i=0;
     for (i=0; i<RVS_MAX_PEERS; i++)
@@ -179,9 +185,6 @@ int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int
 
     vsh->share.variables[spot_to_take].last_write_time=0;
     vsh->share.variables[spot_to_take].permissions=permissions;
-
-
-    vsh->share.variables[spot_to_take].flag_needs_refresh_from_sock=0;
 
 
     vsh->share.variables[spot_to_take].GUARD_BYTE1 = RVS_GUARD_VALUE ;
@@ -227,19 +230,18 @@ int VariableIdExists(struct VariableShare * vsh,unsigned int var_id)
   return 1;
 }
 
-int MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,unsigned int var_id,int clientsock)
+int MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,unsigned int var_id,int peer_id)
 {
    if (!VariableIdExists(vsh,var_id)) { fprintf(stderr,"Variable addressed ( %u ) by MarkVariableAsNeedsRefresh_VariableDatabase does not exist \n",var_id); return 0; }
    fprintf(stderr,"Variable %u has been marked , as \"needs refresh\" \n",var_id);
-   vsh->share.variables[var_id].flag_needs_refresh_from_sock = clientsock;
+   vsh->share.variables[var_id].needs_update = 1;
+   vsh->share.variables[var_id].needs_update_from_peer = peer_id;
    return 1;
 }
 
 int IfLocalVariableChanged_SignalUpdateToJoblist(struct VariableShare * vsh,unsigned int var_id)
 {
   if (!VariableIdExists(vsh,var_id)) { fprintf(stderr,"Variable addressed ( %u ) by IfLocalVariableChanged_SignalUpdateToJoblist does not exist \n",var_id); return 0; }
-
-
 
          unsigned int failed_transmissions=0;
          unsigned int successfull_transmissions=0;
@@ -258,18 +260,19 @@ int IfLocalVariableChanged_SignalUpdateToJoblist(struct VariableShare * vsh,unsi
          {
           if (current_hash!=vsh->share.variables[var_id].last_signaled_hash[peer_id])
             {
-             printf("Variable %u new hash for peer %u last hash update %u , now %u\n",var_id,peer_id,(unsigned int) vsh->share.variables[var_id].last_signaled_hash[peer_id] , (unsigned int) current_hash);
+             //printf("Variable %u new hash for peer %u last hash update %u , now %u\n",var_id,peer_id,(unsigned int) vsh->share.variables[var_id].last_signaled_hash[peer_id] , (unsigned int) current_hash);
              fprintf(stderr,"Variable %u new hash for peer %u last hash update %u , now %u\n",var_id,peer_id,(unsigned int) vsh->share.variables[var_id].last_signaled_hash[peer_id] , (unsigned int) current_hash);
 
            if ( MessageExists(&vsh->peer_list[peer_id].messages,var_id,INTERNAL_START_READFROM,INCOMING_MSG) )
              {
                fprintf(stderr,"We have a pending READFROM for var %u so no point in resignaling var change\n",var_id);
-               printf("We have a pending READFROM for var %u so no point in resignaling var change\n",var_id);
+               //printf("We have a pending READFROM for var %u so no point in resignaling var change\n",var_id);
                ++failed_transmissions;
              } else
           if (! MessageExists(&vsh->peer_list[peer_id].messages,var_id,INTERNAL_START_SIGNALCHANGED,INCOMING_MSG) )
              {
                unsigned int * val =  vsh->share.variables[var_id].ptr;
+               printf("Creating INTERNAL_START_SIGNALCHANGED for var %u ( val %u ) , broadcasted to peer %u \n",var_id,*val,peer_id);
                fprintf(stderr,"Creating INTERNAL_START_SIGNALCHANGED for var %u ( val %u ) , broadcasted to peer %u \n",var_id,*val,peer_id);
                internal_msg=AddMessage(&vsh->peer_list[peer_id].messages,INCOMING_MSG,0,&header,0);
                if (!internal_msg.failed) {
@@ -297,7 +300,8 @@ int CheckForChangedVariables(struct VariableShare * vsh)
      live_hash = GetVariableHashForVar(vsh,var_id);
      if (live_hash != vsh->share.variables[var_id].hash )
       {
-        fprintf(stderr,"Variable %u changed!\n");
+        printf("Variable %u changed!\n",var_id);
+        fprintf(stderr,"Variable %u changed!\n",var_id);
         vsh->share.variables[var_id].hash=live_hash;
         ++retres;
       }
@@ -322,7 +326,7 @@ int SignalUpdatesForAllLocalVariablesThatNeedIt(struct VariableShare * vsh)
   return retres;
 }
 
-int NewValueForVariable(struct VariableShare * vsh,unsigned int var_id,void * new_val,unsigned int new_val_size,unsigned int time)
+int NewRemoteValueForVariable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,void * new_val,unsigned int new_val_size,unsigned int time)
 {
   unsigned int * old_val = (unsigned int *) vsh->share.variables[var_id].ptr;
  //TODO: Add locking for variable ..! :)
@@ -333,16 +337,20 @@ int NewValueForVariable(struct VariableShare * vsh,unsigned int var_id,void * ne
   else {
          unsigned int ptr_size = vsh->share.variables[var_id].size_of_ptr;
          unsigned int * new_val_int = (unsigned int * ) new_val;
-         fprintf(stderr,"Var %s ( id %u ) , val %u-time %u now becomes val %u-time %u\n",vsh->share.variables[var_id].ptr_name , var_id ,*old_val, vsh->share.variables[var_id].last_write_time, *new_val_int , time );
-         printf("Var %s ( id %u ) val %u-time %u now becomes val %u-time %u\n",vsh->share.variables[var_id].ptr_name , var_id ,*old_val, vsh->share.variables[var_id].last_write_time, *new_val_int , time );
+         fprintf(stderr,"Var %s ( id %u ) , val %u(@time %u) now becomes val %u(@time %u)\n",vsh->share.variables[var_id].ptr_name , var_id ,*old_val, vsh->share.variables[var_id].last_write_time, *new_val_int , time );
+         printf("Var %s ( id %u ) val %u(@time %u) now becomes val %u(@time %u)\n",vsh->share.variables[var_id].ptr_name , var_id ,*old_val, vsh->share.variables[var_id].last_write_time, *new_val_int , time );
 
          if (mutex_msg()) fprintf(stderr,"Waiting for mutex NewValueForVariable\n");
          pthread_mutex_lock (&vsh->refresh_lock); // LOCK PROTECTED OPERATION -------------------------------------------
          if (mutex_msg()) fprintf(stderr,"Entered mutex NewValueForVariable\n");
 
+         vsh->share.variables[var_id].needs_update=0;  // We just got a new value so we dont need an update thank you very much :P..!
+
          memcpy(old_val,new_val,ptr_size);
          vsh->share.variables[var_id].hash=GetVariableHashForVar(vsh,var_id);
+         vsh->share.variables[var_id].last_signaled_hash[peer_id]=vsh->share.variables[var_id].hash;
          vsh->share.variables[var_id].last_write_time = time;
+
 
          pthread_mutex_unlock (&vsh->refresh_lock); // LOCK PROTECTED OPERATION -------------------------------------------
 
@@ -359,15 +367,15 @@ int RefreshAllVariablesThatNeedIt(struct VariableShare *vsh)
 {
    unsigned int added_jobs=0;
    unsigned int var_id=0;
+   unsigned int peer_id=0;
 
     for ( var_id=0; var_id<vsh->share.total_variables_shared; var_id++)
    {
-      if ( vsh->share.variables[var_id].flag_needs_refresh_from_sock > 0 )
+      if ( vsh->share.variables[var_id].needs_update )
         {
            fprintf(stderr,"Detected that a variable (%u) needs refresh , and automatically adding a job to receive it\n",var_id);
 
            struct failint internal_msg={0};
-           struct failint peer_find={0};
 
            struct PacketHeader header={0};
            header.operation_type=INTERNAL_START_READFROM;
@@ -375,19 +383,25 @@ int RefreshAllVariablesThatNeedIt(struct VariableShare *vsh)
            header.incremental_value=0;
            header.payload_size=0;
 
-           peer_find = GetPeerIdBySock(vsh,vsh->share.variables[var_id].flag_needs_refresh_from_sock);
-           if (peer_find.failed)
-           {
-            fprintf(stderr,"ERROR Resolving from socket for peer id!\n");
-           } else
-           if (! MessageExists(&vsh->peer_list[peer_find.value].messages,var_id,INTERNAL_START_READFROM,INCOMING_MSG) )
+           peer_id=vsh->share.variables[var_id].needs_update_from_peer;
+
+            if (MessageExists(&vsh->peer_list[peer_id].messages,var_id,INTERNAL_START_SIGNALCHANGED,INCOMING_MSG) )
+             {
+                fprintf(stderr,"We already have a INTERNAL_START_SIGNALCHANGED pending outgoing message\n");
+                //printf("We already have a INTERNAL_START_SIGNALCHANGED pending outgoing message\n");
+             } else
+           if (! MessageExists(&vsh->peer_list[peer_id].messages,var_id,INTERNAL_START_READFROM,INCOMING_MSG) )
              {
                unsigned int * val =  vsh->share.variables[var_id].ptr;
-               //printf("Creating INTERNAL_START_READFROM for var %u ( val %u ) broadcasted to peer %u\n",var_id,*val,peer_find.value);
-               fprintf(stderr,"Creating INTERNAL_START_READFROM for var %u ( val %u ) broadcasted to peer %u\n",var_id,*val,peer_find.value);
-               internal_msg=AddMessage(&vsh->peer_list[peer_find.value].messages,INCOMING_MSG,0,&header,0);
+               printf("Creating INTERNAL_START_READFROM for var %u ( val %u ) broadcasted to peer %u\n",var_id,*val,peer_id);
+               fprintf(stderr,"Creating INTERNAL_START_READFROM for var %u ( val %u ) broadcasted to peer %u\n",var_id,*val,peer_id);
+               internal_msg=AddMessage(&vsh->peer_list[peer_id].messages,INCOMING_MSG,0,&header,0);
 
-               if (!internal_msg.failed) { vsh->share.variables[var_id].flag_needs_refresh_from_sock=0; /* We trust that the "add job" will do its job :P*/ }
+               if (!internal_msg.failed)
+               {
+                 vsh->share.variables[var_id].needs_update=0; /* We trust that the "add job" will do its job :P*/
+                 //vsh->share.variables[var_id].needs_update_from_peer=0; /* This doesnt need to be changed , this is also good for debugging the last message accepted.. :P*/
+               }
              }
         }
    }
@@ -414,7 +428,7 @@ int MakeSureVarReachedPeers(struct VariableShare *vsh,char * varname,unsigned in
   {
 
       if ( (vsh->share.variables[var_id].this_hash_transmission_count == vsh->total_peers ) &&
-           (vsh->share.variables[var_id].flag_needs_refresh_from_sock==0)  /*add message table counter here maybe*/)
+           (vsh->share.variables[var_id].needs_update==0)  /*add message table counter here maybe*/)
 
                           { return 1; }
 
@@ -436,14 +450,21 @@ AutoRefreshVariable_Thread(void * ptr)
 
    unsigned int total_variables_changed=0;
    unsigned int variables_changed=0,variables_signaled=0,variables_refreshed=0;
-   while ( (vsh->global_policy==VSP_AUTOMATIC) && (vsh->stop_refresh_thread==0) )
+   while ( /*(vsh->global_policy==VSP_AUTOMATIC) && */(vsh->stop_refresh_thread==0) )
    {
        usleep(vsh->share.auto_refresh_every_msec);
 
        if (vsh->pause_refresh_thread)
           {
             // This means that auto refresh is disabled so we dont do anything until is re-enabled
-          } else
+          }
+        if (vsh->global_policy!=VSP_AUTOMATIC)
+          {
+             pthread_mutex_lock (&vsh->refresh_lock); // LOCK PROTECTED OPERATION -------------------------------------------
+             RefreshAllVariablesThatNeedIt(vsh);
+             pthread_mutex_unlock (&vsh->refresh_lock); // LOCK PROTECTED OPERATION -------------------------------------------
+          }
+           else
           {
              if (mutex_msg()) fprintf(stderr,"Waiting for mutex AutoRefreshVariable_Thread\n");
              pthread_mutex_lock (&vsh->refresh_lock); // LOCK PROTECTED OPERATION -------------------------------------------
