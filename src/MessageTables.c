@@ -186,12 +186,35 @@ int MessageExists(struct MessageTable * mt , unsigned int varid , unsigned char 
            //Executed messages are in progress , only when the remove flag is set do we know that they have been carried out
            //So a message "effect" exsists until the remove flag is set
        if ( ( (mt->table[mt_id].remove==0)/* && (mt->table[mt_id].executed==0)*/ ) &&
-            (mt->table[mt_id].header.var_id==varid) &&
-            (mt->table[mt_id].header.operation_type==optype) &&
-            (mt->table[mt_id].direction==direction)
+              (mt->table[mt_id].header.var_id==varid) &&
+              (mt->table[mt_id].header.operation_type==optype) &&
+              (mt->table[mt_id].direction==direction)
           )
           {
             fprintf(stderr,"Message (%u) for var_id %u type %s already exists\n",mt_id,varid,ReturnPrintMessageTypeVal(optype));
+            //printf("Message (%u) for var_id %u type %s already exists\n",mt_id,varid,ReturnPrintMessageTypeVal(optype));
+            return 1;
+          }
+     }
+ return 0;
+}
+
+
+int MessagePendingSend(struct MessageTable * mt , unsigned int varid , unsigned char optype, unsigned char direction)
+{
+  unsigned int mt_id=0;
+  for (mt_id=0; mt_id < mt->message_queue_current_length; mt_id++)
+     {
+           //Executed messages are in progress , only when the remove flag is set do we know that they have been carried out
+           //So a message "effect" exsists until the remove flag is set
+       if ( ( (mt->table[mt_id].remove==0)/* && (mt->table[mt_id].executed==0)*/ ) &&
+              (mt->table[mt_id].sent==0)  &&
+              (mt->table[mt_id].header.var_id==varid) &&
+              (mt->table[mt_id].header.operation_type==optype) &&
+              (mt->table[mt_id].direction==direction)
+          )
+          {
+            fprintf(stderr,"Message (%u) for var_id %u type %s pending send \n",mt_id,varid,ReturnPrintMessageTypeVal(optype));
             //printf("Message (%u) for var_id %u type %s already exists\n",mt_id,varid,ReturnPrintMessageTypeVal(optype));
             return 1;
           }
@@ -597,16 +620,18 @@ struct failint WaitForSuccessIndicatorAtMessageTableItem(struct MessageTable *mt
   return retres;
 }
 
-struct failint WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *mt ,unsigned int peer_id,unsigned char groupid,struct VariableShare *vsh ,unsigned int var_id, unsigned int wait_forever)
+struct failint WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *mt ,unsigned int peer_id,unsigned char waitingop,unsigned char groupid,struct VariableShare *vsh, unsigned int wait_forever)
 {
-  fprintf(stderr,"WAITING for RESP_WRITETO  GROUP %u , mt_length = %u \n",groupid,mt->message_queue_current_length);
-  struct failint retres= WaitForMessage(mt,RESP_WRITETO,RESP_WRITETO,groupid,1 /*INCOMING*/,wait_forever);
-  if (wait_forever) fprintf(stderr,"DONE WAITING for RESP_WRITETO  GROUP %u , mt_length = %u \n",groupid,mt->message_queue_current_length);
+  fprintf(stderr,"WAITING for %s  GROUP %u , mt_length = %u \n",ReturnPrintMessageTypeVal(waitingop),groupid,mt->message_queue_current_length);
+  struct failint retres= WaitForMessage(mt,waitingop,waitingop,groupid,1 /*INCOMING*/,wait_forever);
+  if (wait_forever) fprintf(stderr,"DONE WAITING for %s  GROUP %u , mt_length = %u \n",ReturnPrintMessageTypeVal(waitingop),groupid,mt->message_queue_current_length);
 
   if (!retres.failed)
    {
      unsigned int mt_respwriteto = retres.value;
-     if ( (var_id==mt->table[mt_respwriteto].header.var_id) || (vsh->share.variables[var_id].size_of_ptr!=mt->table[mt_respwriteto].header.payload_size) )
+     unsigned int var_id =mt->table[mt_respwriteto].header.var_id;
+     //TOdo add check here , permissions etc..
+     if (vsh->share.variables[var_id].size_of_ptr==mt->table[mt_respwriteto].header.payload_size)
      {
          if ( NewRemoteValueForVariable(vsh,peer_id,var_id,mt->table[mt_respwriteto].payload,mt->table[mt_respwriteto].header.payload_size,mt->table[mt_respwriteto].time) )
           {
@@ -620,17 +645,16 @@ struct failint WaitForVariableAndCopyItAtMessageTableItem(struct MessageTable *m
              retres.failed=1;
              return retres;
           }
-
      }
        else
      {
-        fprintf(stderr,"\nMixed or tampered RESP_WRITETO for var_id %u while waiting for var_id %u\n",mt->table[mt_respwriteto].header.var_id,var_id);
+        fprintf(stderr,"\nMixed or tampered var %u has size %u bytes incoming var wants to write %u bytes\n",var_id,vsh->share.variables[var_id].size_of_ptr,mt->table[mt_respwriteto].header.payload_size);
         retres.failed=1;
         return retres;
      }
    } else
    {
-       if (wait_forever) fprintf(stderr,"ERROR ,FAILED WAITING for RESP_WRITETO  GROUP %u ,  mt_length = %u \n",groupid,mt->message_queue_current_length);
+       if (wait_forever) fprintf(stderr,"ERROR ,FAILED WAITING for %s  GROUP %u ,  mt_length = %u \n",ReturnPrintMessageTypeVal(waitingop),groupid,mt->message_queue_current_length);
    }
 
   return retres;

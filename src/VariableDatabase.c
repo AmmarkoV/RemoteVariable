@@ -253,8 +253,17 @@ int IfLocalVariableChanged_SignalUpdate(struct VariableShare * vsh,unsigned int 
          {
           if (current_hash!=vsh->share.variables[var_id].last_signaled_hash[peer_id])
             {
-               if (SignalVariableChange(vsh,var_id,peer_id)) { ++successfull_transmissions; } else
-                                                             { ++failed_transmissions; }
+              if (1)
+                {
+                   //One message direct write
+                   if (WriteVarToPeer(vsh,var_id,peer_id)) { ++successfull_transmissions; } else
+                                                           { ++failed_transmissions; }
+                } else
+                {
+                   //Signal only
+                   if (SignalVariableChange(vsh,var_id,peer_id)) { ++successfull_transmissions; } else
+                                                                 { ++failed_transmissions; }
+                }
             }
          } // End of for all peers loop
   return successfull_transmissions;

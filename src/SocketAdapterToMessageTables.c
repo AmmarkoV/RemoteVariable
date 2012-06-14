@@ -262,7 +262,7 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
        last_protocol_id = &mt->table[mt_id].last_protocol_id;
        groupid = &mt->table[mt_id].header.incremental_value;
 
-          switch ( mt->table[mt_id].header.operation_type )
+       switch ( mt->table[mt_id].header.operation_type )
          {
           case NOACTION :
             fprintf(stderr,"NOACTION ( id %u ) doesnt trigger @  Message Processing Thread\n",mt_id);

@@ -207,6 +207,15 @@ int Request_WriteVariable(struct VariableShare * vsh,unsigned int peer_id,unsign
 
 int AcceptRequest_WriteVariable(struct VariableShare * vsh,unsigned int peer_id,struct MessageTable * mt,unsigned int mt_id, unsigned char * groupid , unsigned char * protocol_progress , unsigned int * last_protocol_mid)
 {
+  struct failint msg1=WaitForVariableAndCopyItAtMessageTableItem(&vsh->peer_list[peer_id].messages,peer_id,WRITETO,*groupid,vsh,0);
+  if ( msg1.failed==1 ) { return 0;  /*Only change message type the rest remains the same*/ } else
+  if ( msg1.failed==2 ) { /*optypeForMSG3=SIGNALMSGFAILURE; Only change message type the rest remains the same*/ } else
+                        {
+                          mt->table[mt_id].remove=1;
+                          /*optypeForMSG3=SIGNALMSGSUCCESS; Only change message type the rest remains the same*/
+                          return 1;
+                        }
+
   return 0;
 }
 
@@ -296,7 +305,7 @@ int Request_ReadVariable(struct VariableShare * vsh,unsigned int peer_id,unsigne
   fprintf(stderr,"\nRequest_ReadVariable STEP 1 triggered from mt_id %u , type %s \n",mt_id,ReturnPrintMessageTypeVal(mt->table[mt_id].header.operation_type));
    //We wait for the success indicator recv and subsequent pass to our message table
   unsigned char optypeForMSG3=SIGNALMSGSUCCESS;
-  struct failint msg2=WaitForVariableAndCopyItAtMessageTableItem(&vsh->peer_list[peer_id].messages,peer_id,*groupid,vsh,var_id,0);
+  struct failint msg2=WaitForVariableAndCopyItAtMessageTableItem(&vsh->peer_list[peer_id].messages,peer_id,RESP_WRITETO,*groupid,vsh,0);
   if ( msg2.failed==1 ) { return 0;  /*Only change message type the rest remains the same*/ } else
   if ( msg2.failed==2 ) { optypeForMSG3=SIGNALMSGFAILURE; /*Only change message type the rest remains the same*/ } else
                         { optypeForMSG3=SIGNALMSGSUCCESS; /*Only change message type the rest remains the same*/ }
@@ -572,6 +581,41 @@ int ReadVarFromPeer(struct VariableShare * vsh,unsigned int var_id,unsigned int 
         if (!internal_msg.failed)
         {
           vsh->share.variables[var_id].needs_update=0; /* We trust that the "add job" will do its job :P*/
+          return 1;
+         }
+      }
+  return 0;
+}
+
+
+int WriteVarToPeer(struct VariableShare * vsh,unsigned int var_id,unsigned int peer_id)
+{
+  struct failint internal_msg={0};
+
+  struct PacketHeader header={0};
+  header.operation_type=WRITETO;
+  header.var_id=var_id;
+  header.incremental_value=0;
+  header.payload_size=vsh->share.variables[var_id].size_of_ptr;
+
+  peer_id=vsh->share.variables[var_id].needs_update_from_peer;
+
+
+  if ( MessagePendingSend(&vsh->peer_list[peer_id].messages,var_id,WRITETO,OUTGOING_MSG) )
+      {
+         //Message already pending send , do nothing..!
+      }
+            else
+      {
+        unsigned int * val =  vsh->share.variables[var_id].ptr;
+        printf("Creating WRITETO for var %u ( val %u ) broadcasted to peer %u\n",var_id,*val,peer_id);
+        fprintf(stderr,"Creating WRITETO for var %u ( val %u ) broadcasted to peer %u\n",var_id,*val,peer_id);
+        internal_msg=AddMessage(&vsh->peer_list[peer_id].messages,OUTGOING_MSG,0,&header,vsh->share.variables[var_id].ptr);
+
+        if (!internal_msg.failed)
+        {
+          ++vsh->share.variables[var_id].this_hash_transmission_count;
+          vsh->share.variables[var_id].last_signaled_hash[peer_id]=vsh->share.variables[var_id].hash;
           return 1;
          }
       }
