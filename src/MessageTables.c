@@ -158,6 +158,7 @@ unsigned char GenNewMessageGroupID(struct MessageTable * mt)
   if (mt->groupid>=230) { fprintf(stderr,"New GroupID truncated\n"); mt->groupid=1; return 1; }
 
   ++mt->groupid;
+  if (mt->is_master) { ++mt->groupid; }
   //mt->groupid+=rand()%8;
 
   return mt->groupid;

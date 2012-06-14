@@ -130,6 +130,7 @@ int PeersActive_VariableShare(struct VariableShare * vsh)
 
 void SetPolicy(struct VariableShare * vsh,unsigned int new_policy)
 {
+    return ;// disabled for now
     vsh->global_policy = new_policy;
 
 }
@@ -182,15 +183,21 @@ int Unlock_LocalVariable(struct VariableShare * vsh,char * variable_name)
 */
 int Refresh_AllLocalVariables(struct VariableShare * vsh)
 {
+  return 1;// disabled for now
+
   pthread_mutex_lock (&vsh->refresh_lock); // LOCK PROTECTED OPERATION -------------------------------------------
 
-  unsigned int variables_changed=CheckForChangedVariables(vsh);
+    unsigned int variables_changed=1 , variables_signaled=1 , variables_refreshed=1;
 
-  unsigned int variables_signaled=SignalUpdatesForAllLocalVariablesThatNeedIt(vsh);
+  while ((variables_changed+variables_signaled+variables_refreshed)!=0)
+  {
+   variables_changed=CheckForChangedVariables(vsh);
 
-  unsigned int variables_refreshed=RefreshAllVariablesThatNeedIt(vsh);
-  printf("AutoRefresh Thread: %u vars changed | %u vars signaled | %u vars refreshed\n",variables_changed,variables_signaled,variables_refreshed);
+   variables_signaled=SignalUpdatesForAllLocalVariablesThatNeedIt(vsh);
 
+   variables_refreshed=RefreshAllVariablesThatNeedIt(vsh);
+   printf("AutoRefresh Thread: %u vars changed | %u vars signaled | %u vars refreshed\n",variables_changed,variables_signaled,variables_refreshed);
+  }
   pthread_mutex_unlock (&vsh->refresh_lock); // LOCK PROTECTED OPERATION -------------------------------------------
 
   return 1;

@@ -27,6 +27,7 @@ struct failint AddPeer(struct VariableShare * vsh,char * name,unsigned int port 
        pthread_mutex_init(&vsh->peer_list[pos].messages.remlock, 0); //New allocation so cleaning up mutex
 
        AllocateMessageQueue(&vsh->peer_list[pos].messages,100);
+       vsh->peer_list[pos].messages.is_master = vsh->this_address_space_is_master;
 
        ++vsh->total_peers;
        retres.value=pos;

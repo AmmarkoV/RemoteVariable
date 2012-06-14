@@ -101,6 +101,9 @@ struct MessageTable
     pthread_mutex_t lock;
     pthread_mutex_t remlock;
 
+    unsigned char is_master;
+
+
     unsigned char time;
     unsigned char groupid;
 
