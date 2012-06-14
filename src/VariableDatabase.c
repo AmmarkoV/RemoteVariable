@@ -25,6 +25,7 @@
 #include "HashFunctions.h"
 #include "MessageTables.h"
 #include "Peers.h"
+#include "Protocol.h"
 
 int VariableShareOk(struct VariableShare * vsh)
 {
@@ -239,52 +240,24 @@ int MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,unsig
    return 1;
 }
 
-int IfLocalVariableChanged_SignalUpdateToJoblist(struct VariableShare * vsh,unsigned int var_id)
+int IfLocalVariableChanged_SignalUpdate(struct VariableShare * vsh,unsigned int var_id)
 {
   if (!VariableIdExists(vsh,var_id)) { fprintf(stderr,"Variable addressed ( %u ) by IfLocalVariableChanged_SignalUpdateToJoblist does not exist \n",var_id); return 0; }
 
          unsigned int failed_transmissions=0;
          unsigned int successfull_transmissions=0;
          unsigned int peer_id=0;
-         struct failint internal_msg={0};
-
-           struct PacketHeader header={0};
-           header.incremental_value=0;
-           header.operation_type=INTERNAL_START_SIGNALCHANGED;
-           header.var_id=var_id;
-           header.payload_size=0;
-
 
          unsigned long current_hash=vsh->share.variables[var_id].hash;//GetVariableHashForVar(vsh,var_id);
          for (peer_id=0; peer_id< vsh->total_peers; peer_id++)
          {
           if (current_hash!=vsh->share.variables[var_id].last_signaled_hash[peer_id])
             {
-             //printf("Variable %u new hash for peer %u last hash update %u , now %u\n",var_id,peer_id,(unsigned int) vsh->share.variables[var_id].last_signaled_hash[peer_id] , (unsigned int) current_hash);
-             fprintf(stderr,"Variable %u new hash for peer %u last hash update %u , now %u\n",var_id,peer_id,(unsigned int) vsh->share.variables[var_id].last_signaled_hash[peer_id] , (unsigned int) current_hash);
-
-           if ( MessageExists(&vsh->peer_list[peer_id].messages,var_id,INTERNAL_START_READFROM,INCOMING_MSG) )
-             {
-               fprintf(stderr,"We have a pending READFROM for var %u so no point in resignaling var change\n",var_id);
-               //printf("We have a pending READFROM for var %u so no point in resignaling var change\n",var_id);
-               ++failed_transmissions;
-             } else
-          if (! MessageExists(&vsh->peer_list[peer_id].messages,var_id,INTERNAL_START_SIGNALCHANGED,INCOMING_MSG) )
-             {
-               unsigned int * val =  vsh->share.variables[var_id].ptr;
-               printf("Creating INTERNAL_START_SIGNALCHANGED for var %u ( val %u ) , broadcasted to peer %u \n",var_id,*val,peer_id);
-               fprintf(stderr,"Creating INTERNAL_START_SIGNALCHANGED for var %u ( val %u ) , broadcasted to peer %u \n",var_id,*val,peer_id);
-               internal_msg=AddMessage(&vsh->peer_list[peer_id].messages,INCOMING_MSG,0,&header,0);
-               if (!internal_msg.failed) {
-                                           ++successfull_transmissions;
-                                           ++vsh->share.variables[var_id].this_hash_transmission_count;
-                                           vsh->share.variables[var_id].last_signaled_hash[peer_id]=current_hash;
-                                         } else
-                                         { ++failed_transmissions; }
-             }
-         }
-       } // End of for all peers loop
-  return 0;
+               if (SignalVariableChange(vsh,var_id,peer_id)) { ++successfull_transmissions; } else
+                                                             { ++failed_transmissions; }
+            }
+         } // End of for all peers loop
+  return successfull_transmissions;
 }
 
 
@@ -320,7 +293,7 @@ int SignalUpdatesForAllLocalVariablesThatNeedIt(struct VariableShare * vsh)
  //fprintf(stderr,"Refreshing %u variables!\n",vsh->share.total_variables_shared);
  for ( i=0; i<vsh->share.total_variables_shared; i++)
   {
-     if ( IfLocalVariableChanged_SignalUpdateToJoblist(vsh,i) ) { ++retres; /*usleep(100);*/ }
+     if ( IfLocalVariableChanged_SignalUpdate(vsh,i) ) { ++retres; /*usleep(100);*/ }
   }
 
   return retres;
@@ -365,7 +338,7 @@ int NewRemoteValueForVariable(struct VariableShare * vsh,unsigned int peer_id,un
 
 int RefreshAllVariablesThatNeedIt(struct VariableShare *vsh)
 {
-   unsigned int added_jobs=0;
+   unsigned int refreshed_vars=0;
    unsigned int var_id=0;
    unsigned int peer_id=0;
 
@@ -375,39 +348,13 @@ int RefreshAllVariablesThatNeedIt(struct VariableShare *vsh)
         {
            fprintf(stderr,"Detected that a variable (%u) needs refresh , and automatically adding a job to receive it\n",var_id);
 
-           struct failint internal_msg={0};
-
-           struct PacketHeader header={0};
-           header.operation_type=INTERNAL_START_READFROM;
-           header.var_id=var_id;
-           header.incremental_value=0;
-           header.payload_size=0;
-
            peer_id=vsh->share.variables[var_id].needs_update_from_peer;
-
-            if (MessageExists(&vsh->peer_list[peer_id].messages,var_id,INTERNAL_START_SIGNALCHANGED,INCOMING_MSG) )
-             {
-                fprintf(stderr,"We already have a INTERNAL_START_SIGNALCHANGED pending outgoing message\n");
-                //printf("We already have a INTERNAL_START_SIGNALCHANGED pending outgoing message\n");
-             } else
-           if (! MessageExists(&vsh->peer_list[peer_id].messages,var_id,INTERNAL_START_READFROM,INCOMING_MSG) )
-             {
-               unsigned int * val =  vsh->share.variables[var_id].ptr;
-               printf("Creating INTERNAL_START_READFROM for var %u ( val %u ) broadcasted to peer %u\n",var_id,*val,peer_id);
-               fprintf(stderr,"Creating INTERNAL_START_READFROM for var %u ( val %u ) broadcasted to peer %u\n",var_id,*val,peer_id);
-               internal_msg=AddMessage(&vsh->peer_list[peer_id].messages,INCOMING_MSG,0,&header,0);
-
-               if (!internal_msg.failed)
-               {
-                 vsh->share.variables[var_id].needs_update=0; /* We trust that the "add job" will do its job :P*/
-                 //vsh->share.variables[var_id].needs_update_from_peer=0; /* This doesnt need to be changed , this is also good for debugging the last message accepted.. :P*/
-               }
-             }
+           if ( ReadVarFromPeer(vsh,var_id,peer_id) ) { ++refreshed_vars; }
         }
-   }
+    }
 
 
-  return added_jobs;
+  return refreshed_vars;
 }
 
 int MakeSureVarReachedPeers(struct VariableShare *vsh,char * varname,unsigned int wait_time)

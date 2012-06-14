@@ -500,3 +500,80 @@ int AcceptRequest_SignalChangeVariable(struct VariableShare * vsh,unsigned int p
   return 0;
 }
 
+/*!
+
+    ------------------------------------------------------  ------------------------------------------------------
+    ------------------------------------------------------  ------------------------------------------------------
+    ------------------------------------------------------  ------------------------------------------------------
+    ------------------------------------------------------  ------------------------------------------------------
+    ------------------------------------------------------  ------------------------------------------------------
+    ------------------------------------------------------  ------------------------------------------------------
+    ------------------------------------------------------  ------------------------------------------------------
+
+!*/
+
+int SignalVariableChange(struct VariableShare * vsh,unsigned int var_id,unsigned int peer_id)
+{
+  if (!VariableIdExists(vsh,var_id)) { fprintf(stderr,"Variable addressed ( %u ) by IfLocalVariableChanged_SignalUpdateToJoblist does not exist \n",var_id); return 0; }
+
+  struct failint internal_msg={0};
+
+  struct PacketHeader header={0};
+  header.incremental_value=0;
+  header.operation_type=INTERNAL_START_SIGNALCHANGED;
+  header.var_id=var_id;
+  header.payload_size=0;
+
+  if ( MessageExists(&vsh->peer_list[peer_id].messages,var_id,INTERNAL_START_READFROM,INCOMING_MSG) )
+     {
+       fprintf(stderr,"We have a pending READFROM for var %u so no point in resignaling var change\n",var_id);
+       //printf("We have a pending READFROM for var %u so no point in resignaling var change\n",var_id);
+      } else
+  if (! MessageExists(&vsh->peer_list[peer_id].messages,var_id,INTERNAL_START_SIGNALCHANGED,INCOMING_MSG) )
+      {
+       unsigned int * val =  vsh->share.variables[var_id].ptr;
+       printf("Creating INTERNAL_START_SIGNALCHANGED for var %u ( val %u ) , broadcasted to peer %u \n",var_id,*val,peer_id);
+       fprintf(stderr,"Creating INTERNAL_START_SIGNALCHANGED for var %u ( val %u ) , broadcasted to peer %u \n",var_id,*val,peer_id);
+       internal_msg=AddMessage(&vsh->peer_list[peer_id].messages,INCOMING_MSG,0,&header,0);
+       if (!internal_msg.failed) {
+                                    ++vsh->share.variables[var_id].this_hash_transmission_count;
+                                    vsh->share.variables[var_id].last_signaled_hash[peer_id]=vsh->share.variables[var_id].hash;
+                                    return 1;
+                                  }
+      }
+
+  return 0;
+}
+
+int ReadVarFromPeer(struct VariableShare * vsh,unsigned int var_id,unsigned int peer_id)
+{
+  struct failint internal_msg={0};
+
+  struct PacketHeader header={0};
+  header.operation_type=INTERNAL_START_READFROM;
+  header.var_id=var_id;
+  header.incremental_value=0;
+  header.payload_size=0;
+
+  peer_id=vsh->share.variables[var_id].needs_update_from_peer;
+
+  if (MessageExists(&vsh->peer_list[peer_id].messages,var_id,INTERNAL_START_SIGNALCHANGED,INCOMING_MSG) )
+      {
+       fprintf(stderr,"We already have a INTERNAL_START_SIGNALCHANGED pending outgoing message\n");
+       //printf("We already have a INTERNAL_START_SIGNALCHANGED pending outgoing message\n");
+      } else
+  if (! MessageExists(&vsh->peer_list[peer_id].messages,var_id,INTERNAL_START_READFROM,INCOMING_MSG) )
+      {
+        unsigned int * val =  vsh->share.variables[var_id].ptr;
+        printf("Creating INTERNAL_START_READFROM for var %u ( val %u ) broadcasted to peer %u\n",var_id,*val,peer_id);
+        fprintf(stderr,"Creating INTERNAL_START_READFROM for var %u ( val %u ) broadcasted to peer %u\n",var_id,*val,peer_id);
+        internal_msg=AddMessage(&vsh->peer_list[peer_id].messages,INCOMING_MSG,0,&header,0);
+
+        if (!internal_msg.failed)
+        {
+          vsh->share.variables[var_id].needs_update=0; /* We trust that the "add job" will do its job :P*/
+          return 1;
+         }
+      }
+  return 0;
+}
