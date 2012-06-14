@@ -218,7 +218,7 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
   struct SocketAdapterToMessageTablesContext * thread_context=(struct SocketAdapterToMessageTablesContext *) ptr;
   struct VariableShare * vsh = thread_context->vsh;
   unsigned int peer_id =  thread_context->peer_id;
-  int peersock = thread_context->peersock;
+//  int peersock = thread_context->peersock;
   unsigned int internal_loop = thread_context->type_of_thread;
   struct MessageTable * mt = &vsh->peer_list[peer_id].messages;
   if ((mt==0)||(mt->table==0)) { fprintf(stderr," Serious Error MessageTable doesnt seem to be allocated\n"); return 0; }
@@ -252,10 +252,34 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
    {
     for (mt_id=0; mt_id<mt->message_queue_current_length; mt_id++)
     {
+
+   /* -----------------------------------------------------------
+                        OUTGOING MESSAGE HANDLER
+      -----------------------------------------------------------  */
+      if ( (!mt->table[mt_id].executed) &&
+            (mt->table[mt_id].direction==OUTGOING_MSG) &&
+            (!mt->table[mt_id].remove) )
+      {
+       protocol_progress = &mt->table[mt_id].protocol_progress;
+       last_protocol_id = &mt->table[mt_id].last_protocol_id;
+       groupid = &mt->table[mt_id].header.incremental_value;
+
+       switch ( mt->table[mt_id].header.operation_type )
+         {
+          case WRITETO :
+            if (mt->table[mt_id].sent)
+             {  mt->table[mt_id].remove=1; mt->table[mt_id].executed=1; }
+          break;
+         };
+      }
+        else
+   /* -----------------------------------------------------------
+                        INCOMING MESSAGE HANDLER
+      -----------------------------------------------------------  */
+
       if ( (!mt->table[mt_id].executed) &&
             (mt->table[mt_id].direction==INCOMING_MSG) &&
-            (!mt->table[mt_id].remove)
-          )
+            (!mt->table[mt_id].remove) )
       {
 
        protocol_progress = &mt->table[mt_id].protocol_progress;
@@ -284,15 +308,15 @@ void * JobAndMessageTableExecutor_Thread(void * ptr)
              if ( Request_WriteVariable(vsh,peer_id,mt->table[mt_id].header.var_id,mt_id,groupid,protocol_progress,last_protocol_id))
               { mt->table[mt_id].remove=1;  mt->table[mt_id].executed=1; } /*Internal messages must me marked remove here*/
 
-          case WRITETO:
+          case WRITETO: // INCOMING WRITETO REQUEST
              if ( AcceptRequest_WriteVariable(vsh,peer_id,mt,mt_id,groupid,protocol_progress,last_protocol_id))
-             { mt->table[mt_id].executed=1; }
+             { mt->table[mt_id].executed=1; mt->table[mt_id].remove=1; }
           break;
-          case READFROM:
+          case READFROM: // INCOMING READFROM REQUEST
              if ( AcceptRequest_ReadVariable(vsh,peer_id,mt,mt_id,groupid,protocol_progress,last_protocol_id))
              { mt->table[mt_id].executed=1; }
           break;
-          case SIGNALCHANGED :
+          case SIGNALCHANGED : // INCOMING SIGNALCHANGED REQUEST
              if ( AcceptRequest_SignalChangeVariable(vsh,peer_id,mt,mt_id,groupid,protocol_progress,last_protocol_id) )
              { mt->table[mt_id].executed=1; }
           break;

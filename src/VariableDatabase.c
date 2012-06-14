@@ -248,11 +248,12 @@ int IfLocalVariableChanged_SignalUpdate(struct VariableShare * vsh,unsigned int 
          unsigned int successfull_transmissions=0;
          unsigned int peer_id=0;
 
-         unsigned long current_hash=vsh->share.variables[var_id].hash;//GetVariableHashForVar(vsh,var_id);
          for (peer_id=0; peer_id< vsh->total_peers; peer_id++)
          {
-          if (current_hash!=vsh->share.variables[var_id].last_signaled_hash[peer_id])
+          if (vsh->share.variables[var_id].hash!=vsh->share.variables[var_id].last_signaled_hash[peer_id])
             {
+              //WTF this gets executed with the same values!!
+              printf("Variable has changed hash %u , last signaled hash is %u \n",(unsigned int) vsh->share.variables[var_id].hash,(unsigned int) vsh->share.variables[var_id].last_signaled_hash[peer_id]);
               if (1)
                 {
                    //One message direct write
@@ -277,13 +278,13 @@ int CheckForChangedVariables(struct VariableShare * vsh)
  unsigned int var_id=0;
  unsigned long live_hash=0;
  //fprintf(stderr,"Refreshing %u variables!\n",vsh->share.total_variables_shared);
- for ( var_id=0; var_id<vsh->share.total_variables_shared; var_id++)
+ for ( var_id=0; var_id<vsh->share.total_variables_shared; var_id++ )
   {
      live_hash = GetVariableHashForVar(vsh,var_id);
      if (live_hash != vsh->share.variables[var_id].hash )
       {
-        printf("Variable %u changed!\n",var_id);
-        fprintf(stderr,"Variable %u changed!\n",var_id);
+        printf("Variable %u changed from hash %u to %u!\n",var_id,(unsigned int) vsh->share.variables[var_id].hash,(unsigned int) live_hash);
+        fprintf(stderr,"Variable %u changed from hash %u to %u!\n",var_id,(unsigned int) vsh->share.variables[var_id].hash,(unsigned int) live_hash);
         vsh->share.variables[var_id].hash=live_hash;
         ++retres;
       }
@@ -299,11 +300,8 @@ int SignalUpdatesForAllLocalVariablesThatNeedIt(struct VariableShare * vsh)
  if ( vsh->share.total_variables_shared == 0 ) { return 0; /* NO VARIABLES TO SHARE OR UPDATE!*/}
  int retres=0;
  unsigned int i=0;
- //fprintf(stderr,"Refreshing %u variables!\n",vsh->share.total_variables_shared);
  for ( i=0; i<vsh->share.total_variables_shared; i++)
-  {
-     if ( IfLocalVariableChanged_SignalUpdate(vsh,i) ) { ++retres; /*usleep(100);*/ }
-  }
+   {  if ( IfLocalVariableChanged_SignalUpdate(vsh,i) ) { ++retres; } }
 
   return retres;
 }
@@ -413,7 +411,7 @@ AutoRefreshVariable_Thread(void * ptr)
        if (vsh->pause_refresh_thread)
           {
             // This means that auto refresh is disabled so we dont do anything until is re-enabled
-          }
+          } else
         if (vsh->global_policy!=VSP_AUTOMATIC)
           {
              pthread_mutex_lock (&vsh->refresh_lock); // LOCK PROTECTED OPERATION -------------------------------------------
