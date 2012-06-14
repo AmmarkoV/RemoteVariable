@@ -121,15 +121,26 @@ int Resize_VariableDatabase(struct VariableShare * vsh , unsigned int newsize)
 
 unsigned long GetVariableHash(struct VariableShare * vsh,void * ptr,unsigned int size_of_ptr)
 {
-  if (size_of_ptr<sizeof(unsigned long)) {
-                                                                           /*The whole variable fits inside the unsigned long so no hash is required*/
-                                                                            unsigned long * stacklongptr = ptr;
-                                                                            unsigned long stacklong = *stacklongptr;
-                                                                           /*fprintf(stderr,"GetVariableHash for var %u returning %u\n",var_id,stacklong);*/
-                                                                            return stacklong;
-                                                                         }
-  debug_say("TODO: ADD code that produces hash on variables that do not fit unsigned long!\n");
-  /*hash(unsigned char *str);*/
+/* THE COMMENTED OUT CODE IS !BAD! , LEAVING IT HERE AS A MEMO :P
+  if (size_of_ptr<sizeof(unsigned long)) { //The whole variable fits inside the unsigned long so no hash is required
+                                              unsigned long * stacklongptr = ptr;
+                                              unsigned long stacklong = *stacklongptr;
+                                              //fprintf(stderr,"GetVariableHash for var %u returning %u\n",var_id,stacklong);
+                                             return stacklong;
+                                            }*/
+
+  if (size_of_ptr<=sizeof(unsigned long)) { //This bug took me 2 weeks to find out , unsigned long with the previous code
+                                              //had 2 unitialized bytes that caused various weird behiaviours in the program
+                                              unsigned long stacklong = 0;
+                                              memcpy( (void*) &stacklong,ptr,size_of_ptr);
+                                              //fprintf(stderr,"GetVariableHash for var %u returning %u\n",var_id,stacklong);
+                                             return stacklong;
+                                            } else
+                                            {
+                                              // hash(unsigned char *str);
+                                               debug_say("TODO: ADD code that produces hash on variables that do not fit unsigned long!\n");
+                                            }
+
   return 0;
 }
 unsigned long GetVariableHashForVar(struct VariableShare * vsh,unsigned int var_id)
@@ -242,6 +253,7 @@ int MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,unsig
 
 int IfLocalVariableChanged_SignalUpdate(struct VariableShare * vsh,unsigned int var_id)
 {
+  int USE_DIRECT_COMMANDS = 1;
   if (!VariableIdExists(vsh,var_id)) { fprintf(stderr,"Variable addressed ( %u ) by IfLocalVariableChanged_SignalUpdateToJoblist does not exist \n",var_id); return 0; }
 
          unsigned int failed_transmissions=0;
@@ -250,11 +262,17 @@ int IfLocalVariableChanged_SignalUpdate(struct VariableShare * vsh,unsigned int 
 
          for (peer_id=0; peer_id< vsh->total_peers; peer_id++)
          {
+
           if (vsh->share.variables[var_id].hash!=vsh->share.variables[var_id].last_signaled_hash[peer_id])
             {
+              if (vsh->share.variables[var_id].hash==vsh->share.variables[var_id].last_signaled_hash[peer_id]) { printf("WTF IS HAPPENING ? \n"); }
+              if (vsh->share.variables[var_id].hash==vsh->share.variables[var_id].last_signaled_hash[peer_id]) { printf("WTF IS HAPPENING ? \n"); }
+              if (vsh->share.variables[var_id].hash==vsh->share.variables[var_id].last_signaled_hash[peer_id]) { printf("WTF IS HAPPENING ? \n"); }
+
               //WTF this gets executed with the same values!!
               printf("Variable has changed hash %u , last signaled hash is %u \n",(unsigned int) vsh->share.variables[var_id].hash,(unsigned int) vsh->share.variables[var_id].last_signaled_hash[peer_id]);
-              if (1)
+
+              if (USE_DIRECT_COMMANDS)
                 {
                    //One message direct write
                    if (WriteVarToPeer(vsh,var_id,peer_id)) { ++successfull_transmissions; } else
