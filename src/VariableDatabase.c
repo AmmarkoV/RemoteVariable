@@ -253,7 +253,7 @@ int MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,unsig
 
 int IfLocalVariableChanged_SignalUpdate(struct VariableShare * vsh,unsigned int var_id)
 {
-  int USE_DIRECT_COMMANDS = 1;
+  int USE_LOW_LATENCY_MORE_BANDWIDTH_DIRECT_COMMANDS = 1;
   if (!VariableIdExists(vsh,var_id)) { fprintf(stderr,"Variable addressed ( %u ) by IfLocalVariableChanged_SignalUpdateToJoblist does not exist \n",var_id); return 0; }
 
          unsigned int failed_transmissions=0;
@@ -272,7 +272,7 @@ int IfLocalVariableChanged_SignalUpdate(struct VariableShare * vsh,unsigned int 
               //WTF this gets executed with the same values!!
               printf("Variable has changed hash %u , last signaled hash is %u \n",(unsigned int) vsh->share.variables[var_id].hash,(unsigned int) vsh->share.variables[var_id].last_signaled_hash[peer_id]);
 
-              if (USE_DIRECT_COMMANDS)
+              if (USE_LOW_LATENCY_MORE_BANDWIDTH_DIRECT_COMMANDS)
                 {
                    //One message direct write
                    if (WriteVarToPeer(vsh,var_id,peer_id)) { ++successfull_transmissions; } else
