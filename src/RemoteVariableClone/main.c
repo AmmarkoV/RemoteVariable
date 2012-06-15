@@ -40,20 +40,17 @@ int main()
 
     static volatile int DUMMY_VAR=0;
     static volatile int SHARED_VAR=0;
-    if ( ! Add_VariableToSharingList(vsh,"SHARED_VAR",7,&SHARED_VAR,sizeof(SHARED_VAR)) )
-      {
-        fprintf(stderr,"Client : Error Adding SHARED_VAR Shared Variable , cannot continue\n");
-        return 1;
-      }
-   if ( ! Add_VariableToSharingList(vsh,"DUMMY_VAR",7,&DUMMY_VAR,sizeof(DUMMY_VAR)) )
-      {
-        fprintf(stderr,"Client : Error Adding DUMMY_VAR Shared Variable , cannot continue\n");
-        return 1;
-      }
+    static volatile char MSG[32]={0};
+    if ( ! Add_VariableToSharingList(vsh,"SHARED_VAR",7,&SHARED_VAR,sizeof(SHARED_VAR)) ) { fprintf(stderr,"Client : Error Adding SHARED_VAR Shared Variable , cannot continue\n"); return 1; }
+    if ( ! Add_VariableToSharingList(vsh,"DUMMY_VAR",7,&DUMMY_VAR,sizeof(DUMMY_VAR)) ) { fprintf(stderr,"Client : Error Adding DUMMY_VAR Shared Variable , cannot continue\n"); return 1; }
+    if ( ! Add_VariableToSharingList(vsh,"MESSAGE",7,&MSG,32) ) { fprintf(stderr,"Client : Error Adding MSG Shared Variable , cannot continue\n"); return 1; }
 
 
     printf("Client : Starting Self Test , Waiting to get the 666 initial value!\n");
     if ( !wait_for_var_to_become_x(&SHARED_VAR,WAIT_TIME,666)) { fprintf(stderr,"Client : Failed the test PRE1\n"); return 1; }
+
+    printf("Client : Master wrote to us `%s` \n",MSG);
+
 
 
     printf("Client : TEST STEP 1 , setting SHARED VAR to 1\n");
@@ -82,6 +79,9 @@ int main()
     i=system("aplay Documentation/sound.wav");
     if (i!=0 ) {fprintf(stderr,"Failed to play sound\n"); }
     fprintf(stderr,"Client : Test is successfull!\n");
+
+
+    printf("Client : Master wrote to us `%s` \n",MSG);
 
     fprintf(stderr,"Client : Cleaning VariableShare context!\n");
     if ( Stop_VariableSharing(vsh) == 0 ) fprintf(stderr,"Client : Error Deleting share\n");

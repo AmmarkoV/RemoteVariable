@@ -283,6 +283,7 @@ void SetPolicy(struct VariableShare * vsh,unsigned int new_policy);
 int Add_VariableToSharingList(struct VariableShare * vsh,char * variable_name,unsigned int permissions,volatile void * ptr,unsigned int ptr_size);
 int Delete_VariableFromSharingList(struct VariableShare * vsh,char * variable_name);
 int Refresh_AllLocalVariables(struct VariableShare * vsh);
+int RVS_LocalVariableChanged(struct VariableShare * vsh,unsigned int var_id);
 int Refresh_RemoteVariable(struct VariableShare * vsh,char * variable_name);
 int IsUptodate_RemoteVariable(struct VariableShare * vsh,char * variable_name);
 int MakeSureVarReachedPeers_RemoteVariable(struct VariableShare * vsh,char * variable_name,unsigned int wait_time_ms);

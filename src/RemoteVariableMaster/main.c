@@ -4,6 +4,7 @@
 #include "../RemoteVariableSupport.h"
 
 #include <time.h>
+#include <string.h>
 
 
 int wait_for_var_to_become_x(volatile int * var , unsigned int timeout , unsigned int x)
@@ -42,16 +43,10 @@ int main()
     // We start up with a Variable with the value 666 , we expect the client program to alter it to 1 after it successfully connects
     static volatile int DUMMY_VAR=0;
     static volatile int SHARED_VAR=0;
-    if ( Add_VariableToSharingList(vsh,"SHARED_VAR",7,&SHARED_VAR,sizeof(SHARED_VAR)) == 0 )
-     {
-      fprintf(stderr,"Master : Error Adding Shared Variable\n");
-      return 1;
-     }
-   if ( ! Add_VariableToSharingList(vsh,"DUMMY_VAR",7,&DUMMY_VAR,sizeof(DUMMY_VAR)) )
-      {
-        fprintf(stderr,"Master : Error Adding DUMMY_VAR Shared Variable , cannot continue\n");
-        return 1;
-      }
+    static volatile char MSG[32]={0};
+    if ( ! Add_VariableToSharingList(vsh,"SHARED_VAR",7,&SHARED_VAR,sizeof(SHARED_VAR)) ) { fprintf(stderr,"Master : Error Adding Shared Variable\n"); return 1; }
+    if ( ! Add_VariableToSharingList(vsh,"DUMMY_VAR",7,&DUMMY_VAR,sizeof(DUMMY_VAR)) ) { fprintf(stderr,"Master : Error Adding DUMMY_VAR Shared Variable , cannot continue\n"); return 1; }
+    if ( ! Add_VariableToSharingList(vsh,"MESSAGE",7,&MSG,32) ) { fprintf(stderr,"Master : Error Adding MSG Shared Variable , cannot continue\n"); return 1; }
 
 
 
@@ -64,9 +59,14 @@ int main()
    fprintf(stderr,"Master : Peer found , proceeding..\n");
 
 
+    strcpy((char*) MSG,"Hello from client\0");
+    RVS_LocalVariableChanged(vsh,2);
+
+
     printf("Master : TEST STEP 1 , setting SHARED VAR to 666\n");
     SHARED_VAR=666; // This will propagate to the client
      Refresh_AllLocalVariables(vsh);
+
 
 
 

@@ -204,6 +204,12 @@ int Refresh_AllLocalVariables(struct VariableShare * vsh)
  //    return RefreshLocalVariable_VariableDatabase(vsh,variable_name);
 }
 
+int RVS_LocalVariableChanged(struct VariableShare * vsh,unsigned int var_id)
+{
+  return 1;
+}
+
+
 /* #Refresh_RemoteVariable#
    If the share policy is automatic updates , it forces an update
    If the share policy is manual updates , it forces an update

@@ -134,13 +134,11 @@ unsigned long GetVariableHash(struct VariableShare * vsh,void * ptr,unsigned int
                                               unsigned long stacklong = 0;
                                               memcpy( (void*) &stacklong,ptr,size_of_ptr);
                                               //fprintf(stderr,"GetVariableHash for var %u returning %u\n",var_id,stacklong);
-                                             return stacklong;
+                                              return stacklong;
                                             } else
                                             {
-                                              // hash(unsigned char *str);
-                                               debug_say("TODO: ADD code that produces hash on variables that do not fit unsigned long!\n");
+                                              return rvhash(ptr,size_of_ptr);
                                             }
-
   return 0;
 }
 unsigned long GetVariableHashForVar(struct VariableShare * vsh,unsigned int var_id)
@@ -265,24 +263,12 @@ int IfLocalVariableChanged_SignalUpdate(struct VariableShare * vsh,unsigned int 
 
           if (vsh->share.variables[var_id].hash!=vsh->share.variables[var_id].last_signaled_hash[peer_id])
             {
-              if (vsh->share.variables[var_id].hash==vsh->share.variables[var_id].last_signaled_hash[peer_id]) { printf("WTF IS HAPPENING ? \n"); }
-              if (vsh->share.variables[var_id].hash==vsh->share.variables[var_id].last_signaled_hash[peer_id]) { printf("WTF IS HAPPENING ? \n"); }
-              if (vsh->share.variables[var_id].hash==vsh->share.variables[var_id].last_signaled_hash[peer_id]) { printf("WTF IS HAPPENING ? \n"); }
-
-              //WTF this gets executed with the same values!!
               printf("Variable has changed hash %u , last signaled hash is %u \n",(unsigned int) vsh->share.variables[var_id].hash,(unsigned int) vsh->share.variables[var_id].last_signaled_hash[peer_id]);
-
-              if (USE_LOW_LATENCY_MORE_BANDWIDTH_DIRECT_COMMANDS)
-                {
-                   //One message direct write
-                   if (WriteVarToPeer(vsh,var_id,peer_id)) { ++successfull_transmissions; } else
-                                                           { ++failed_transmissions; }
-                } else
-                {
-                   //Signal only
-                   if (SignalVariableChange(vsh,var_id,peer_id)) { ++successfull_transmissions; } else
-                                                                 { ++failed_transmissions; }
-                }
+              if ( (USE_LOW_LATENCY_MORE_BANDWIDTH_DIRECT_COMMANDS)
+                  // && (vsh->share.variables[var_id].size_of_ptr<=4 )
+                  ) // For signaling small changes (i.e. unsigned ints it is more economical to directly send writeto request
+                    { /*One message direct write*/ if (WriteVarToPeer(vsh,var_id,peer_id)) { ++successfull_transmissions; } else { ++failed_transmissions; } }
+              else { /*Signal only*/ if (SignalVariableChange(vsh,var_id,peer_id)) { ++successfull_transmissions; } else { ++failed_transmissions; } }
             }
          } // End of for all peers loop
   return successfull_transmissions;

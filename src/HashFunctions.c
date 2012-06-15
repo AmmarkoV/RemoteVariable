@@ -31,6 +31,26 @@ this algorithm was created for sdbm (a public-domain reimplementation of ndbm) d
         return hash;
     }
 
+
+
+   unsigned long rvhash(void * str , unsigned int bytescount)
+    {
+        unsigned long hash=0;
+        unsigned int proc=0;
+        int c;
+
+        char * ptr=(void *) str;
+
+        while (proc<bytescount)
+        {
+          c = *ptr++;
+          hash = c + (hash << 6) + (hash << 16) - hash;
+          ++proc;
+        }
+
+        return hash;
+    }
+
 /*
 lose lose
 This hash function appeared in K&R (1st ed) but at least the reader was warned: "This is not the best possible algorithm, but it has the merit of extreme simplicity." This is an understatement; It is a terrible hashing algorithm, and it could have been much better without sacrificing its "extreme simplicity." [see the second edition!] Many C programmers use this function without actually testing it, or checking something like Knuth's Sorting and Searching, so it stuck. It is now found mixed with otherwise respectable code, eg. cnews. sigh. [see also: tpop]
