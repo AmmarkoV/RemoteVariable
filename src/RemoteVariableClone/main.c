@@ -22,7 +22,7 @@ int main()
 {
     unsigned int WAIT_TIME=20000;
     printf("REMOTE VARIABLES CLIENT STARTUP !!!!!!!!!!!!! \n");
-    struct VariableShare * vsh = ConnectToRemote_VariableSharing("SHARE2","127.0.0.1",12345,"password");
+    struct VariableShare * vsh = RVS_ConnectToVariableShare("SHARE2","127.0.0.1",12345,"password");
     if ( vsh == 0 )
       {
         fprintf(stderr,"Client : Error Creating share");
@@ -30,20 +30,20 @@ int main()
       }
 
     srand(time(0));
-    if (!RemoteVariableSupport_InternalTest())
+    if (!RVS_InternalTest())
       {
         fprintf(stderr,"Client : Failed preliminary internal test\n");
         return 1;
       }
 
-    SetPolicy(vsh,VSP_MANUAL);
+    RVS_SetPolicy(vsh,VSP_MANUAL);
 
     static volatile int DUMMY_VAR=0;
     static volatile int SHARED_VAR=0;
     static volatile char MSG[32]={0};
-    if ( ! Add_VariableToSharingList(vsh,"SHARED_VAR",7,&SHARED_VAR,sizeof(SHARED_VAR)) ) { fprintf(stderr,"Client : Error Adding SHARED_VAR Shared Variable , cannot continue\n"); return 1; }
-    if ( ! Add_VariableToSharingList(vsh,"DUMMY_VAR",7,&DUMMY_VAR,sizeof(DUMMY_VAR)) ) { fprintf(stderr,"Client : Error Adding DUMMY_VAR Shared Variable , cannot continue\n"); return 1; }
-    if ( ! Add_VariableToSharingList(vsh,"MESSAGE",7,&MSG,32) ) { fprintf(stderr,"Client : Error Adding MSG Shared Variable , cannot continue\n"); return 1; }
+    if ( ! RVS_AddVariable(vsh,"SHARED_VAR",7,&SHARED_VAR,sizeof(SHARED_VAR)) ) { fprintf(stderr,"Client : Error Adding SHARED_VAR Shared Variable , cannot continue\n"); return 1; }
+    if ( ! RVS_AddVariable(vsh,"DUMMY_VAR",7,&DUMMY_VAR,sizeof(DUMMY_VAR)) ) { fprintf(stderr,"Client : Error Adding DUMMY_VAR Shared Variable , cannot continue\n"); return 1; }
+    if ( ! RVS_AddVariable(vsh,"MESSAGE",7,&MSG,32) ) { fprintf(stderr,"Client : Error Adding MSG Shared Variable , cannot continue\n"); return 1; }
 
 
     printf("Client : Starting Self Test , Waiting to get the 666 initial value!\n");
@@ -84,7 +84,7 @@ int main()
     printf("Client : Master wrote to us `%s` \n",MSG);
 
     fprintf(stderr,"Client : Cleaning VariableShare context!\n");
-    if ( Stop_VariableSharing(vsh) == 0 ) fprintf(stderr,"Client : Error Deleting share\n");
+    if ( RVS_StopVariableShare(vsh) == 0 ) fprintf(stderr,"Client : Error Deleting share\n");
     fprintf(stderr,"Client : Complete Halt!\n");
 
     return 0;

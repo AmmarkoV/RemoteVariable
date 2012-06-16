@@ -22,7 +22,7 @@ int main()
 {
     unsigned int WAIT_TIME=20000;
     printf("REMOTE VARIABLES MASTER STARTUP!!!!!!!!!!!!! \n");
-    struct VariableShare * vsh = Start_VariableSharing("SHARE2","127.0.0.1",12345,"password");
+    struct VariableShare * vsh = RVS_HostVariableShare("SHARE2","127.0.0.1",12345,"password");
     if ( vsh == 0 )
      {
          fprintf(stderr,"Master : Error Creating share\n");
@@ -31,31 +31,27 @@ int main()
 
     srand(time(0));
 
-    if (!RemoteVariableSupport_InternalTest())
+    if (!RVS_InternalTest())
       {
         fprintf(stderr,"Master : Failed preliminary internal test\n");
         return 1;
       }
 
 
-    SetPolicy(vsh,VSP_MANUAL);
+    RVS_SetPolicy(vsh,VSP_MANUAL);
 
     // We start up with a Variable with the value 666 , we expect the client program to alter it to 1 after it successfully connects
     static volatile int DUMMY_VAR=0;
     static volatile int SHARED_VAR=0;
     static volatile char MSG[32]={0};
-    if ( ! Add_VariableToSharingList(vsh,"SHARED_VAR",7,&SHARED_VAR,sizeof(SHARED_VAR)) ) { fprintf(stderr,"Master : Error Adding Shared Variable\n"); return 1; }
-    if ( ! Add_VariableToSharingList(vsh,"DUMMY_VAR",7,&DUMMY_VAR,sizeof(DUMMY_VAR)) ) { fprintf(stderr,"Master : Error Adding DUMMY_VAR Shared Variable , cannot continue\n"); return 1; }
-    if ( ! Add_VariableToSharingList(vsh,"MESSAGE",7,&MSG,32) ) { fprintf(stderr,"Master : Error Adding MSG Shared Variable , cannot continue\n"); return 1; }
+    if ( ! RVS_AddVariable(vsh,"SHARED_VAR",7,&SHARED_VAR,sizeof(SHARED_VAR)) ) { fprintf(stderr,"Master : Error Adding Shared Variable\n"); return 1; }
+    if ( ! RVS_AddVariable(vsh,"DUMMY_VAR",7,&DUMMY_VAR,sizeof(DUMMY_VAR)) ) { fprintf(stderr,"Master : Error Adding DUMMY_VAR Shared Variable , cannot continue\n"); return 1; }
+    if ( ! RVS_AddVariable(vsh,"MESSAGE",7,&MSG,32) ) { fprintf(stderr,"Master : Error Adding MSG Shared Variable , cannot continue\n"); return 1; }
 
 
 
    fprintf(stderr,"Master : Waiting for a peer to startup test..\n");
-    while (!PeersActive_VariableShare(vsh))
-     {
-       fprintf(stderr,"*");
-       usleep(1000);
-     }
+    while (!RVS_PeersActive(vsh)) { fprintf(stderr,"*");  usleep(1000); }
    fprintf(stderr,"Master : Peer found , proceeding..\n");
 
 
@@ -83,7 +79,7 @@ int main()
     }
 
 
-    MakeSureVarReachedPeers_RemoteVariable(vsh,"SHARED_VAR",5000);
+    RVS_MakeSureVarReachedPeers(vsh,"SHARED_VAR",5000);
     usleep(1000);
 
     printf("\nMaster: Test is successfull\n");
@@ -94,7 +90,7 @@ int main()
     fprintf(stderr,"Master : Closing things down \n");
 
     fprintf(stderr,"Master : Cleaning VariableShare context!\n");
-    if (!Stop_VariableSharing(vsh))
+    if (!RVS_StopVariableShare(vsh))
      {
          fprintf(stderr,"Master : Error Stopping Variable share\n");
          return 1;

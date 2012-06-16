@@ -273,20 +273,35 @@ struct SocketAdapterToMessageTablesContext
    unsigned int * stop_switch;
 };
 
+/* Initialization , Deinitialization Routines*/
+struct VariableShare * RVS_HostVariableShare(char * sharename,char * bindaddress,unsigned int port,char * password);
+struct VariableShare * RVS_ConnectToVariableShare(char * sharename,char * IP,unsigned int port,char * password);
+int RVS_StopVariableShare(struct VariableShare * vsh);
 
-struct VariableShare * Start_VariableSharing(char * sharename,char * bindaddress,unsigned int port,char * password);
-struct VariableShare * ConnectToRemote_VariableSharing(char * sharename,char * IP,unsigned int port,char * password);
-int Stop_VariableSharing(struct VariableShare * vsh);
-int PeersActive_VariableShare(struct VariableShare * vsh);
-int RemoteVariableSupport_InternalTest();
-void SetPolicy(struct VariableShare * vsh,unsigned int new_policy);
-int Add_VariableToSharingList(struct VariableShare * vsh,char * variable_name,unsigned int permissions,volatile void * ptr,unsigned int ptr_size);
-int Delete_VariableFromSharingList(struct VariableShare * vsh,char * variable_name);
+int RVS_InternalTest();
+
+/* Policy switches */
+void RVS_SetPolicy(struct VariableShare * vsh,unsigned int new_policy);
+
+
+/* Add/Remove/Manage Variables */
+int RVS_AddVariable(struct VariableShare * vsh,char * variable_name,unsigned int permissions,volatile void * ptr,unsigned int ptr_size);
+int RVS_RemoveVariable(struct VariableShare * vsh,char * variable_name);
+
+int RVS_GetVarId(struct VariableShare * vsh , char * var_name , char * exists);
+int RVS_GetVarLastUpdateTimestamp(struct VariableShare * vsh , unsigned int var_id);
+int RVS_WaitForTimestamp(struct VariableShare * vsh , unsigned int var_id,unsigned int timestamp_to_wait_for);
+int RVS_MakeSureVarReachedPeers(struct VariableShare * vsh,char * variable_name,unsigned int wait_time_ms);
+
+int RVS_LockVariableLocalOnly(struct VariableShare * vsh,unsigned int var_id);
+int RVS_UnlockVariable(struct VariableShare * vsh,unsigned int var_id);
+
+int RVS_PeersActive(struct VariableShare * vsh);
 int Refresh_AllLocalVariables(struct VariableShare * vsh);
-int RVS_LocalVariableChanged(struct VariableShare * vsh,unsigned int var_id);
 int Refresh_RemoteVariable(struct VariableShare * vsh,char * variable_name);
-int IsUptodate_RemoteVariable(struct VariableShare * vsh,char * variable_name);
-int MakeSureVarReachedPeers_RemoteVariable(struct VariableShare * vsh,char * variable_name,unsigned int wait_time_ms);
+
+int RVS_LocalVariableChanged(struct VariableShare * vsh,unsigned int var_id);
+int RVS_LocalVariableIsUptodate(struct VariableShare * vsh,unsigned int var_id);
 
 
 #ifdef __cplusplus

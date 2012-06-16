@@ -34,7 +34,7 @@
    This function is supposed to allocate a VariableShare structure ( vsh )
    and prepare the Variable Share Server in our machine as a master share
 */
-struct VariableShare * Start_VariableSharing(char * sharename,char * bindaddress,unsigned int port,char * password)
+struct VariableShare * RVS_HostVariableShare(char * sharename,char * bindaddress,unsigned int port,char * password)
 {
     under_construction_msg();
 
@@ -60,7 +60,7 @@ struct VariableShare * Start_VariableSharing(char * sharename,char * bindaddress
    This function is supposed to allocate a VariableShare structure ( vsh )
    and connect to a remote Share and replicate its data in our structures
 */
-struct VariableShare * ConnectToRemote_VariableSharing(char * sharename,char * IP,unsigned int port,char * password)
+struct VariableShare * RVS_ConnectToVariableShare(char * sharename,char * IP,unsigned int port,char * password)
 {
     under_construction_msg();
 
@@ -83,7 +83,7 @@ struct VariableShare * ConnectToRemote_VariableSharing(char * sharename,char * I
    Stops all threads used for variable sharing and after they are safely destroyed it frees all the memory
    of the structure vsh
 */
-int Stop_VariableSharing(struct VariableShare * vsh)
+int RVS_StopVariableShare(struct VariableShare * vsh)
 {
 
     unsigned int loaded_peers=vsh->total_peers,i=0;
@@ -105,12 +105,12 @@ int Stop_VariableSharing(struct VariableShare * vsh)
 
 
 
-int RemoteVariableSupport_InternalTest()
+int RVS_InternalTest()
 {
   return PerformInternalTest();
 }
 
-int PeersActive_VariableShare(struct VariableShare * vsh)
+int RVS_PeersActive(struct VariableShare * vsh)
 {
   if (vsh==0) { return 0; }
 
@@ -128,7 +128,7 @@ int PeersActive_VariableShare(struct VariableShare * vsh)
 }
 
 
-void SetPolicy(struct VariableShare * vsh,unsigned int new_policy)
+void RVS_SetPolicy(struct VariableShare * vsh,unsigned int new_policy)
 {
     return ;// disabled for now
     vsh->global_policy = new_policy;
@@ -140,7 +140,7 @@ void SetPolicy(struct VariableShare * vsh,unsigned int new_policy)
    Adds a new variable to the Variable Share with chosen permissions
    If the Variable Share policy is set to automatically synchronize this variable it will start doing it after it is added with this command
 */
-int Add_VariableToSharingList(struct VariableShare * vsh,char * variable_name,unsigned int permissions,volatile void * ptr,unsigned int ptr_size)
+int RVS_AddVariable(struct VariableShare * vsh,char * variable_name,unsigned int permissions,volatile void * ptr,unsigned int ptr_size)
 {
     return AddVariable_Database(vsh,variable_name,permissions,ptr,ptr_size);
 }
@@ -148,17 +148,37 @@ int Add_VariableToSharingList(struct VariableShare * vsh,char * variable_name,un
 /* #Add_VariableToSharingList#
    Removes an existing variable from the Variable Share
 */
-int Delete_VariableFromSharingList(struct VariableShare * vsh,char * variable_name)
+int RVS_RemoveVariable(struct VariableShare * vsh,char * variable_name)
 {
     fprintf(stderr,"Delete_VariableFromSharingList not implemented yet!");
     return 0;
 }
 
 
+int RVS_GetVarId(struct VariableShare * vsh , char * var_name , char * exists)
+{
+   struct failint retres = FindVariable_Database(vsh,var_name);
+   if (retres.failed==0) { *exists=1; } else
+                         { *exists=0; }
+   return retres.value;
+}
+
+
+int RVS_GetVarLastUpdateTimestamp(struct VariableShare * vsh , unsigned int var_id)
+{
+   return 0;
+}
+
+int RVS_WaitForTimestamp(struct VariableShare * vsh , unsigned int var_id,unsigned int timestamp_to_wait_for)
+{
+   return 0;
+}
+
+
 /* #LockForLocalUse_LocalVariable#
    The variable_name is locked and will not be writeable , or readable from a network peer
 */
-int LockForLocalUse_LocalVariable(struct VariableShare * vsh,char * variable_name)
+int RVS_LockVariableLocalOnly(struct VariableShare * vsh,unsigned int var_id)
 {
     /*Todo Implement*/
     return 0;
@@ -169,7 +189,7 @@ int LockForLocalUse_LocalVariable(struct VariableShare * vsh,char * variable_nam
    The variable_name is unlocked and will be writeable , or readable from a network peer according to the permissions
    specified when it was added to the share
 */
-int Unlock_LocalVariable(struct VariableShare * vsh,char * variable_name)
+int RVS_UnlockVariable(struct VariableShare * vsh,unsigned int var_id)
 {
     /*Todo Implement*/
     return 0;
@@ -209,6 +229,11 @@ int RVS_LocalVariableChanged(struct VariableShare * vsh,unsigned int var_id)
   return 1;
 }
 
+int RVS_LocalVariableIsUptodate(struct VariableShare * vsh,unsigned int var_id)
+{
+  return (!RVS_LocalVariableChanged(vsh,var_id));
+}
+
 
 /* #Refresh_RemoteVariable#
    If the share policy is automatic updates , it forces an update
@@ -222,14 +247,8 @@ int Refresh_RemoteVariable(struct VariableShare * vsh,char * variable_name)
 }
 
 
-int IsUptodate_RemoteVariable(struct VariableShare * vsh,char * variable_name)
-{
-  fprintf(stderr,"IsUptodate_RemoteVariable not implemented yet ,returning false!");
-  return 0;
-}
 
-
-int MakeSureVarReachedPeers_RemoteVariable(struct VariableShare * vsh,char * variable_name,unsigned int wait_time_ms)
+int RVS_MakeSureVarReachedPeers(struct VariableShare * vsh,char * variable_name,unsigned int wait_time_ms)
 {
   return MakeSureVarReachedPeers(vsh,variable_name,wait_time_ms);
 }
