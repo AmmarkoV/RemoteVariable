@@ -44,6 +44,7 @@ extern "C" {
 #define RVS_READWRITE 3
 
 #define RVS_AUTOUPDATE 1
+#define RVS_MANUALUPDATE 1
 
 enum jobactions
 {
