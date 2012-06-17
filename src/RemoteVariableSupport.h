@@ -297,8 +297,8 @@ int RVS_LockVariableLocalOnly(struct VariableShare * vsh,unsigned int var_id);
 int RVS_UnlockVariable(struct VariableShare * vsh,unsigned int var_id);
 
 int RVS_PeersActive(struct VariableShare * vsh);
-int Refresh_AllLocalVariables(struct VariableShare * vsh);
-int Refresh_RemoteVariable(struct VariableShare * vsh,char * variable_name);
+int RVS_Refresh_AllVariables(struct VariableShare * vsh);
+int RVS_Refresh_Variable(struct VariableShare * vsh,unsigned int var_id);
 
 int RVS_LocalVariableChanged(struct VariableShare * vsh,unsigned int var_id);
 int RVS_LocalVariableIsUptodate(struct VariableShare * vsh,unsigned int var_id);

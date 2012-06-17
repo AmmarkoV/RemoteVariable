@@ -55,7 +55,7 @@ int main()
 
     printf("Client : TEST STEP 1 , setting SHARED VAR to 1\n");
     SHARED_VAR=1;
-     Refresh_AllLocalVariables(vsh);
+     RVS_Refresh_AllVariables(vsh);
 
     printf("Client : Starting Self Test waiting for value 2 from peer !\n");
     int i=2;
@@ -69,7 +69,7 @@ int main()
      //usleep(rand()%10000);
 
      SHARED_VAR=i+1;
-     Refresh_AllLocalVariables(vsh);
+     RVS_Refresh_AllVariables(vsh);
      printf("Client : Now we have changed the variable to %u , will wait until it becomes %u\n",i+1,i+2);
     }
 

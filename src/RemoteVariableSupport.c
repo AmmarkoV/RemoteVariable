@@ -201,7 +201,7 @@ int RVS_UnlockVariable(struct VariableShare * vsh,unsigned int var_id)
    If the share policy is manual updates , it forces an update
    This function BLOCKS until the variable is refreshed or the connection dropped
 */
-int Refresh_AllLocalVariables(struct VariableShare * vsh)
+int RVS_Refresh_AllVariables(struct VariableShare * vsh)
 {
   return 1;// disabled for now
 
@@ -224,6 +224,18 @@ int Refresh_AllLocalVariables(struct VariableShare * vsh)
  //    return RefreshLocalVariable_VariableDatabase(vsh,variable_name);
 }
 
+/* #RVS_Refresh_Variable#
+   If the share policy is automatic updates , it forces an update
+   If the share policy is manual updates , it forces an update
+   This function BLOCKS until the variable is refreshed or the connection dropped
+*/
+int RVS_Refresh_Variable(struct VariableShare * vsh,unsigned int var_id)
+{
+  return 0;
+  //  return RefreshRemoteVariable_VariableDatabase(vsh,variable_name);
+}
+
+
 int RVS_LocalVariableChanged(struct VariableShare * vsh,unsigned int var_id)
 {
   return 1;
@@ -235,16 +247,7 @@ int RVS_LocalVariableIsUptodate(struct VariableShare * vsh,unsigned int var_id)
 }
 
 
-/* #Refresh_RemoteVariable#
-   If the share policy is automatic updates , it forces an update
-   If the share policy is manual updates , it forces an update
-   This function BLOCKS until the variable is refreshed or the connection dropped
-*/
-int Refresh_RemoteVariable(struct VariableShare * vsh,char * variable_name)
-{
-  return 0;
-  //  return RefreshRemoteVariable_VariableDatabase(vsh,variable_name);
-}
+
 
 
 

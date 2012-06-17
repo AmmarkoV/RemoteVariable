@@ -61,7 +61,7 @@ int main()
 
     printf("Master : TEST STEP 1 , setting SHARED VAR to 666\n");
     SHARED_VAR=666; // This will propagate to the client
-     Refresh_AllLocalVariables(vsh);
+     RVS_Refresh_AllVariables(vsh);
 
 
 
@@ -74,7 +74,7 @@ int main()
      DUMMY_VAR=rand()%10000;
      fprintf(stderr,"TEST STEP %u\n",i+1);
      SHARED_VAR=i+1;
-     Refresh_AllLocalVariables(vsh);
+     RVS_Refresh_AllVariables(vsh);
      printf("Master : Now we have changed the variable to %u , will wait until it becomes %u\n",i+1,i+2);
     }
 

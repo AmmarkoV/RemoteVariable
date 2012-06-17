@@ -34,6 +34,10 @@ wxString OpponentName;
 volatile unsigned int OurMove=666;
 volatile unsigned int OpponentMove=666;
 
+volatile char InMSG[32]={0};
+volatile char OutMSG[32]={0};
+
+
 unsigned int OurScore=0;
 unsigned int OpponentScore=0;
 
@@ -111,6 +115,7 @@ GamesTesterFrame::GamesTesterFrame(wxWindow* parent,wxWindowID id)
     Create(parent, id, _("Games Tester App For RemoteVariables"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE, _T("id"));
     SetClientSize(wxSize(870,562));
     OurTextCtrl = new wxTextCtrl(this, ID_TEXTCTRL1, wxEmptyString, wxPoint(600,448), wxSize(256,24), wxTE_PROCESS_ENTER, wxDefaultValidator, _T("ID_TEXTCTRL1"));
+    OurTextCtrl->SetMaxLength(32);
     StaticText1 = new wxStaticText(this, ID_STATICTEXT1, _("Label"), wxPoint(784,416), wxDefaultSize, 0, _T("ID_STATICTEXT1"));
     SendButton = new wxButton(this, ID_BUTTON1, _("Send"), wxPoint(752,480), wxSize(104,27), 0, wxDefaultValidator, _T("ID_BUTTON1"));
     ChatTextCtrl = new wxRichTextCtrl(this, ID_TEXTCTRL2, wxEmptyString, wxPoint(600,18), wxSize(256,424), wxTE_MULTILINE, wxDefaultValidator, _T("ID_TEXTCTRL2"));
@@ -175,13 +180,15 @@ GamesTesterFrame::GamesTesterFrame(wxWindow* parent,wxWindowID id)
       {
         // Host setup
         turn=1;
-        vsh = Start_VariableSharing("GAMESHARE",hostname,port,"password");
-        Add_VariableToSharingList(vsh,"HOST_MOVE",7,&OurMove,sizeof(OurMove));
-        Add_VariableToSharingList(vsh,"CLIENT_MOVE",7,&OpponentMove,sizeof(OpponentMove));
-        Add_VariableToSharingList(vsh,"GAME_STATE",7,&game_state,sizeof(game_state));
+        vsh = RVS_HostVariableShare("GAMESHARE",hostname,port,"password");
+        RVS_AddVariable(vsh,"HOST_MOVE",7,&OurMove,sizeof(OurMove));
+        RVS_AddVariable(vsh,"CLIENT_MOVE",7,&OpponentMove,sizeof(OpponentMove));
+        RVS_AddVariable(vsh,"GAME_STATE",7,&game_state,sizeof(game_state));
+        RVS_AddVariable(vsh,"HOST_MSG",7,&OutMSG,32);
+        RVS_AddVariable(vsh,"CLIENT_MSG",7,&InMSG,32);
 
         fprintf(stderr,"Waiting for client ");
-        while (PeersActive_VariableShare(vsh)==0) {  wxSleep(1); fprintf(stderr,"*");  }
+        while (RVS_PeersActive(vsh)==0) {  wxSleep(1); fprintf(stderr,"*");  }
 
         fprintf(stderr,"Waiting for initialization ");
         game_state=1;
@@ -192,10 +199,12 @@ GamesTesterFrame::GamesTesterFrame(wxWindow* parent,wxWindowID id)
       {
         // Client setup
         turn=2;
-        vsh = ConnectToRemote_VariableSharing("GAMESHARE",hostname,port,"password");
-        Add_VariableToSharingList(vsh,"HOST_MOVE",7,&OpponentMove,sizeof(OpponentMove));
-        Add_VariableToSharingList(vsh,"CLIENT_MOVE",7,&OurMove,sizeof(OurMove));
-        Add_VariableToSharingList(vsh,"GAME_STATE",7,&game_state,sizeof(game_state));
+        vsh = RVS_ConnectToVariableShare("GAMESHARE",hostname,port,"password");
+        RVS_AddVariable(vsh,"HOST_MOVE",7,&OpponentMove,sizeof(OpponentMove));
+        RVS_AddVariable(vsh,"CLIENT_MOVE",7,&OurMove,sizeof(OurMove));
+        RVS_AddVariable(vsh,"GAME_STATE",7,&game_state,sizeof(game_state));
+        RVS_AddVariable(vsh,"HOST_MSG",7,&InMSG,32);
+        RVS_AddVariable(vsh,"CLIENT_MSG",7,&OutMSG,32);
 
         while (game_state!=1) { wxSleep(1); fprintf(stderr,"."); }
         fprintf(stderr,"\nLets go!\n");
@@ -248,7 +257,7 @@ int PlaySound(char * sndname)
 
 void GamesTesterFrame::OnQuit(wxCommandEvent& event)
 {
-    Stop_VariableSharing(vsh);
+    RVS_StopVariableShare(vsh);
     Close();
 }
 
@@ -260,8 +269,7 @@ void GamesTesterFrame::OnAbout(wxCommandEvent& event)
 
 void GamesTesterFrame::OnSendButtonClick(wxCommandEvent& event)
 {
-   strncpy(OurMessage, (const char*) OurTextCtrl->GetValue().mb_str(wxConvUTF8),128);
-
+   strncpy((char*) OutMSG, (const char*) OurTextCtrl->GetValue().mb_str(wxConvUTF8),32);
 
    wxString FinalMessage = OurName;
    FinalMessage << wxT( " : ");
@@ -304,8 +312,26 @@ inline int XYOverRect(int x , int y , int rectx1,int recty1,int rectx2,int recty
 }
 
 
+int NewGame()
+{
+    //TODO : Add some state changing code here..!
+ for (int y=0; y<8; y++)
+  {
+    for (int x=0; x<8; x++)
+      {
+        board[x][y]=0;
+      }
+  }
+
+ end_line_x1=666; end_line_y1=666; end_line_x2=666; end_line_y2=666;
+ wxMessageBox(wxT("Press ok to start the next round..!\n"),wxT("New Round"));
+
+ return 1;
+}
+
 void CheckEndGame()
 {
+   unsigned int won=0;
    /*Horizontal checker*/
    for (int y=0; y<8; y++)
     {
@@ -318,7 +344,7 @@ void CheckEndGame()
                {
                  end_line_x1=x; end_line_y1=y; end_line_x2=x+3; end_line_y2=y;
                  fprintf(stderr,"Player %u wins , horizontal line from %u,%u to %u,%u\n",board[x][y],end_line_x1,end_line_y1,end_line_x2,end_line_y2);
-                 PlaySound("gong");
+                 won=1;
                }
       }
     }
@@ -335,11 +361,52 @@ void CheckEndGame()
                {
                  end_line_x1=x; end_line_y1=y; end_line_x2=x; end_line_y2=y+3;
                  fprintf(stderr,"Player %u wins , vertical line from %u,%u to %u,%u\n",board[x][y],end_line_x1,end_line_y1,end_line_x2,end_line_y2);
-                 PlaySound("gong");
+                 won=1;
                }
       }
     }
 
+   /*Diagonal checker #1*/
+   for (int y=0; y<4; y++)
+    {
+     for (int x=0; x<4; x++)
+      {
+         if ( (board[x][y]!=0)&&
+              (board[x+1][y+1]==board[x][y])&&
+              (board[x+2][y+2]==board[x][y])&&
+              (board[x+3][y+3]==board[x][y]) )
+               {
+                 end_line_x1=x; end_line_y1=y; end_line_x2=x+3; end_line_y2=y+3;
+                 fprintf(stderr,"Player %u wins , diagonal line from %u,%u to %u,%u\n",board[x][y],end_line_x1,end_line_y1,end_line_x2,end_line_y2);
+                 won=1;
+               }
+      }
+    }
+
+
+   /*Diagonal checker #1*/
+   for (int y=0; y<4; y++)
+    {
+     for (int x=0; x<4; x++)
+      {
+         if ( (board[x][y+3]!=0)&&
+              (board[x+1][y+2]==board[x][y])&&
+              (board[x+2][y+1]==board[x][y])&&
+              (board[x+3][y]==board[x][y]) )
+               {
+                 end_line_x1=x+3; end_line_y1=y; end_line_x2=x; end_line_y2=y+3;
+                 fprintf(stderr,"Player %u wins , diagonal line from %u,%u to %u,%u\n",board[x][y],end_line_x1,end_line_y1,end_line_x2,end_line_y2);
+                 won=1;
+               }
+      }
+    }
+
+
+if (won)
+ {
+   PlaySound("gong");
+   NewGame();
+ }
 }
 
 
@@ -369,19 +436,27 @@ int process_move(unsigned int spot_x , unsigned int player)
 
 void GamesTesterFrame::OnClockTimerTrigger(wxTimerEvent& event)
 {
-   if ( strlen(OpponentMessage)!=0 )
+   if ( strlen((char*) InMSG)!=0 )
     {
-       ChatTextCtrl->BeginBold();
-       wxString FinalMessage = OpponentName;
-       FinalMessage << wxT( " : ");
-       ChatTextCtrl->AppendText(FinalMessage);
-       ChatTextCtrl->EndBold();
+       if (strcmp((char*) InMSG,"/nudge")==0)
+        {
+          ChatTextCtrl->AppendText(wxT("Incoming Nudge..\n") );
+          Nudge();
+        } else
+        {
+         ChatTextCtrl->BeginBold();
+         wxString FinalMessage = OpponentName;
+         FinalMessage << wxT( " : ");
+         ChatTextCtrl->AppendText(FinalMessage);
+         ChatTextCtrl->EndBold();
 
-       wxString NewOpponentMessage(OpponentMessage, wxConvUTF8);
-       FinalMessage = NewOpponentMessage;
-       FinalMessage << wxT("\n");
+         wxString NewOpponentMessage((char*)InMSG, wxConvUTF8);
+         FinalMessage = NewOpponentMessage;
+         FinalMessage << wxT("\n");
 
-       ChatTextCtrl->AppendText(FinalMessage);
+         ChatTextCtrl->AppendText(FinalMessage);
+         }
+       strcpy((char*) InMSG,"\0");
     }
 
 
@@ -427,15 +502,20 @@ void GamesTesterFrame::Nudge()
 {
  // wxSound msg("Sounds\\nudge.wav",false);
  // msg.Play();
-  wxPoint start = GetPosition();
-  wxPoint move = start; move.x+=5; move.y-=5; SetPosition(move); wxMilliSleep(50);
+  strcpy((char*) OutMSG,"/nudge\0");
+  PlaySound("boing");
 
-  move = start; move.x-=5; move.y+=5; SetPosition(move); wxMilliSleep(50);
-  move = start; move.x-=5; move.y-=5; SetPosition(move); wxMilliSleep(50);
-  move = start; move.x-=5; move.y+=5; SetPosition(move); wxMilliSleep(50);
-  move = start; move.x+=5; move.y+=5; SetPosition(move); wxMilliSleep(50);
-  SetPosition (start);
-  wxMilliSleep(250);
+  wxPoint start = GetPosition();
+  wxPoint move = start; move.x+=5; move.y-=5; Move(move,wxSIZE_USE_EXISTING); /* SetPosition(move); */ wxMilliSleep(150); Update();
+
+  move = start; move.x-=5; move.y+=5; Move(move,wxSIZE_USE_EXISTING); /* SetPosition(move); */ wxMilliSleep(150); Update();
+  move = start; move.x-=5; move.y-=5; Move(move,wxSIZE_USE_EXISTING); /* SetPosition(move); */ wxMilliSleep(150); Update();
+  move = start; move.x-=5; move.y+=5; Move(move,wxSIZE_USE_EXISTING); /* SetPosition(move); */ wxMilliSleep(150); Update();
+  move = start; move.x+=5; move.y+=5; Move(move,wxSIZE_USE_EXISTING); /* SetPosition(move); */ wxMilliSleep(150); Update();
+  Move(start,wxSIZE_USE_EXISTING); /* SetPosition (start); */ wxMilliSleep(150);  Update();
+
+
+
 }
 
 void GamesTesterFrame::OnNudgeButtonClick(wxCommandEvent& event)

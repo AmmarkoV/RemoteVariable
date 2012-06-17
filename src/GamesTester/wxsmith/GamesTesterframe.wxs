@@ -4,6 +4,7 @@
 		<title>Games Tester App For RemoteVariables</title>
 		<size>870,562</size>
 		<object class="wxTextCtrl" name="ID_TEXTCTRL1" variable="OurTextCtrl" member="yes">
+			<maxlength>32</maxlength>
 			<pos>600,448</pos>
 			<size>256,24</size>
 			<style>wxTE_PROCESS_ENTER</style>
