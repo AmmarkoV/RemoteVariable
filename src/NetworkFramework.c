@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright (C) 2010 by Ammar Qammaz *
+* Copyright (C) 2010-2012 by Ammar Qammaz *
 * ammarkov@gmail.com *
 * *
 * This program is free software; you can redistribute it and/or modify *
