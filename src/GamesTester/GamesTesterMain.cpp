@@ -384,15 +384,15 @@ void CheckEndGame()
     }
 
 
-   /*Diagonal checker #1*/
+   /*Diagonal checker #2*/
    for (int y=0; y<4; y++)
     {
      for (int x=0; x<4; x++)
       {
          if ( (board[x][y+3]!=0)&&
-              (board[x+1][y+2]==board[x][y])&&
-              (board[x+2][y+1]==board[x][y])&&
-              (board[x+3][y]==board[x][y]) )
+              (board[x+1][y+2]==board[x][y+3])&&
+              (board[x+2][y+1]==board[x][y+3])&&
+              (board[x+3][y]  ==board[x][y+3]) )
                {
                  end_line_x1=x+3; end_line_y1=y; end_line_x2=x; end_line_y2=y+3;
                  fprintf(stderr,"Player %u wins , diagonal line from %u,%u to %u,%u\n",board[x][y],end_line_x1,end_line_y1,end_line_x2,end_line_y2);
