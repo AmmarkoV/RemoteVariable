@@ -44,9 +44,9 @@ int main()
     static volatile int DUMMY_VAR=0;
     static volatile int SHARED_VAR=0;
     static volatile char MSG[32]={0};
-    if ( ! RVS_AddVariable(vsh,"SHARED_VAR",7,&SHARED_VAR,sizeof(SHARED_VAR)) ) { fprintf(stderr,"Master : Error Adding Shared Variable\n"); return 1; }
-    if ( ! RVS_AddVariable(vsh,"DUMMY_VAR",7,&DUMMY_VAR,sizeof(DUMMY_VAR)) ) { fprintf(stderr,"Master : Error Adding DUMMY_VAR Shared Variable , cannot continue\n"); return 1; }
-    if ( ! RVS_AddVariable(vsh,"MESSAGE",7,&MSG,32) ) { fprintf(stderr,"Master : Error Adding MSG Shared Variable , cannot continue\n"); return 1; }
+    if ( ! RVS_AddVariable(vsh,"SHARED_VAR",RVS_READWRITE,RVS_AUTOUPDATE,&SHARED_VAR,sizeof(SHARED_VAR)) ) { fprintf(stderr,"Master : Error Adding Shared Variable\n"); return 1; }
+    if ( ! RVS_AddVariable(vsh,"DUMMY_VAR",RVS_READWRITE,RVS_AUTOUPDATE,&DUMMY_VAR,sizeof(DUMMY_VAR)) ) { fprintf(stderr,"Master : Error Adding DUMMY_VAR Shared Variable , cannot continue\n"); return 1; }
+    if ( ! RVS_AddVariable(vsh,"MESSAGE",RVS_READWRITE,RVS_AUTOUPDATE,&MSG,32) ) { fprintf(stderr,"Master : Error Adding MSG Shared Variable , cannot continue\n"); return 1; }
 
 
 

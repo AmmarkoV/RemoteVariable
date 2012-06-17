@@ -93,7 +93,7 @@ struct VariableShare * RVS_ConnectToVariableShare(char * sharename,char * IP,uns
 */
 int RVS_StopVariableShare(struct VariableShare * vsh)
 {
-
+    fprintf(stderr,"TODO: Fix proper deallocation , thread stopping , etc.. \n");
     unsigned int loaded_peers=vsh->total_peers,i=0;
     for (i=0; i<loaded_peers; i++)
      {
@@ -138,12 +138,11 @@ void RVS_SetPolicy(struct VariableShare * vsh,unsigned int new_policy)
 
 }
 
-
 /* #Add_VariableToSharingList#
    Adds a new variable to the Variable Share with chosen permissions
    If the Variable Share policy is set to automatically synchronize this variable it will start doing it after it is added with this command
 */
-int RVS_AddVariable(struct VariableShare * vsh,char * variable_name,unsigned int permissions,volatile void * ptr,unsigned int ptr_size)
+int RVS_AddVariable(struct VariableShare * vsh,char * variable_name,unsigned char permissions,unsigned char AUTO_UPDATE,volatile void * ptr,unsigned int ptr_size)
 {
     return AddVariable_Database(vsh,variable_name,permissions,ptr,ptr_size);
 }

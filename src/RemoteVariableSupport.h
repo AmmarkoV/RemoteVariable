@@ -39,6 +39,12 @@ extern "C" {
 #define RVS_MAX_SHARE_IP_CHARS 64
 
 
+#define RVS_READ 1
+#define RVS_WRITE 2
+#define RVS_READWRITE 3
+
+#define RVS_AUTOUPDATE 1
+
 enum jobactions
 {
     NOACTION = 0 ,
@@ -215,8 +221,6 @@ enum VariableSharePolicies
 
 
 
-
-
 struct VariableShare
 {
     char sharename[RVS_MAX_SHARE_NAME_CHARS];
@@ -289,7 +293,7 @@ void RVS_SetPolicy(struct VariableShare * vsh,unsigned int new_policy);
 
 
 /* Add/Remove/Manage Variables */
-int RVS_AddVariable(struct VariableShare * vsh,char * variable_name,unsigned int permissions,volatile void * ptr,unsigned int ptr_size);
+int RVS_AddVariable(struct VariableShare * vsh,char * variable_name,unsigned char permissions,unsigned char AUTO_UPDATE,volatile void * ptr,unsigned int ptr_size);
 int RVS_RemoveVariable(struct VariableShare * vsh,unsigned int var_id);
 
 int RVS_GetVarId(struct VariableShare * vsh , char * var_name , char * exists);

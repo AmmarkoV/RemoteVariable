@@ -181,11 +181,11 @@ GamesTesterFrame::GamesTesterFrame(wxWindow* parent,wxWindowID id)
         // Host setup
         turn=1;
         vsh = RVS_HostVariableShare("GAMESHARE",hostname,port,"password");
-        RVS_AddVariable(vsh,"HOST_MOVE",7,&OurMove,sizeof(OurMove));
-        RVS_AddVariable(vsh,"CLIENT_MOVE",7,&OpponentMove,sizeof(OpponentMove));
-        RVS_AddVariable(vsh,"GAME_STATE",7,&game_state,sizeof(game_state));
-        RVS_AddVariable(vsh,"HOST_MSG",7,&OutMSG,32);
-        RVS_AddVariable(vsh,"CLIENT_MSG",7,&InMSG,32);
+        RVS_AddVariable(vsh,"HOST_MOVE",RVS_READWRITE,RVS_AUTOUPDATE,&OurMove,sizeof(OurMove));
+        RVS_AddVariable(vsh,"CLIENT_MOVE",RVS_READWRITE,RVS_AUTOUPDATE,&OpponentMove,sizeof(OpponentMove));
+        RVS_AddVariable(vsh,"GAME_STATE",RVS_READWRITE,RVS_AUTOUPDATE,&game_state,sizeof(game_state));
+        RVS_AddVariable(vsh,"HOST_MSG",RVS_READWRITE,RVS_AUTOUPDATE,&OutMSG,32);
+        RVS_AddVariable(vsh,"CLIENT_MSG",RVS_READWRITE,RVS_AUTOUPDATE,&InMSG,32);
 
         fprintf(stderr,"Waiting for client ");
         while (RVS_PeersActive(vsh)==0) {  wxSleep(1); fprintf(stderr,"*");  }
@@ -200,11 +200,11 @@ GamesTesterFrame::GamesTesterFrame(wxWindow* parent,wxWindowID id)
         // Client setup
         turn=2;
         vsh = RVS_ConnectToVariableShare("GAMESHARE",hostname,port,"password");
-        RVS_AddVariable(vsh,"HOST_MOVE",7,&OpponentMove,sizeof(OpponentMove));
-        RVS_AddVariable(vsh,"CLIENT_MOVE",7,&OurMove,sizeof(OurMove));
-        RVS_AddVariable(vsh,"GAME_STATE",7,&game_state,sizeof(game_state));
-        RVS_AddVariable(vsh,"HOST_MSG",7,&InMSG,32);
-        RVS_AddVariable(vsh,"CLIENT_MSG",7,&OutMSG,32);
+        RVS_AddVariable(vsh,"HOST_MOVE",RVS_READWRITE,RVS_AUTOUPDATE,&OpponentMove,sizeof(OpponentMove));
+        RVS_AddVariable(vsh,"CLIENT_MOVE",RVS_READWRITE,RVS_AUTOUPDATE,&OurMove,sizeof(OurMove));
+        RVS_AddVariable(vsh,"GAME_STATE",RVS_READWRITE,RVS_AUTOUPDATE,&game_state,sizeof(game_state));
+        RVS_AddVariable(vsh,"HOST_MSG",RVS_READWRITE,RVS_AUTOUPDATE,&InMSG,32);
+        RVS_AddVariable(vsh,"CLIENT_MSG",RVS_READWRITE,RVS_AUTOUPDATE,&OutMSG,32);
 
         while (game_state!=1) { wxSleep(1); fprintf(stderr,"."); }
         fprintf(stderr,"\nLets go!\n");
