@@ -137,8 +137,9 @@ struct ShareListItem
 
     unsigned char GUARD_BYTE1;
 
-    unsigned int last_write_time;
-    unsigned int permissions;
+    unsigned int  last_write_time;
+    unsigned int  permissions;
+    unsigned char locked_localy_only; // this switch should make the variable only accessible ( read/write ) locally ( temp permission change )
 
     unsigned long last_signaled_hash[RVS_MAX_PEERS];
     unsigned long hash;
@@ -273,12 +274,15 @@ struct SocketAdapterToMessageTablesContext
    unsigned int * stop_switch;
 };
 
+
+
+int RVS_InternalTest();
+
 /* Initialization , Deinitialization Routines*/
 struct VariableShare * RVS_HostVariableShare(char * sharename,char * bindaddress,unsigned int port,char * password);
 struct VariableShare * RVS_ConnectToVariableShare(char * sharename,char * IP,unsigned int port,char * password);
 int RVS_StopVariableShare(struct VariableShare * vsh);
 
-int RVS_InternalTest();
 
 /* Policy switches */
 void RVS_SetPolicy(struct VariableShare * vsh,unsigned int new_policy);
@@ -286,15 +290,15 @@ void RVS_SetPolicy(struct VariableShare * vsh,unsigned int new_policy);
 
 /* Add/Remove/Manage Variables */
 int RVS_AddVariable(struct VariableShare * vsh,char * variable_name,unsigned int permissions,volatile void * ptr,unsigned int ptr_size);
-int RVS_RemoveVariable(struct VariableShare * vsh,char * variable_name);
+int RVS_RemoveVariable(struct VariableShare * vsh,unsigned int var_id);
 
 int RVS_GetVarId(struct VariableShare * vsh , char * var_name , char * exists);
 int RVS_GetVarLastUpdateTimestamp(struct VariableShare * vsh , unsigned int var_id);
-int RVS_WaitForTimestamp(struct VariableShare * vsh , unsigned int var_id,unsigned int timestamp_to_wait_for);
+int RVS_WaitForDifferentTimestamp(struct VariableShare * vsh , unsigned int var_id,unsigned int current_timestamp);
 int RVS_MakeSureVarReachedPeers(struct VariableShare * vsh,char * variable_name,unsigned int wait_time_ms);
 
-int RVS_LockVariableLocalOnly(struct VariableShare * vsh,unsigned int var_id);
-int RVS_UnlockVariable(struct VariableShare * vsh,unsigned int var_id);
+int RVS_LockVariable_LocalUseOnly(struct VariableShare * vsh,unsigned int var_id);
+int RVS_UnlockVariable_LocalUseOnly(struct VariableShare * vsh,unsigned int var_id);
 
 int RVS_PeersActive(struct VariableShare * vsh);
 int RVS_Refresh_AllVariables(struct VariableShare * vsh);

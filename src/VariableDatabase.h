@@ -22,6 +22,10 @@
 #define VARIABLEDATABASE_H_INCLUDED
 
 #include "RemoteVariableSupport.h"
+
+int VariableShareOk(struct VariableShare * vsh);
+int VariableIdExists(struct VariableShare * vsh,unsigned int var_id);
+
 struct VariableShare * Create_VariableDatabase(char * sharename,char * IP,unsigned int port,char * password,unsigned int newsize);
 
 int Destroy_VariableDatabase(struct VariableShare * vsh);
@@ -30,10 +34,9 @@ unsigned long GetVariableHash(struct VariableShare * vsh,void * ptr,unsigned int
 unsigned long GetVariableHashForVar(struct VariableShare * vsh,unsigned int var_id);
 
 int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int permissions,volatile void * ptr,unsigned int ptr_size);
-int DeleteVariable_Database(struct VariableShare * vsh,char * var_name);
+int DeleteVariable_Database(struct VariableShare * vsh,unsigned int var_id);
 struct failint FindVariable_Database(struct VariableShare * vsh,char * var_name);
 
-int VariableIdExists(struct VariableShare * vsh,unsigned int var_id);
 
 int  MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,unsigned int var_id,int peer_id);
 

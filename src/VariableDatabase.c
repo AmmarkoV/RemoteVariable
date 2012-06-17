@@ -34,6 +34,14 @@ int VariableShareOk(struct VariableShare * vsh)
  return 1;
 }
 
+int VariableIdExists(struct VariableShare * vsh,unsigned int var_id)
+{
+  if ( vsh == 0 ) { error("Variable Share not ok!"); return 0; }
+  if ( vsh->share.variables == 0 ) { error("Variable Share not ok , no initialized space for variables!"); return 0; }
+  if (vsh->share.total_variables_shared<=var_id) { error("Variable Share request out of bounds!"); return 0; }
+  return 1;
+}
+
 struct VariableShare * Create_VariableDatabase(char * sharename,char * IP,unsigned int port,char * password,unsigned int newsize)
 {
   struct VariableShare * vsh=0;
@@ -195,6 +203,7 @@ int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int
 
     vsh->share.variables[spot_to_take].last_write_time=0;
     vsh->share.variables[spot_to_take].permissions=permissions;
+    vsh->share.variables[spot_to_take].locked_localy_only=0;
 
 
     vsh->share.variables[spot_to_take].GUARD_BYTE1 = RVS_GUARD_VALUE ;
@@ -206,7 +215,7 @@ int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int
  return 1;
 }
 
-int DeleteVariable_Database(struct VariableShare * vsh,char * var_name)
+int DeleteVariable_Database(struct VariableShare * vsh,unsigned int var_id)
 {
   // TODO TODO TODO
   error("The Variable Share Object wants to delete an item and there is no code implemented for deleting it (yet) !");
@@ -231,13 +240,6 @@ struct failint FindVariable_Database(struct VariableShare * vsh,char * var_name)
 
  retres.failed=1;
  return retres;
-}
-
-
-int VariableIdExists(struct VariableShare * vsh,unsigned int var_id)
-{
-  if (vsh->share.total_variables_shared<=var_id) { return 0; }
-  return 1;
 }
 
 int MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,unsigned int var_id,int peer_id)

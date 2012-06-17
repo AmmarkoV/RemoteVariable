@@ -119,6 +119,121 @@ void PrintMessageType(struct PacketHeader *header)
 
 
 
+/*!
+
+
+        -------------------------------------------------------------------------
+        -------------------------------------------------------------------------
+
+        -------------------------------------------------------------------------
+        -------------------------------------------------------------------------
+
+
+     SEND/RECEIVE OPERATIONS
+
+          |
+          |
+         \ /
+          -
+!*/
+
+
+
+struct failint SendMessageToSocket(int clientsock,struct MessageTable * mt,unsigned int item_num)
+{
+  struct failint retres={0};
+  retres.value=0;
+  retres.failed=0;
+
+  if (mt->table[item_num].direction != OUTGOING_MSG)
+   {
+      fprintf(stderr,"ERROR : Asked SendPacketAndPassToMT to send a non Outgoing message ( %u ) , skipping operation\n",item_num);
+      retres.failed=1;
+      return retres;
+   }
+
+  if (mutex_msg()) fprintf(stderr,"Waiting for mutex SendMessageToSocket\n");
+  pthread_mutex_lock (&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
+  if (mutex_msg()) fprintf(stderr,"Entered mutex SendMessageToSocket\n");
+
+  if(sockadap_msg())
+  {
+    fprintf(stderr,"SENDING %s mt_id=%u , GROUP %u \n",ReturnPrintMessageTypeVal(mt->table[item_num].header.operation_type), item_num, mt->table[item_num].header.incremental_value);
+  }
+
+  //This message will trigger will travel to the peer with the send operation but its role is not finished here
+  //It will start a protocol action so we set it NOT for removal and NOT executed
+  mt->table[item_num].executed=0;
+  mt->table[item_num].remove=0;
+
+  //Rest of initialization..
+  mt->table[item_num].sent=1; // We set it as sent , if sending fails we will restore it
+
+
+
+  int opres=send(clientsock,&mt->table[item_num].header,sizeof(mt->table[item_num].header),MSG_WAITALL);
+  if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1;  mt->table[item_num].sent=0; pthread_mutex_unlock(&mt->lock); return retres; }
+
+  if ( mt->table[item_num].header.payload_size > 0 )
+   {
+     unsigned int * payload_val = (unsigned int *) mt->table[item_num].payload;
+
+     fprintf(stderr,"SENDING %s payload %p , payload_val %u , size %u GROUP %u \n",ReturnPrintMessageTypeVal(mt->table[item_num].header.operation_type),mt->table[item_num].payload,*payload_val,mt->table[item_num].header.payload_size,mt->table[item_num].header.incremental_value);
+     printf("SENDING %s payload %p , payload_val %u , size %u GROUP %u \n",ReturnPrintMessageTypeVal(mt->table[item_num].header.operation_type),mt->table[item_num].payload,*payload_val,mt->table[item_num].header.payload_size,mt->table[item_num].header.incremental_value);
+
+     opres=send(clientsock,mt->table[item_num].payload,mt->table[item_num].header.payload_size,MSG_WAITALL);
+     if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; mt->table[item_num].sent=0; pthread_mutex_unlock(&mt->lock); return retres; } else
+     if ( opres != mt->table[item_num].header.payload_size ) { fprintf(stderr,"Payload was not fully transmitted only %u of %u bytes \n",opres,mt->table[item_num].header.payload_size);
+                                                                retres.failed=1; mt->table[item_num].sent=0;  pthread_mutex_unlock(&mt->lock); return retres; }
+
+   }
+
+
+
+  pthread_mutex_unlock(&mt->lock); // LOCK PROTECTED OPERATION -------------------------------------------
+
+  retres.value=item_num;
+  retres.failed=0;
+  return retres;
+}
+
+struct failint RecvMessageFromSocket(int clientsock,struct MessageTable * mt)
+{
+  struct failint retres={0};
+  retres.value=0;
+  retres.failed=0;
+
+  struct PacketHeader header={0};
+  int opres=recv(clientsock,&header,sizeof(struct PacketHeader),MSG_WAITALL);
+  if (opres<0) { fprintf(stderr,"Error RecvPacketAndPassToMT recv error %u \n",errno); retres.failed=1; return retres; } else
+  if (opres!=sizeof(struct PacketHeader)) { fprintf(stderr,"Error RecvPacketAndPassToMT incorrect number of bytes recieved %u \n",opres); retres.failed=1; return retres; }
+
+  if ( header.payload_size > 0 )
+   {
+    void * payload = (void * ) malloc(header.payload_size);
+    if (payload==0) { fprintf(stderr,"Error mallocing %u bytes \n ",header.payload_size); }
+    opres=recv(clientsock,payload,header.payload_size,MSG_WAITALL);
+    if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; return retres; } else
+    if ( opres != header.payload_size ) { fprintf(stderr,"Payload was not fully received only %u of %u bytes \n",opres,header.payload_size); retres.failed=1; return retres; }
+
+    retres = AddMessage(mt,INCOMING_MSG,1,&header,payload);
+    if(sockadap_msg())
+     {
+        unsigned int * payload_val=(unsigned int * ) payload;
+        fprintf(stderr,"RECEIVED %s - GROUP %u - With %u bytes of payload %u ----------------\n",ReturnPrintMessageTypeVal(header.operation_type),header.incremental_value,header.payload_size,*payload_val);
+     }
+    return retres;
+   } else
+   {
+     if(sockadap_msg())
+      {
+        fprintf(stderr,"RECEIVED %s - GROUP %u - with NO payload ----------------\n",ReturnPrintMessageTypeVal(header.operation_type),header.incremental_value);
+      }
+   }
+
+  retres = AddMessage(mt,INCOMING_MSG,0,&header,0);
+  return retres;
+}
 
 void * SocketAdapterToMessageTable_Thread(void * ptr)
 {

@@ -30,6 +30,14 @@
 #include "VariableDatabase.h"
 
 
+
+
+int RVS_InternalTest()
+{
+  return PerformInternalTest();
+}
+
+
 /* #Start_VariableSharing#
    This function is supposed to allocate a VariableShare structure ( vsh )
    and prepare the Variable Share Server in our machine as a master share
@@ -98,17 +106,12 @@ int RVS_StopVariableShare(struct VariableShare * vsh)
     vsh->stop_refresh_thread=1;
 
     usleep(1000);
+    i=Destroy_VariableDatabase(vsh);
+    usleep(1000);
 
-
-    return Destroy_VariableDatabase(vsh);
+    return i;
 }
 
-
-
-int RVS_InternalTest()
-{
-  return PerformInternalTest();
-}
 
 int RVS_PeersActive(struct VariableShare * vsh)
 {
@@ -148,10 +151,9 @@ int RVS_AddVariable(struct VariableShare * vsh,char * variable_name,unsigned int
 /* #Add_VariableToSharingList#
    Removes an existing variable from the Variable Share
 */
-int RVS_RemoveVariable(struct VariableShare * vsh,char * variable_name)
+int RVS_RemoveVariable(struct VariableShare * vsh,unsigned int var_id)
 {
-    fprintf(stderr,"Delete_VariableFromSharingList not implemented yet!");
-    return 0;
+    return DeleteVariable_Database(vsh,var_id);
 }
 
 
@@ -166,22 +168,31 @@ int RVS_GetVarId(struct VariableShare * vsh , char * var_name , char * exists)
 
 int RVS_GetVarLastUpdateTimestamp(struct VariableShare * vsh , unsigned int var_id)
 {
-   return 0;
+   if (!VariableIdExists(vsh,var_id)) { error("Error with RVS_GetVarLastUpdateTimestamp request\n"); return 0; }
+   return vsh->share.variables[var_id].last_write_time;
 }
 
-int RVS_WaitForTimestamp(struct VariableShare * vsh , unsigned int var_id,unsigned int timestamp_to_wait_for)
+int RVS_WaitForDifferentTimestamp(struct VariableShare * vsh , unsigned int var_id,unsigned int current_timestamp)
 {
-   return 0;
+   if (!VariableIdExists(vsh,var_id)) { error("Error with RVS_WaitForTimestamp request\n"); return 0; }
+
+   while (vsh->share.variables[var_id].last_write_time == current_timestamp)
+    {
+      usleep(10);
+    }
+
+   return 1;
 }
 
 
 /* #LockForLocalUse_LocalVariable#
    The variable_name is locked and will not be writeable , or readable from a network peer
 */
-int RVS_LockVariableLocalOnly(struct VariableShare * vsh,unsigned int var_id)
+int RVS_LockVariable_LocalUseOnly(struct VariableShare * vsh,unsigned int var_id)
 {
-    /*Todo Implement*/
-    return 0;
+    if (!VariableIdExists(vsh,var_id)) { error("Error with RVS_LockVariable_LocalUseOnly request\n"); return 0; }
+    vsh->share.variables[var_id].locked_localy_only=1;
+    return 1;
 }
 
 
@@ -189,9 +200,10 @@ int RVS_LockVariableLocalOnly(struct VariableShare * vsh,unsigned int var_id)
    The variable_name is unlocked and will be writeable , or readable from a network peer according to the permissions
    specified when it was added to the share
 */
-int RVS_UnlockVariable(struct VariableShare * vsh,unsigned int var_id)
+int RVS_UnlockVariable_LocalUseOnly(struct VariableShare * vsh,unsigned int var_id)
 {
-    /*Todo Implement*/
+    if (!VariableIdExists(vsh,var_id)) { error("Error with RVS_UnlockVariable_LocalUseOnly request\n"); return 0; }
+    vsh->share.variables[var_id].locked_localy_only=0;
     return 0;
 }
 
