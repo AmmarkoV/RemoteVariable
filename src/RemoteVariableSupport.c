@@ -60,7 +60,7 @@ struct VariableShare * RVS_HostVariableShare(char * sharename,char * bindaddress
                               error("Variable Shared already initialized , stop it before starting it again as server!");
                             }
     StartRemoteVariableServer(vsh);
-    StartAutoRefreshVariable(vsh);
+    StartAutoSyncVariables(vsh);
     return vsh;
 }
 
@@ -82,7 +82,7 @@ struct VariableShare * RVS_ConnectToVariableShare(char * sharename,char * IP,uns
 
 
     StartRemoteVariableConnection(vsh);
-    StartAutoRefreshVariable(vsh);
+    StartAutoSyncVariables(vsh);
     return vsh;
 }
 
@@ -212,7 +212,7 @@ int RVS_UnlockVariable_LocalUseOnly(struct VariableShare * vsh,unsigned int var_
    If the share policy is manual updates , it forces an update
    This function BLOCKS until the variable is refreshed or the connection dropped
 */
-int RVS_Refresh_AllVariables(struct VariableShare * vsh)
+int RVS_Sync_AllVariables(struct VariableShare * vsh)
 {
   return 1;// disabled for now
 
@@ -235,15 +235,13 @@ int RVS_Refresh_AllVariables(struct VariableShare * vsh)
  //    return RefreshLocalVariable_VariableDatabase(vsh,variable_name);
 }
 
-/* #RVS_Refresh_Variable#
+/* #RVS_Sync_Variable#
    If the share policy is automatic updates , it forces an update
    If the share policy is manual updates , it forces an update
-   This function BLOCKS until the variable is refreshed or the connection dropped
-*/
-int RVS_Refresh_Variable(struct VariableShare * vsh,unsigned int var_id)
+   This function should BLOCK until the variable is refreshed or the connection dropped ( it doenst for now )*/
+int RVS_Sync_Variable(struct VariableShare * vsh,unsigned int var_id)
 {
-  return 0;
-  //  return RefreshRemoteVariable_VariableDatabase(vsh,variable_name);
+  return FullySyncVariable(vsh,var_id,1);
 }
 
 

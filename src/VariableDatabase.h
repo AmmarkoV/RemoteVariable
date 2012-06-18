@@ -44,7 +44,9 @@ int  MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,unsi
 //int CanReadFrom_VariableDatabase(struct VariableShare * vsh,unsigned int var_spot);
 int CheckForChangedVariables(struct VariableShare * vsh);
 int SignalUpdatesForAllLocalVariablesThatNeedIt(struct VariableShare * vsh);
-int RefreshAllVariablesThatNeedIt(struct VariableShare *vsh);
+int SyncAllVariablesThatNeedIt(struct VariableShare *vsh);
+
+int FullySyncVariable(struct VariableShare *vsh,unsigned int var_id,unsigned char lock_mutex);
 
 int NewRemoteValueForVariable(struct VariableShare * vsh,unsigned int peer_id,unsigned int var_id,void * new_val,unsigned int new_val_size,unsigned int time);
 
@@ -53,7 +55,7 @@ int NewRemoteValueForVariable(struct VariableShare * vsh,unsigned int peer_id,un
 
 int MakeSureVarReachedPeers(struct VariableShare *vsh,char * varname,unsigned int wait_time);
 
-void AutoRefreshVariable_Thread_Pause(struct VariableShare * vsh);
-void AutoRefreshVariable_Thread_Resume(struct VariableShare * vsh);
-int StartAutoRefreshVariable(struct VariableShare * vsh);
+void AutoSyncVariables_Thread_Pause(struct VariableShare * vsh);
+void AutoSyncVariables_Thread_Resume(struct VariableShare * vsh);
+int StartAutoSyncVariables(struct VariableShare * vsh);
 #endif // VARIABLEDATABASE_H_INCLUDED

@@ -202,6 +202,7 @@ int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int
      }
 
     vsh->share.variables[spot_to_take].last_write_time=0;
+    vsh->share.variables[spot_to_take].last_write_is_local=0;
     vsh->share.variables[spot_to_take].permissions=permissions;
     vsh->share.variables[spot_to_take].locked_localy_only=0;
 
@@ -251,6 +252,23 @@ int MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,unsig
    return 1;
 }
 
+
+/*!
+       /\
+       ||
+       ||
+
+     Initialization / Getters - Setters
+
+
+     Variable Synchronization Behavior functions
+
+       ||
+       ||
+       \/
+!*/
+
+
 int IfLocalVariableChanged_SignalUpdate(struct VariableShare * vsh,unsigned int var_id)
 {
   int USE_LOW_LATENCY_MORE_BANDWIDTH_DIRECT_COMMANDS = 1;
@@ -277,23 +295,30 @@ int IfLocalVariableChanged_SignalUpdate(struct VariableShare * vsh,unsigned int 
 }
 
 
+inline int CheckIfVariableChangedLocally(struct VariableShare * vsh,unsigned int var_id)
+{
+ int retres=0;
+ unsigned long live_hash = GetVariableHashForVar(vsh,var_id);
+ if (live_hash != vsh->share.variables[var_id].hash )
+  {
+    printf("Variable %u changed from hash %u to %u!\n",var_id,(unsigned int) vsh->share.variables[var_id].hash,(unsigned int) live_hash);
+    fprintf(stderr,"Variable %u changed from hash %u to %u!\n",var_id,(unsigned int) vsh->share.variables[var_id].hash,(unsigned int) live_hash);
+    vsh->share.variables[var_id].hash=live_hash;
+    vsh->share.variables[var_id].last_write_is_local = 1;
+    ++retres;
+  }
+  return retres;
+}
+
+
 int CheckForChangedVariables(struct VariableShare * vsh)
 {
  if ( vsh->share.total_variables_shared == 0 ) { return 0; /* NO VARIABLES TO SHARE OR UPDATE!*/}
  int retres=0;
  unsigned int var_id=0;
- unsigned long live_hash=0;
- //fprintf(stderr,"Refreshing %u variables!\n",vsh->share.total_variables_shared);
  for ( var_id=0; var_id<vsh->share.total_variables_shared; var_id++ )
   {
-     live_hash = GetVariableHashForVar(vsh,var_id);
-     if (live_hash != vsh->share.variables[var_id].hash )
-      {
-        printf("Variable %u changed from hash %u to %u!\n",var_id,(unsigned int) vsh->share.variables[var_id].hash,(unsigned int) live_hash);
-        fprintf(stderr,"Variable %u changed from hash %u to %u!\n",var_id,(unsigned int) vsh->share.variables[var_id].hash,(unsigned int) live_hash);
-        vsh->share.variables[var_id].hash=live_hash;
-        ++retres;
-      }
+    retres+=CheckIfVariableChangedLocally(vsh,var_id);
   }
 
   return retres;
@@ -336,6 +361,7 @@ int NewRemoteValueForVariable(struct VariableShare * vsh,unsigned int peer_id,un
          vsh->share.variables[var_id].hash=GetVariableHashForVar(vsh,var_id);
          vsh->share.variables[var_id].last_signaled_hash[peer_id]=vsh->share.variables[var_id].hash;
          vsh->share.variables[var_id].last_write_time = time;
+         vsh->share.variables[var_id].last_write_is_local = 0; //Last value written came from the remote peer
 
 
          pthread_mutex_unlock (&vsh->refresh_lock); // LOCK PROTECTED OPERATION -------------------------------------------
@@ -348,27 +374,44 @@ int NewRemoteValueForVariable(struct VariableShare * vsh,unsigned int peer_id,un
    return 0;
 }
 
+//Very verbose function names until the data flow on this part of the library is settled :p
+int SyncVariableIdWithPeersIfTheyOrWeNeedIt(struct VariableShare *vsh,unsigned int var_id)
+{
+  if ( vsh->share.variables[var_id].needs_update )
+   {
+    fprintf(stderr,"Detected that a variable (%u) needs refresh , and automatically adding a job to receive it\n",var_id);
+    unsigned int peer_id=vsh->share.variables[var_id].needs_update_from_peer;
+    if ( ReadVarFromPeer(vsh,var_id,peer_id) ) { return 1; }
+   }
+  return 0;
+}
 
-int RefreshAllVariablesThatNeedIt(struct VariableShare *vsh)
+int SyncAllVariablesThatNeedIt(struct VariableShare *vsh)
 {
    unsigned int refreshed_vars=0;
    unsigned int var_id=0;
-   unsigned int peer_id=0;
 
-    for ( var_id=0; var_id<vsh->share.total_variables_shared; var_id++)
+   for ( var_id=0; var_id<vsh->share.total_variables_shared; var_id++)
    {
-      if ( vsh->share.variables[var_id].needs_update )
-        {
-           fprintf(stderr,"Detected that a variable (%u) needs refresh , and automatically adding a job to receive it\n",var_id);
-
-           peer_id=vsh->share.variables[var_id].needs_update_from_peer;
-           if ( ReadVarFromPeer(vsh,var_id,peer_id) ) { ++refreshed_vars; }
-        }
-    }
-
+      if ( SyncVariableIdWithPeersIfTheyOrWeNeedIt(vsh,var_id) ) { ++refreshed_vars; }
+   }
 
   return refreshed_vars;
 }
+
+int FullySyncVariable(struct VariableShare *vsh,unsigned int var_id,unsigned char lock_mutex)
+{
+  if (lock_mutex) pthread_mutex_lock (&vsh->refresh_lock); // LOCK PROTECTED OPERATION -------------------------------------------
+
+  CheckIfVariableChangedLocally(vsh,var_id);
+  IfLocalVariableChanged_SignalUpdate(vsh,var_id);
+  SyncVariableIdWithPeersIfTheyOrWeNeedIt(vsh,var_id);
+
+  if (lock_mutex) pthread_mutex_unlock (&vsh->refresh_lock); // LOCK PROTECTED OPERATION -------------------------------------------
+
+  return 1;
+}
+
 
 int MakeSureVarReachedPeers(struct VariableShare *vsh,char * varname,unsigned int wait_time)
 {
@@ -400,9 +443,24 @@ int MakeSureVarReachedPeers(struct VariableShare *vsh,char * varname,unsigned in
   return 0;
 }
 
+/*!
+       /\
+       ||
+       ||
+
+     Variable Synchronization Behavior functions
+
+
+
+     AutoSync Thread
+
+       ||
+       ||
+       \/
+!*/
 
 void *
-AutoRefreshVariable_Thread(void * ptr)
+AutoSyncVariables_Thread(void * ptr)
 {
   debug_say("AutoRefresh Thread: AutoRefresh Thread started..\n");
   struct VariableShare *vsh=0;
@@ -421,7 +479,7 @@ AutoRefreshVariable_Thread(void * ptr)
         if (vsh->global_policy!=VSP_AUTOMATIC)
           {
              pthread_mutex_lock (&vsh->refresh_lock); // LOCK PROTECTED OPERATION -------------------------------------------
-             RefreshAllVariablesThatNeedIt(vsh);
+             SyncAllVariablesThatNeedIt(vsh);
              pthread_mutex_unlock (&vsh->refresh_lock); // LOCK PROTECTED OPERATION -------------------------------------------
           }
            else
@@ -437,11 +495,11 @@ AutoRefreshVariable_Thread(void * ptr)
              variables_signaled=SignalUpdatesForAllLocalVariablesThatNeedIt(vsh);
              total_variables_changed+=variables_signaled;
 
-             variables_refreshed=RefreshAllVariablesThatNeedIt(vsh);
+             variables_refreshed=SyncAllVariablesThatNeedIt(vsh);
              pthread_mutex_unlock (&vsh->refresh_lock); // LOCK PROTECTED OPERATION -------------------------------------------
 
              if ( (variables_changed==0 ) && ( variables_signaled == 0) && ( variables_refreshed == 0) ) { /*fprintf(stderr,".");*/ } else
-                                                                           { fprintf(stderr,"AutoRefresh Thread: %u vars changed | %u vars signaled | %u vars refreshed\n",variables_changed,variables_signaled,variables_refreshed); }
+                                                                           { fprintf(stderr,"AutoRefresh Thread: %u vars changed | %u vars signaled | %u vars synced\n",variables_changed,variables_signaled,variables_refreshed); }
           }
    }
    fprintf(stderr,"AutoRefresh Thread: %u total variables changed detected by autorefresh thread\n",total_variables_changed);
@@ -449,22 +507,22 @@ AutoRefreshVariable_Thread(void * ptr)
    return 0;
 }
 
-void AutoRefreshVariable_Thread_Pause(struct VariableShare * vsh)
+void AutoSyncVariables_Thread_Pause(struct VariableShare * vsh)
 {
   vsh->pause_refresh_thread=1;
 }
 
-void AutoRefreshVariable_Thread_Resume(struct VariableShare * vsh)
+void AutoSyncVariables_Thread_Resume(struct VariableShare * vsh)
 {
   vsh->pause_refresh_thread=0;
 }
 
 /* THREAD STARTER */
-int StartAutoRefreshVariable(struct VariableShare * vsh)
+int StartAutoSyncVariables(struct VariableShare * vsh)
 {
   vsh->stop_refresh_thread=0;
   vsh->pause_refresh_thread=0;
-  int retres = pthread_create( &vsh->refresh_thread, 0,  AutoRefreshVariable_Thread ,(void*) vsh);
+  int retres = pthread_create( &vsh->refresh_thread, 0,  AutoSyncVariables_Thread ,(void*) vsh);
 
   if (retres!=0) retres = 0; else retres = 1;
   return retres;

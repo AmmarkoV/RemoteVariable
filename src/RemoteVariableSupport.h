@@ -145,8 +145,10 @@ struct ShareListItem
     unsigned char GUARD_BYTE1;
 
     unsigned int  last_write_time;
+    unsigned char last_write_is_local;
     unsigned int  permissions;
     unsigned char locked_localy_only; // this switch should make the variable only accessible ( read/write ) locally ( temp permission change )
+
 
     unsigned long last_signaled_hash[RVS_MAX_PEERS];
     unsigned long hash;
@@ -306,8 +308,9 @@ int RVS_LockVariable_LocalUseOnly(struct VariableShare * vsh,unsigned int var_id
 int RVS_UnlockVariable_LocalUseOnly(struct VariableShare * vsh,unsigned int var_id);
 
 int RVS_PeersActive(struct VariableShare * vsh);
-int RVS_Refresh_AllVariables(struct VariableShare * vsh);
-int RVS_Refresh_Variable(struct VariableShare * vsh,unsigned int var_id);
+
+int RVS_Sync_AllVariables(struct VariableShare * vsh);
+int RVS_Sync_Variable(struct VariableShare * vsh,unsigned int var_id);
 
 int RVS_LocalVariableChanged(struct VariableShare * vsh,unsigned int var_id);
 int RVS_LocalVariableIsUptodate(struct VariableShare * vsh,unsigned int var_id);
