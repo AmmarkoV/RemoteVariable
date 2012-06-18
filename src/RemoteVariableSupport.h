@@ -44,7 +44,7 @@ extern "C" {
 #define RVS_READWRITE 3
 
 #define RVS_AUTOUPDATE 1
-#define RVS_MANUALUPDATE 1
+#define RVS_MANUALUPDATE 0
 
 enum jobactions
 {
@@ -157,8 +157,9 @@ struct ShareListItem
     unsigned char receiving_new_val;
     unsigned int receiving_from_peer;
 
+    unsigned char auto_update;
     unsigned char needs_update;
-    unsigned int needs_update_from_peer;
+    unsigned int  needs_update_from_peer;
 
     unsigned int size_of_ptr;
     void * ptr;
@@ -299,10 +300,10 @@ void RVS_SetPolicy(struct VariableShare * vsh,unsigned int new_policy);
 int RVS_AddVariable(struct VariableShare * vsh,char * variable_name,unsigned char permissions,unsigned char AUTO_UPDATE,volatile void * ptr,unsigned int ptr_size);
 int RVS_RemoveVariable(struct VariableShare * vsh,unsigned int var_id);
 
+int RVS_GetVarIdFromPointer(struct VariableShare * vsh , void * ptr , char * exists);
 int RVS_GetVarId(struct VariableShare * vsh , char * var_name , char * exists);
 int RVS_GetVarLastUpdateTimestamp(struct VariableShare * vsh , unsigned int var_id);
 int RVS_WaitForDifferentTimestamp(struct VariableShare * vsh , unsigned int var_id,unsigned int current_timestamp);
-int RVS_MakeSureVarReachedPeers(struct VariableShare * vsh,char * variable_name,unsigned int wait_time_ms);
 
 int RVS_LockVariable_LocalUseOnly(struct VariableShare * vsh,unsigned int var_id);
 int RVS_UnlockVariable_LocalUseOnly(struct VariableShare * vsh,unsigned int var_id);

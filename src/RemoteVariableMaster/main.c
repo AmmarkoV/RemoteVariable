@@ -79,7 +79,7 @@ int main()
     }
 
 
-    RVS_MakeSureVarReachedPeers(vsh,"SHARED_VAR",5000);
+//    RVS_MakeSureVarReachedPeers(vsh,"SHARED_VAR",5000);
     usleep(1000);
 
     printf("\nMaster: Test is successfull\n");

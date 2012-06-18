@@ -158,7 +158,7 @@ unsigned long GetVariableHashForVar(struct VariableShare * vsh,unsigned int var_
 
 
 
-int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int permissions,volatile void * ptr,unsigned int ptr_size)
+int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int permissions,unsigned char AUTOUPDATE,volatile void * ptr,unsigned int ptr_size)
 {
  if ( VariableShareOk(vsh) == 0 ) { fprintf(stderr,"Error could not add %s var to database \n",var_name); return 0; }
 
@@ -194,6 +194,8 @@ int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int
     vsh->share.variables[spot_to_take].needs_update=0;
     vsh->share.variables[spot_to_take].needs_update_from_peer=0;
 
+    if (AUTOUPDATE) { vsh->share.variables[spot_to_take].auto_update=1; } else
+                    { vsh->share.variables[spot_to_take].auto_update=0; }
 
     unsigned int i=0;
     for (i=0; i<RVS_MAX_PEERS; i++)
@@ -243,6 +245,26 @@ struct failint FindVariable_Database(struct VariableShare * vsh,char * var_name)
  return retres;
 }
 
+struct failint FindVariablePointer_Database(struct VariableShare * vsh,void * ptr)
+{
+ struct failint retres={0};
+
+ if ( VariableShareOk(vsh) == 0 ) { retres.failed=1; return retres; }
+
+ int i;
+ for ( i=0; i<vsh->share.total_variables_shared; i++)
+  {
+     if (  vsh->share.variables[i].ptr == ptr )
+      {
+        retres.value=i;
+        return retres;
+      }
+  }
+
+ retres.failed=1;
+ return retres;
+}
+
 int MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,unsigned int var_id,int peer_id)
 {
    if (!VariableIdExists(vsh,var_id)) { fprintf(stderr,"Variable addressed ( %u ) by MarkVariableAsNeedsRefresh_VariableDatabase does not exist \n",var_id); return 0; }
@@ -269,7 +291,7 @@ int MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,unsig
 !*/
 
 
-int IfLocalVariableChanged_SignalUpdate(struct VariableShare * vsh,unsigned int var_id)
+int IfLocalVariableChanged_SignalUpdate(struct VariableShare * vsh,unsigned int var_id,unsigned int FORCEIT)
 {
   int USE_LOW_LATENCY_MORE_BANDWIDTH_DIRECT_COMMANDS = 1;
   if (!VariableIdExists(vsh,var_id)) { fprintf(stderr,"Variable addressed ( %u ) by IfLocalVariableChanged_SignalUpdateToJoblist does not exist \n",var_id); return 0; }
@@ -280,8 +302,9 @@ int IfLocalVariableChanged_SignalUpdate(struct VariableShare * vsh,unsigned int 
 
          for (peer_id=0; peer_id< vsh->total_peers; peer_id++)
          {
-
-          if (vsh->share.variables[var_id].hash!=vsh->share.variables[var_id].last_signaled_hash[peer_id])
+          if ( (vsh->share.variables[var_id].auto_update)||(FORCEIT) )
+          {
+           if (vsh->share.variables[var_id].hash!=vsh->share.variables[var_id].last_signaled_hash[peer_id])
             {
               printf("Variable has changed hash %u , last signaled hash is %u \n",(unsigned int) vsh->share.variables[var_id].hash,(unsigned int) vsh->share.variables[var_id].last_signaled_hash[peer_id]);
               if ( (USE_LOW_LATENCY_MORE_BANDWIDTH_DIRECT_COMMANDS)
@@ -290,6 +313,7 @@ int IfLocalVariableChanged_SignalUpdate(struct VariableShare * vsh,unsigned int 
                     { /*One message direct write*/ if (WriteVarToPeer(vsh,var_id,peer_id)) { ++successfull_transmissions; } else { ++failed_transmissions; } }
               else { /*Signal only*/ if (SignalVariableChange(vsh,var_id,peer_id)) { ++successfull_transmissions; } else { ++failed_transmissions; } }
             }
+          }
          } // End of for all peers loop
   return successfull_transmissions;
 }
@@ -332,7 +356,7 @@ int SignalUpdatesForAllLocalVariablesThatNeedIt(struct VariableShare * vsh)
  int retres=0;
  unsigned int i=0;
  for ( i=0; i<vsh->share.total_variables_shared; i++)
-   {  if ( IfLocalVariableChanged_SignalUpdate(vsh,i) ) { ++retres; } }
+   {  if ( IfLocalVariableChanged_SignalUpdate(vsh,i,0) ) { ++retres; } }
 
   return retres;
 }
@@ -404,7 +428,7 @@ int FullySyncVariable(struct VariableShare *vsh,unsigned int var_id,unsigned cha
   if (lock_mutex) pthread_mutex_lock (&vsh->refresh_lock); // LOCK PROTECTED OPERATION -------------------------------------------
 
   CheckIfVariableChangedLocally(vsh,var_id);
-  IfLocalVariableChanged_SignalUpdate(vsh,var_id);
+  IfLocalVariableChanged_SignalUpdate(vsh,var_id,1);
   SyncVariableIdWithPeersIfTheyOrWeNeedIt(vsh,var_id);
 
   if (lock_mutex) pthread_mutex_unlock (&vsh->refresh_lock); // LOCK PROTECTED OPERATION -------------------------------------------

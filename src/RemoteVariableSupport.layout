@@ -14,7 +14,7 @@
 		<Cursor position="85" topLine="0" />
 	</File>
 	<File name="MessageTables.c" open="1" top="0" tabpos="21">
-		<Cursor position="10844" topLine="514" />
+		<Cursor position="10844" topLine="515" />
 	</File>
 	<File name="MessageTables.h" open="1" top="0" tabpos="14">
 		<Cursor position="999" topLine="0" />
@@ -40,11 +40,11 @@
 	<File name="Protocol.h" open="1" top="0" tabpos="18">
 		<Cursor position="1569" topLine="0" />
 	</File>
-	<File name="RemoteVariableSupport.c" open="1" top="0" tabpos="4">
-		<Cursor position="6970" topLine="184" />
+	<File name="RemoteVariableSupport.c" open="1" top="1" tabpos="4">
+		<Cursor position="8479" topLine="202" />
 	</File>
 	<File name="RemoteVariableSupport.h" open="1" top="0" tabpos="7">
-		<Cursor position="7303" topLine="270" />
+		<Cursor position="7015" topLine="272" />
 	</File>
 	<File name="SocketAdapterToMessageTables.c" open="1" top="0" tabpos="15">
 		<Cursor position="9613" topLine="94" />
@@ -53,10 +53,10 @@
 		<Cursor position="260" topLine="0" />
 	</File>
 	<File name="VariableDatabase.c" open="1" top="0" tabpos="5">
-		<Cursor position="7999" topLine="285" />
+		<Cursor position="12336" topLine="478" />
 	</File>
 	<File name="VariableDatabase.h" open="1" top="0" tabpos="8">
-		<Cursor position="1131" topLine="3" />
+		<Cursor position="1025" topLine="0" />
 	</File>
 	<File name="helper.c" open="1" top="0" tabpos="2">
 		<Cursor position="102" topLine="0" />

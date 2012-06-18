@@ -144,7 +144,7 @@ void RVS_SetPolicy(struct VariableShare * vsh,unsigned int new_policy)
 */
 int RVS_AddVariable(struct VariableShare * vsh,char * variable_name,unsigned char permissions,unsigned char AUTO_UPDATE,volatile void * ptr,unsigned int ptr_size)
 {
-    return AddVariable_Database(vsh,variable_name,permissions,ptr,ptr_size);
+    return AddVariable_Database(vsh,variable_name,permissions,AUTO_UPDATE,ptr,ptr_size);
 }
 
 /* #Add_VariableToSharingList#
@@ -155,6 +155,13 @@ int RVS_RemoveVariable(struct VariableShare * vsh,unsigned int var_id)
     return DeleteVariable_Database(vsh,var_id);
 }
 
+int RVS_GetVarIdFromPointer(struct VariableShare * vsh , void * ptr , char * exists)
+{
+  struct failint retres = FindVariablePointer_Database(vsh,ptr);
+   if (retres.failed==0) { *exists=1; } else
+                         { *exists=0; }
+   return retres.value;
+}
 
 int RVS_GetVarId(struct VariableShare * vsh , char * var_name , char * exists)
 {
@@ -226,13 +233,12 @@ int RVS_Sync_AllVariables(struct VariableShare * vsh)
 
    variables_signaled=SignalUpdatesForAllLocalVariablesThatNeedIt(vsh);
 
-   variables_refreshed=RefreshAllVariablesThatNeedIt(vsh);
+   variables_refreshed=SyncAllVariablesThatNeedIt(vsh);
    printf("AutoRefresh Thread: %u vars changed | %u vars signaled | %u vars refreshed\n",variables_changed,variables_signaled,variables_refreshed);
   }
   pthread_mutex_unlock (&vsh->refresh_lock); // LOCK PROTECTED OPERATION -------------------------------------------
 
   return 1;
- //    return RefreshLocalVariable_VariableDatabase(vsh,variable_name);
 }
 
 /* #RVS_Sync_Variable#
@@ -244,10 +250,10 @@ int RVS_Sync_Variable(struct VariableShare * vsh,unsigned int var_id)
   return FullySyncVariable(vsh,var_id,1);
 }
 
-
 int RVS_LocalVariableChanged(struct VariableShare * vsh,unsigned int var_id)
 {
-  return 1;
+  RVS_Sync_Variable(vsh,var_id);
+  return vsh->share.variables[var_id].last_write_is_local;
 }
 
 int RVS_LocalVariableIsUptodate(struct VariableShare * vsh,unsigned int var_id)
@@ -255,18 +261,3 @@ int RVS_LocalVariableIsUptodate(struct VariableShare * vsh,unsigned int var_id)
   return (!RVS_LocalVariableChanged(vsh,var_id));
 }
 
-
-
-
-
-
-int RVS_MakeSureVarReachedPeers(struct VariableShare * vsh,char * variable_name,unsigned int wait_time_ms)
-{
-  return MakeSureVarReachedPeers(vsh,variable_name,wait_time_ms);
-}
-
-
-
-/*
-   TODO ADD POLICY SWITCHES
-*/

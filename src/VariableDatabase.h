@@ -33,10 +33,11 @@ int Destroy_VariableDatabase(struct VariableShare * vsh);
 unsigned long GetVariableHash(struct VariableShare * vsh,void * ptr,unsigned int size_of_ptr);
 unsigned long GetVariableHashForVar(struct VariableShare * vsh,unsigned int var_id);
 
-int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int permissions,volatile void * ptr,unsigned int ptr_size);
+int AddVariable_Database(struct VariableShare * vsh,char * var_name,unsigned int permissions,unsigned char AUTOUPDATE,volatile void * ptr,unsigned int ptr_size);
 int DeleteVariable_Database(struct VariableShare * vsh,unsigned int var_id);
-struct failint FindVariable_Database(struct VariableShare * vsh,char * var_name);
 
+struct failint FindVariable_Database(struct VariableShare * vsh,char * var_name);
+struct failint FindVariablePointer_Database(struct VariableShare * vsh,void * ptr);
 
 int  MarkVariableAsNeedsRefresh_VariableDatabase(struct VariableShare * vsh,unsigned int var_id,int peer_id);
 

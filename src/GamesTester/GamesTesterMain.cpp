@@ -185,7 +185,7 @@ GamesTesterFrame::GamesTesterFrame(wxWindow* parent,wxWindowID id)
         RVS_AddVariable(vsh,"CLIENT_MOVE",RVS_READWRITE,RVS_AUTOUPDATE,&OpponentMove,sizeof(OpponentMove));
         RVS_AddVariable(vsh,"GAME_STATE",RVS_READWRITE,RVS_AUTOUPDATE,&game_state,sizeof(game_state));
         RVS_AddVariable(vsh,"HOST_MSG",RVS_READWRITE,RVS_MANUALUPDATE,&OutMSG,32);
-        RVS_AddVariable(vsh,"CLIENT_MSG",RVS_READWRITE,RVS_MANUALUPDATE,&InMSG,32);
+        RVS_AddVariable(vsh,"CLIENT_MSG",RVS_READWRITE,RVS_AUTOUPDATE,&InMSG,32);
 
         fprintf(stderr,"Waiting for client ");
         while (RVS_PeersActive(vsh)==0) {  wxSleep(1); fprintf(stderr,"*");  }
@@ -203,7 +203,7 @@ GamesTesterFrame::GamesTesterFrame(wxWindow* parent,wxWindowID id)
         RVS_AddVariable(vsh,"HOST_MOVE",RVS_READWRITE,RVS_AUTOUPDATE,&OpponentMove,sizeof(OpponentMove));
         RVS_AddVariable(vsh,"CLIENT_MOVE",RVS_READWRITE,RVS_AUTOUPDATE,&OurMove,sizeof(OurMove));
         RVS_AddVariable(vsh,"GAME_STATE",RVS_READWRITE,RVS_AUTOUPDATE,&game_state,sizeof(game_state));
-        RVS_AddVariable(vsh,"HOST_MSG",RVS_READWRITE,RVS_MANUALUPDATE,&InMSG,32);
+        RVS_AddVariable(vsh,"HOST_MSG",RVS_READWRITE,RVS_AUTOUPDATE,&InMSG,32);
         RVS_AddVariable(vsh,"CLIENT_MSG",RVS_READWRITE,RVS_MANUALUPDATE,&OutMSG,32);
 
         while (game_state!=1) { wxSleep(1); fprintf(stderr,"."); }
@@ -267,9 +267,20 @@ void GamesTesterFrame::OnAbout(wxCommandEvent& event)
     wxMessageBox(msg, _("Welcome to..."));
 }
 
+
+void TransmitOutMSG()
+{
+   char exists =0;
+   unsigned int var_id = RVS_GetVarIdFromPointer(vsh,(void *) &OutMSG,&exists);
+   RVS_Sync_Variable(vsh,var_id);
+}
+
+
 void GamesTesterFrame::OnSendButtonClick(wxCommandEvent& event)
 {
    strncpy((char*) OutMSG, (const char*) OurTextCtrl->GetValue().mb_str(wxConvUTF8),32);
+   TransmitOutMSG();
+
 
    wxString FinalMessage = OurName;
    FinalMessage << wxT( " : ");
@@ -503,6 +514,7 @@ void GamesTesterFrame::Nudge()
  // wxSound msg("Sounds\\nudge.wav",false);
  // msg.Play();
   strcpy((char*) OutMSG,"/nudge\0");
+  TransmitOutMSG();
   PlaySound("boing");
 
   wxPoint start = GetPosition();
