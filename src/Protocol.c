@@ -75,12 +75,12 @@ long TimerEnd(struct timeval *start_time,struct timeval *end_time,struct timeval
 int SendStringTo(int clientsock,char * message,unsigned int length)
 {
   fprintf(stderr,"SendStringTo Trying to send length %u to peer socket %d \n",length,clientsock);
-  int opres1 = send(clientsock,&length,sizeof(length),0);
+  int opres1 = send(clientsock,&length,sizeof(length),MSG_NOSIGNAL);
   if ( opres1 < 0 ) { fprintf(stderr,"Error %u while SendStringTo the length packet\n",errno); return opres1; } else
   if ( opres1 < sizeof(length) ) { fprintf(stderr,"Did not send the whole length packet ( only %u bytes ) while SendStringTo\n",opres1); return opres1; }
 
   fprintf(stderr,"SendStringTo Trying to send `%s` to peer socket %d \n",message,clientsock);
-  int opres2 = send(clientsock,message,length, 0);
+  int opres2 = send(clientsock,message,length,MSG_NOSIGNAL);
   if ( opres2 < 0 ) { fprintf(stderr,"Error %u while SendStringTo the length packet\n",errno); return opres2; } else
   if ( opres2 < sizeof(length) ) { fprintf(stderr,"Did not send the whole length packet ( only %u bytes ) while SendStringTo\n",opres2); return opres2; }
 
@@ -130,8 +130,8 @@ int Start_Version_Handshake(struct VariableShare * vsh,int peersock)
   if (strncmp(message,"HI!!",4)!=0) { error("Error at connect handshaking : Did not receive HELLO "); return 0; }
 
   // 2ND MESSAGE SENT
-  opres=send(peersock,"VER=",4,MSG_WAITALL);
-  opres=send(peersock,&RVS_PROTOCOL_VERSION,1,MSG_WAITALL);
+  opres=send(peersock,"VER=",4,MSG_WAITALL|MSG_NOSIGNAL);
+  opres=send(peersock,&RVS_PROTOCOL_VERSION,1,MSG_WAITALL|MSG_NOSIGNAL);
   fprintf(stderr,"send VER`%c`\n",RVS_PROTOCOL_VERSION);
 
   //THIS MESSAGE RECEIVES THE VERSION OF THE PEER
@@ -143,7 +143,7 @@ int Start_Version_Handshake(struct VariableShare * vsh,int peersock)
 
 
   // FOURTH MESSAGE SENT
-  opres=send(peersock,"CON=",4,MSG_WAITALL);
+  opres=send(peersock,"CON=",4,MSG_WAITALL|MSG_NOSIGNAL);
   SendStringTo(peersock,vsh->sharename,strlen(vsh->sharename));
 
   memset (message,0,3);
@@ -175,8 +175,8 @@ int Accept_Version_Handshake(struct VariableShare * vsh,int peersock)
   if (message[4]!=RVS_PROTOCOL_VERSION ) { fprintf(stderr,"Error at connect handshaking : Incorrect version for peer ( got %c we have %c ) ",message[4],RVS_PROTOCOL_VERSION); return 0;}
 
   // THIRD MESSAGE SENT
-  opres=send(peersock,"VER=",4,MSG_WAITALL);
-  opres=send(peersock,&RVS_PROTOCOL_VERSION,1,MSG_WAITALL);
+  opres=send(peersock,"VER=",4,MSG_WAITALL|MSG_NOSIGNAL);
+  opres=send(peersock,&RVS_PROTOCOL_VERSION,1,MSG_WAITALL|MSG_NOSIGNAL);
   fprintf(stderr,"send VER=%c\n",RVS_PROTOCOL_VERSION);
 
   message[0]=0; message[1]=0; message[2]=0; message[3]=0; message[4]=0; message[5]=0;
@@ -189,11 +189,11 @@ int Accept_Version_Handshake(struct VariableShare * vsh,int peersock)
   if (strcmp(message,vsh->sharename)!=0)
    {
      fprintf(stderr,"Peer asked for the wrong share ..\n Requested share = `%s` , our share = `%s` \n",message,vsh->sharename);
-     opres=send(peersock,"NO",2,MSG_WAITALL);
+     opres=send(peersock,"NO",2,MSG_WAITALL|MSG_NOSIGNAL);
      return 0;
    }
 
-  opres=send(peersock,"OK",2,MSG_WAITALL);
+  opres=send(peersock,"OK",2,MSG_WAITALL|MSG_NOSIGNAL);
   fprintf(stderr,"Accept_Version_Handshake completed \n");
   return 1;
 }

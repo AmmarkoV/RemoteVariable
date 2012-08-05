@@ -171,7 +171,7 @@ struct failint SendMessageToSocket(int clientsock,struct MessageTable * mt,unsig
 
 
 
-  int opres=send(clientsock,&mt->table[item_num].header,sizeof(mt->table[item_num].header),MSG_WAITALL);
+  int opres=send(clientsock,&mt->table[item_num].header,sizeof(mt->table[item_num].header),MSG_WAITALL|MSG_NOSIGNAL);
   if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1;  mt->table[item_num].sent=0; pthread_mutex_unlock(&mt->lock); return retres; }
 
   if ( mt->table[item_num].header.payload_size > 0 )
@@ -181,7 +181,7 @@ struct failint SendMessageToSocket(int clientsock,struct MessageTable * mt,unsig
      fprintf(stderr,"SENDING %s payload %p , payload_val %u , size %u GROUP %u \n",ReturnPrintMessageTypeVal(mt->table[item_num].header.operation_type),mt->table[item_num].payload,*payload_val,mt->table[item_num].header.payload_size,mt->table[item_num].header.incremental_value);
      printf("SENDING %s payload %p , payload_val %u , size %u GROUP %u \n",ReturnPrintMessageTypeVal(mt->table[item_num].header.operation_type),mt->table[item_num].payload,*payload_val,mt->table[item_num].header.payload_size,mt->table[item_num].header.incremental_value);
 
-     opres=send(clientsock,mt->table[item_num].payload,mt->table[item_num].header.payload_size,MSG_WAITALL);
+     opres=send(clientsock,mt->table[item_num].payload,mt->table[item_num].header.payload_size,MSG_WAITALL|MSG_NOSIGNAL);
      if ( opres < 0 ) { fprintf(stderr,"Error %u while SendPacketAndPassToMT \n",errno); retres.failed=1; mt->table[item_num].sent=0; pthread_mutex_unlock(&mt->lock); return retres; } else
      if ( opres != mt->table[item_num].header.payload_size ) { fprintf(stderr,"Payload was not fully transmitted only %u of %u bytes \n",opres,mt->table[item_num].header.payload_size);
                                                                 retres.failed=1; mt->table[item_num].sent=0;  pthread_mutex_unlock(&mt->lock); return retres; }
